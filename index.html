@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retro Dance Radio</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="logo.png" alt="Retro Dance Radio Logo" id="logo">
+      <h1>Retro Dance Radio</h1>
+    </header>
+
+    <section class="current-track-section">
+      <h2>Слушайте сейчас:</h2>
+      <div id="current-track">Загрузка...</div>
+      <audio controls autoplay>
+        <source src="http://84.247.184.238/listen/retro_dance_radio/radio.mp3" type="audio/mpeg">
+      </audio>
+    </section>
+
+    <section class="history-section">
+      <h2>Последние треки:</h2>
+      <ul id="history"></ul>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
