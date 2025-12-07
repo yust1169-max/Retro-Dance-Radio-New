@@ -5,6 +5,72 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Retro Dance Radio</title>
 <link rel="stylesheet" href="css/style.css">
+<style>
+  /* Новый фон */
+  body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
+    color: #fff;
+  }
+
+  /* Хедер с логотипом слева */
+  header {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    background: rgba(0,0,0,0.6);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+  }
+
+  .logo-container {
+    margin-right: 15px;
+  }
+
+  #logo {
+    height: 50px;
+    transition: transform 0.3s;
+  }
+
+  #logo:hover {
+    transform: scale(1.05);
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 1.8em;
+    color: #ff4081;
+    text-shadow: 1px 1px 5px #000;
+  }
+
+  /* Добавляем отступ, чтобы основной контент не скрывался под фиксированным header */
+  main.radio-container {
+    padding-top: 80px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  section {
+    margin-bottom: 40px;
+  }
+
+  section h2 {
+    color: #ff4081;
+    border-bottom: 2px solid #ff4081;
+    padding-bottom: 5px;
+  }
+
+  iframe {
+    width: 100%;
+    border: 0;
+    border-radius: 10px;
+    background: #111; /* темный фон для iframe */
+  }
+</style>
 </head>
 <body>
 <header>
@@ -20,7 +86,7 @@
         <iframe 
             src="https://radio.retrodanceradio.com/public/retro_dance_radio/embed?text_color=00ffff&volume=18" 
             frameborder="0" allowtransparency="true" 
-            style="width: 100%; min-height: 150px; height: 150px; border: 0;">
+            style="min-height: 150px; height: 150px;">
         </iframe>
         <div id="now-playing">
             <p id="track">Загрузка трека...</p>
@@ -33,7 +99,7 @@
         <iframe 
             src="https://radio.retrodanceradio.com/public/retro_dance_radio/history?theme=light" 
             frameborder="0" allowtransparency="true" 
-            style="width: 100%; min-height: 300px; height: 300px; border: 0;">
+            style="min-height: 300px; height: 300px;">
         </iframe>
     </section>
 
@@ -43,7 +109,7 @@
         <iframe 
             src="https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests?theme=light" 
             frameborder="0" allowtransparency="true" 
-            style="width: 100%; min-height: 850px; height: 850px; border: 0;">
+            style="min-height: 850px; height: 850px;">
         </iframe>
     </section>
 </main>
