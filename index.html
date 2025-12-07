@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retro Dance Radio</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+    <div class="logo-container">
+        <img src="images/logo-placeholder.png" alt="Retro Dance Radio Logo" id="logo">
+    </div>
+    <h1>Retro Dance Radio</h1>
+</header>
+
+<main class="radio-container">
+    <!-- Плеер -->
+    <section class="player-section">
+        <iframe 
+            src="https://radio.retrodanceradio.com/public/retro_dance_radio/embed?text_color=00ffff&volume=18" 
+            frameborder="0" allowtransparency="true" 
+            style="width: 100%; min-height: 150px; height: 150px; border: 0;">
+        </iframe>
+        <div id="now-playing">
+            <p id="track">Загрузка трека...</p>
+        </div>
+    </section>
+
+    <!-- История треков -->
+    <section class="history-section">
+        <h2>Недавние треки</h2>
+        <iframe 
+            src="https://radio.retrodanceradio.com/public/retro_dance_radio/history?theme=light" 
+            frameborder="0" allowtransparency="true" 
+            style="width: 100%; min-height: 300px; height: 300px; border: 0;">
+        </iframe>
+    </section>
+
+    <!-- Запросы треков -->
+    <section class="requests-section">
+        <h2>Запросы треков</h2>
+        <iframe 
+            src="https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests?theme=light" 
+            frameborder="0" allowtransparency="true" 
+            style="width: 100%; min-height: 850px; height: 850px; border: 0;">
+        </iframe>
+    </section>
+</main>
+
+<script src="js/player.js"></script>
+</body>
+</html>
