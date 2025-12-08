@@ -20,7 +20,7 @@ body {
 }
 .player-box {
     margin: 20px auto;
-    max-width: 400px;
+    max-width: 420px;
     background: #1f2333;
     padding: 20px;
     border-radius: 10px;
@@ -29,11 +29,11 @@ body {
 }
 .play-btn {
     margin-top: 15px;
-    padding: 12px 25px;
-    font-size: 16px;
+    padding: 14px 30px;
+    font-size: 17px;
     background: #1e40af;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     color: white;
     cursor: pointer;
 }
@@ -47,8 +47,9 @@ body {
 }
 .static-cover {
     width: 100%;
-    border-radius: 8px;
-    margin-top: 10px;
+    max-width: 380px;
+    border-radius: 10px;
+    margin: 10px auto;
 }
 .recent-box {
     margin: 20px auto;
@@ -64,8 +65,17 @@ body {
     color: #60a5fa;
 }
 .song-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     padding: 10px 0;
     border-bottom: 1px solid #334155;
+}
+.song-item img {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    object-fit: cover;
 }
 .song-item:last-child {
     border-bottom: none;
@@ -77,7 +87,7 @@ body {
 }
 .request-link {
     display: inline-block;
-    padding: 12px 20px;
+    padding: 12px 25px;
     font-size: 18px;
     background: #1e40af;
     color: white;
@@ -94,7 +104,7 @@ body {
 <div class="header">Retro Dance Radio</div>
 
 <div class="player-box">
-    <img src="logo.png" class="static-cover" />
+    <img id="cover" src="https://via.placeholder.com/400x400/1e40af/ffffff?text=Retro+Dance+Radio" class="static-cover" />
     <div class="current-title" id="currentTrack">Загрузка...</div>
     <button class="play-btn" id="playBtn">▶ Воспроизвести</button>
 </div>
@@ -112,12 +122,12 @@ body {
 
 <script>
 const apiURL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
-const streamURL = "const streamURL = "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio.mp3";
-;
+const streamURL = "https://radio.retrodanceradio.com:8000/radio.mp3";
 
 const trackElem = document.getElementById("currentTrack");
 const recentElem = document.getElementById("recentList");
 const btn = document.getElementById("playBtn");
+const cover = document.getElementById("cover");
 
 let audio = new Audio(streamURL);
 audio.preload = "none";
@@ -136,13 +146,26 @@ function loadNowPlaying() {
     fetch(apiURL)
         .then(r => r.json())
         .then(data => {
+            // Текущий трек
             trackElem.innerText = data.now_playing.song.text || "Нет данных";
 
+            // Обложка
+            if (data.now_playing.song.art) {
+                cover.src = data.now_playing.song.art;
+            }
+
+            // История
             const history = data.song_history || [];
             let html = "";
 
             history.slice(0, 10).forEach(s => {
-                html += `<div class="song-item">${s.song.text}</div>`;
+                const art = s.song.art || 'https://via.placeholder.com/100/1e40af/ffffff?text=No+Art';
+                html += `
+                    <div class="song-item">
+                        <img src="${art}">
+                        <div>${s.song.text}</div>
+                    </div>
+                `;
             });
 
             recentElem.innerHTML = html || "Пока пусто";
@@ -158,5 +181,4 @@ setInterval(loadNowPlaying, 15000);
 </script>
 
 </body>
-
 </html>
