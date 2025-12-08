@@ -6,70 +6,91 @@
 <title>Retro Dance Radio</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
-  /* Фон */
-  body {
-    margin: 0;
-    font-family: 'Arial', sans-serif;
-    background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
-    color: #fff;
-  }
+    /* ------------------------------------------- */
+    /* CSS ФИКСЫ ДЛЯ iOS/WebKit           */
+    /* ------------------------------------------- */
+    .ios-iframe-fix {
+        width: 100% !important; 
+        
+        /* Критически важно для iOS: убеждаемся, что элемент является блочным */
+        display: block !important;
+        
+        /* Запрещаем внутреннюю прокрутку, если она мешает рендерингу */
+        overflow: hidden !important; 
+        
+        /* Улучшает прокрутку контента внутри фрейма на iOS */
+        -webkit-overflow-scrolling: touch !important; 
+        
+        /* Общие стили для iframe */
+        border: none !important;
+        border-radius: 10px;
+        background: #111; /* темный фон для iframe */
+    }
 
-  /* Хедер с логотипом слева */
-  header {
-    display: flex;
-    align-items: center;
-    padding: 10px 20px;
-    background: rgba(0,0,0,0.6);
-    position: fixed;
-    width: 100%;
-    top: 0;
-    left: 0;
-    z-index: 1000;
-  }
+    /* ------------------------------------------- */
+    /* ВАШ ОРИГИНАЛЬНЫЙ CSS            */
+    /* ------------------------------------------- */
 
-  .logo-container {
-    margin-right: 15px;
-  }
+    /* Фон */
+    body {
+        margin: 0;
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
+        color: #fff;
+    }
 
-  #logo {
-    height: 50px;
-    transition: transform 0.3s;
-  }
+    /* Хедер с логотипом слева */
+    header {
+        display: flex;
+        align-items: center;
+        padding: 10px 20px;
+        background: rgba(0,0,0,0.6);
+        position: fixed;
+        width: 100%;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+    }
 
-  #logo:hover {
-    transform: scale(1.05);
-  }
+    .logo-container {
+        margin-right: 15px;
+    }
 
-  header h1 {
-    margin: 0;
-    font-size: 1.8em;
-    color: #ff4081;
-    text-shadow: 1px 1px 5px #000;
-  }
+    #logo {
+        height: 50px;
+        transition: transform 0.3s;
+    }
 
-  /* Отступ под фиксированный header */
-  main.radio-container {
-    padding-top: 80px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
+    #logo:hover {
+        transform: scale(1.05);
+    }
 
-  section {
-    margin-bottom: 40px;
-  }
+    header h1 {
+        margin: 0;
+        font-size: 1.8em;
+        color: #ff4081;
+        text-shadow: 1px 1px 5px #000;
+    }
 
-  section h2 {
-    color: #ff4081;
-    border-bottom: 2px solid #ff4081;
-    padding-bottom: 5px;
-  }
+    /* Отступ под фиксированный header */
+    main.radio-container {
+        padding-top: 80px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
 
-  iframe {
-    width: 100%;
-    border: 0;
-    border-radius: 10px;
-    background: #111; /* темный фон для iframe */
-  }
+    section {
+        margin-bottom: 40px;
+    }
+
+    section h2 {
+        color: #ff4081;
+        border-bottom: 2px solid #ff4081;
+        padding-bottom: 5px;
+    }
+    
+    /* УДАЛЕНО: общее правило iframe { ... } чтобы избежать конфликтов */
+    
 </style>
 </head>
 <body>
@@ -81,35 +102,35 @@
 </header>
 
 <main class="radio-container">
-    <!-- Плеер -->
     <section class="player-section">
         <iframe 
+            class="ios-iframe-fix"
             src="https://radio.retrodanceradio.com/public/retro_dance_radio/embed?text_color=00ffff&volume=18" 
             frameborder="0" allowtransparency="true" 
-            style="min-height: 150px; height: 150px;">
+            style="height: 150px; max-height: 150px;">
         </iframe>
         <div id="now-playing">
             <p id="track">Загрузка трека...</p>
         </div>
     </section>
 
-    <!-- История треков -->
     <section class="history-section">
         <h2>Недавние треки</h2>
         <iframe 
+            class="ios-iframe-fix"
             src="https://radio.retrodanceradio.com/public/retro_dance_radio/history?theme=light" 
             frameborder="0" allowtransparency="true" 
-            style="min-height: 300px; height: 300px;">
+            style="height: 300px; max-height: 300px;">
         </iframe>
     </section>
 
-    <!-- Запросы треков -->
     <section class="requests-section">
         <h2>Запросы треков</h2>
         <iframe 
+            class="ios-iframe-fix"
             src="https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests?theme=light" 
             frameborder="0" allowtransparency="true" 
-            style="min-height: 850px; height: 850px;">
+            style="height: 850px; max-height: 850px;">
         </iframe>
     </section>
 </main>
