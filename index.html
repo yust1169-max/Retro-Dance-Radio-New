@@ -5,7 +5,7 @@
   <title>Retro Dance Radio</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- iOS совместимость -->
+  <!-- iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes">
 
   <style>
@@ -26,7 +26,7 @@
       align-items: center;
       gap: 12px;
       padding: 12px 16px;
-      background: #000;
+      background: black;
       position: sticky;
       top: 0;
       z-index: 10;
@@ -44,46 +44,40 @@
     }
 
     .container {
-      padding: 16px;
       max-width: 600px;
-      margin: auto;
+      margin: 0 auto;
+      padding: 16px;
     }
 
-    /* Большая кнопка Play */
     .player-box {
-      background: #111;
+      background: #151515;
       border-radius: 20px;
       padding: 20px;
       text-align: center;
-      margin-bottom: 20px;
     }
 
     .play-btn {
       width: 100%;
+      margin-top: 15px;
       padding: 18px;
       font-size: 20px;
       font-weight: bold;
-      border: none;
       border-radius: 50px;
+      border: none;
       background: linear-gradient(135deg, #00ffff, #ff00ff);
       color: black;
       cursor: pointer;
-      margin-top: 15px;
     }
 
-    audio {
-      display: none;
-    }
-
-    /* Сейчас играет */
     .now-playing {
       display: flex;
       align-items: center;
       gap: 14px;
-      margin-top: 15px;
+      margin-top: 20px;
       background: #111;
       padding: 14px;
       border-radius: 16px;
+      text-align: left;
     }
 
     .now-playing img {
@@ -92,11 +86,7 @@
       border-radius: 16px;
       object-fit: cover;
       flex-shrink: 0;
-    }
-
-    .track-info {
-      flex: 1;
-      overflow: hidden;
+      background: #000;
     }
 
     .track-title {
@@ -110,14 +100,13 @@
       margin-top: 4px;
     }
 
-    /* История треков */
     .history {
-      margin-top: 20px;
+      margin-top: 24px;
     }
 
     .history h2 {
-      margin-bottom: 10px;
       font-size: 18px;
+      margin-bottom: 10px;
     }
 
     .history-list {
@@ -140,11 +129,7 @@
       height: 50px;
       border-radius: 10px;
       object-fit: cover;
-      flex-shrink: 0;
-    }
-
-    .history-text {
-      overflow: hidden;
+      background: #000;
     }
 
     .history-title {
@@ -167,23 +152,24 @@
 
 <div class="container">
 
-  <!-- Плеер -->
   <div class="player-box">
-    <div>▶ Нажми, чтобы слушать</div>
-    <button class="play-btn" id="playBtn">PLAY RADIO</button>
-    <audio id="radio" src="https://radio.retrodanceradio.com/listen/retro_dance_radio/radio.mp3" playsinline></audio>
 
-    <!-- Сейчас играет -->
+    <div style="font-size:14px; opacity:.7;">Нажми, чтобы слушать</div>
+
+    <button class="play-btn" id="playBtn">▶ PLAY RADIO</button>
+
+    <audio id="radioPlayer"></audio>
+
     <div class="now-playing">
-      <img id="nowCover" src="logo.png">
-      <div class="track-info">
+      <img id="nowCover" src="logo.png" alt="">
+      <div>
         <div class="track-title" id="nowTitle">Загрузка...</div>
         <div class="track-artist" id="nowArtist"></div>
       </div>
     </div>
+
   </div>
 
-  <!-- История -->
   <div class="history">
     <h2>Ранее в эфире</h2>
     <div class="history-list" id="historyList"></div>
@@ -192,58 +178,63 @@
 </div>
 
 <script>
-  const radio = document.getElementById('radio');
-  const btn = document.getElementById('playBtn');
+  const stream = "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio.mp3";
+  const audio = document.getElementById("radioPlayer");
+  const btn = document.getElementById("playBtn");
 
-  let isPlaying = false;
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  let playing = false;
 
   btn.onclick = () => {
-    if (!isPlaying) {
-      radio.play();
-      btn.textContent = 'STOP';
-      isPlaying = true;
+    if (isIOS) {
+      window.open(stream, "_blank");
     } else {
-      radio.pause();
-      btn.textContent = 'PLAY RADIO';
-      isPlaying = false;
+      if (!playing) {
+        audio.src = stream;
+        audio.play();
+        btn.textContent = "⏹ STOP";
+        playing = true;
+      } else {
+        audio.pause();
+        btn.textContent = "▶ PLAY RADIO";
+        playing = false;
+      }
     }
   };
 
-  async function loadNowPlaying() {
+  async function updateNowPlaying() {
     try {
-      const res = await fetch('https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio');
-      const data = await res.json();
+      const r = await fetch("https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio");
+      const d = await r.json();
+      const s = d.now_playing.song;
 
-      const now = data.now_playing.song;
+      document.getElementById("nowTitle").textContent = s.title || "Unknown";
+      document.getElementById("nowArtist").textContent = s.artist || "";
+      document.getElementById("nowCover").src = s.art || "logo.png";
 
-      document.getElementById('nowTitle').textContent = now.title || 'Unknown';
-      document.getElementById('nowArtist').textContent = now.artist || '';
-      document.getElementById('nowCover').src = now.art || 'logo.png';
+      const hist = d.song_history || [];
+      const list = document.getElementById("historyList");
+      list.innerHTML = "";
 
-      const history = data.song_history;
-      const list = document.getElementById('historyList');
-      list.innerHTML = '';
-
-      history.slice(0, 5).forEach(song => {
-        const div = document.createElement('div');
-        div.className = 'history-item';
-
+      hist.slice(0, 5).forEach(track => {
+        const div = document.createElement("div");
+        div.className = "history-item";
         div.innerHTML = `
-          <img src="${song.song.art || 'logo.png'}">
-          <div class="history-text">
-            <div class="history-title">${song.song.title}</div>
-            <div class="history-artist">${song.song.artist}</div>
+          <img src="${track.song.art || "logo.png"}">
+          <div>
+            <div class="history-title">${track.song.title}</div>
+            <div class="history-artist">${track.song.artist}</div>
           </div>
         `;
-
         list.appendChild(div);
       });
 
     } catch(e) {}
   }
 
-  loadNowPlaying();
-  setInterval(loadNowPlaying, 10000);
+  updateNowPlaying();
+  setInterval(updateNowPlaying, 10000);
 </script>
 
 </body>
