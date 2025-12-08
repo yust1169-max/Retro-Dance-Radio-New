@@ -1,184 +1,85 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Retro Dance Radio</title>
-<style>
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #0e0e16;
-    color: #fff;
-}
-.header {
-    padding: 20px;
-    text-align: center;
-    font-size: 28px;
-    background: #111827;
-    border-bottom: 2px solid #1e40af;
-}
-.player-box {
-    margin: 20px auto;
-    max-width: 420px;
-    background: #1f2333;
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid #1e40af;
-    text-align: center;
-}
-.play-btn {
-    margin-top: 15px;
-    padding: 14px 30px;
-    font-size: 17px;
-    background: #1e40af;
-    border: none;
-    border-radius: 8px;
-    color: white;
-    cursor: pointer;
-}
-.play-btn:hover {
-    background: #3b82f6;
-}
-.current-title {
-    margin-top: 15px;
-    font-size: 18px;
-    color: #93c5fd;
-}
-.static-cover {
-    width: 100%;
-    max-width: 380px;
-    border-radius: 10px;
-    margin: 10px auto;
-}
-.recent-box {
-    margin: 20px auto;
-    max-width: 600px;
-    background: #1f2333;
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid #1e40af;
-}
-.recent-title {
-    font-size: 22px;
-    margin-bottom: 15px;
-    color: #60a5fa;
-}
-.song-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 0;
-    border-bottom: 1px solid #334155;
-}
-.song-item img {
-    width: 50px;
-    height: 50px;
-    border-radius: 6px;
-    object-fit: cover;
-}
-.song-item:last-child {
-    border-bottom: none;
-}
-.request-link-box {
-    margin: 20px auto;
-    max-width: 400px;
-    text-align: center;
-}
-.request-link {
-    display: inline-block;
-    padding: 12px 25px;
-    font-size: 18px;
-    background: #1e40af;
-    color: white;
-    border-radius: 6px;
-    text-decoration: none;
-}
-.request-link:hover {
-    background: #3b82f6;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Dance Radio</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #ff8a00, #e52e71);
+            font-family: Arial, sans-serif;
+            color: #fff;
+            text-align: center;
+            padding: 50px 20px;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 30px;
+        }
+
+        #playBtn {
+            font-size: 18px;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            background-color: rgba(0,0,0,0.3);
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #playBtn:hover {
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        #currentTrack {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
 </head>
 <body>
 
-<div class="header">Retro Dance Radio</div>
+    <h1>Retro Dance Radio</h1>
 
-<div class="player-box">
-    <img id="cover" src="https://via.placeholder.com/400x400/1e40af/ffffff?text=Retro+Dance+Radio" class="static-cover" />
-    <div class="current-title" id="currentTrack">Загрузка...</div>
-    <button class="play-btn" id="playBtn">▶ Воспроизвести</button>
-</div>
+    <!-- Аудио-плеер -->
+    <div id="player">
+        <button id="playBtn">▶ Воспроизвести</button>
+        <p id="currentTrack">Трек: не определен</p>
+    </div>
 
-<div class="recent-box">
-    <div class="recent-title">Недавно проигранные</div>
-    <div id="recentList">Загрузка...</div>
-</div>
+    <script>
+        // Ссылка на поток
+        const streamURL = "https://radio.retrodanceradio.com:8000/radio.mp3";
 
-<div class="request-link-box">
-    <a class="request-link" href="https://radio.retrodanceradio.com/public/retro_dance_radio/requests" target="_blank">
-        Заказать песню
-    </a>
-</div>
+        // Создаём объект Audio
+        const audio = new Audio();
+        audio.preload = "none";
 
-<script>
-const apiURL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
-const streamURL = "https://radio.retrodanceradio.com:8000/radio.mp3";
+        const btn = document.getElementById("playBtn");
+        const currentTrackElement = document.getElementById("currentTrack");
 
-const trackElem = document.getElementById("currentTrack");
-const recentElem = document.getElementById("recentList");
-const btn = document.getElementById("playBtn");
-const cover = document.getElementById("cover");
-
-let audio = new Audio(streamURL);
-audio.preload = "none";
-
-btn.onclick = () => {
-    if (audio.paused) {
-        audio.play();
-        btn.innerText = "⏸ Пауза";
-    } else {
-        audio.pause();
-        btn.innerText = "▶ Воспроизвести";
-    }
-};
-
-function loadNowPlaying() {
-    fetch(apiURL)
-        .then(r => r.json())
-        .then(data => {
-            // Текущий трек
-            trackElem.innerText = data.now_playing.song.text || "Нет данных";
-
-            // Обложка
-            if (data.now_playing.song.art) {
-                cover.src = data.now_playing.song.art;
+        btn.onclick = () => {
+            if (audio.paused) {
+                audio.src = streamURL;
+                audio.play().catch(err => console.log("Ошибка воспроизведения:", err));
+                btn.innerText = "⏸ Пауза";
+            } else {
+                audio.pause();
+                btn.innerText = "▶ Воспроизвести";
             }
+        };
 
-            // История
-            const history = data.song_history || [];
-            let html = "";
-
-            history.slice(0, 10).forEach(s => {
-                const art = s.song.art || 'https://via.placeholder.com/100/1e40af/ffffff?text=No+Art';
-                html += `
-                    <div class="song-item">
-                        <img src="${art}">
-                        <div>${s.song.text}</div>
-                    </div>
-                `;
-            });
-
-            recentElem.innerHTML = html || "Пока пусто";
-        })
-        .catch(() => {
-            trackElem.innerText = "Ошибка соединения с сервером";
-            recentElem.innerHTML = "Не удалось загрузить список";
-        });
-}
-
-loadNowPlaying();
-setInterval(loadNowPlaying, 15000);
-</script>
+        // Пример: обновление текущего трека (если есть API)
+        // setInterval(() => {
+        //     fetch("https://radio.retrodanceradio.com/api/nowplaying")
+        //         .then(res => res.json())
+        //         .then(data => {
+        //             currentTrackElement.innerText = "Трек: " + data.song.title;
+        //         });
+        // }, 5000);
+    </script>
 
 </body>
 </html>
