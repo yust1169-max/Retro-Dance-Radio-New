@@ -1,140 +1,155 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Retro Dance Radio</title>
-<link rel="stylesheet" href="css/style.css">
 <style>
-    /* ------------------------------------------- */
-    /* CSS ФИКСЫ ДЛЯ iOS/WebKit           */
-    /* ------------------------------------------- */
-    .ios-iframe-fix {
-        width: 100% !important; 
-        
-        /* Критически важно для iOS: убеждаемся, что элемент является блочным */
-        display: block !important;
-        
-        /* Запрещаем внутреннюю прокрутку, если она мешает рендерингу */
-        overflow: hidden !important; 
-        
-        /* Улучшает прокрутку контента внутри фрейма на iOS */
-        -webkit-overflow-scrolling: touch !important; 
-        
-        /* Общие стили для iframe */
-        border: none !important;
-        border-radius: 10px;
-        background: #111; /* темный фон для iframe */
-    }
-
-    /* ------------------------------------------- */
-    /* ВАШ ОРИГИНАЛЬНЫЙ CSS            */
-    /* ------------------------------------------- */
-
-    /* Фон */
-    body {
-        margin: 0;
-        font-family: 'Arial', sans-serif;
-        background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
-        color: #fff;
-    }
-
-    /* Хедер с логотипом слева */
-    header {
-        display: flex;
-        align-items: center;
-        padding: 10px 20px;
-        background: rgba(0,0,0,0.6);
-        position: fixed;
-        width: 100%;
-        top: 0;
-        left: 0;
-        z-index: 1000;
-    }
-
-    .logo-container {
-        margin-right: 15px;
-    }
-
-    #logo {
-        height: 50px;
-        transition: transform 0.3s;
-    }
-
-    #logo:hover {
-        transform: scale(1.05);
-    }
-
-    header h1 {
-        margin: 0;
-        font-size: 1.8em;
-        color: #ff4081;
-        text-shadow: 1px 1px 5px #000;
-    }
-
-    /* Отступ под фиксированный header */
-    main.radio-container {
-        padding-top: 80px;
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
-    section {
-        margin-bottom: 40px;
-    }
-
-    section h2 {
-        color: #ff4081;
-        border-bottom: 2px solid #ff4081;
-        padding-bottom: 5px;
-    }
-    
-    /* УДАЛЕНО: общее правило iframe { ... } чтобы избежать конфликтов */
-    
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0e0e16;
+    color: #fff;
+}
+.header {
+    padding: 20px;
+    text-align: center;
+    font-size: 28px;
+    background: #111827;
+    border-bottom: 2px solid #1e40af;
+}
+.player-box {
+    margin: 20px auto;
+    max-width: 400px;
+    background: #1f2333;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #1e40af;
+    text-align: center;
+}
+.play-btn {
+    margin-top: 15px;
+    padding: 12px 25px;
+    font-size: 16px;
+    background: #1e40af;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+}
+.play-btn:hover {
+    background: #3b82f6;
+}
+.current-title {
+    margin-top: 15px;
+    font-size: 18px;
+    color: #93c5fd;
+}
+.static-cover {
+    width: 100%;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+.recent-box {
+    margin: 20px auto;
+    max-width: 600px;
+    background: #1f2333;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #1e40af;
+}
+.recent-title {
+    font-size: 22px;
+    margin-bottom: 15px;
+    color: #60a5fa;
+}
+.song-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #334155;
+}
+.song-item:last-child {
+    border-bottom: none;
+}
+.request-link-box {
+    margin: 20px auto;
+    max-width: 400px;
+    text-align: center;
+}
+.request-link {
+    display: inline-block;
+    padding: 12px 20px;
+    font-size: 18px;
+    background: #1e40af;
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+}
+.request-link:hover {
+    background: #3b82f6;
+}
 </style>
 </head>
 <body>
-<header>
-    <div class="logo-container">
-        <img src="logo.png" alt="Retro Dance Radio Logo" id="logo">
-    </div>
-    <h1>Retro Dance Radio</h1>
-</header>
 
-<main class="radio-container">
-    <section class="player-section">
-        <iframe 
-            class="ios-iframe-fix"
-            src="https://radio.retrodanceradio.com/public/retro_dance_radio/embed?text_color=00ffff&volume=18" 
-            frameborder="0" allowtransparency="true" 
-            style="height: 150px; max-height: 150px;">
-        </iframe>
-        <div id="now-playing">
-            <p id="track">Загрузка трека...</p>
-        </div>
-    </section>
+<div class="header">Retro Dance Radio</div>
 
-    <section class="history-section">
-        <h2>Недавние треки</h2>
-        <iframe 
-            class="ios-iframe-fix"
-            src="https://radio.retrodanceradio.com/public/retro_dance_radio/history?theme=light" 
-            frameborder="0" allowtransparency="true" 
-            style="height: 300px; max-height: 300px;">
-        </iframe>
-    </section>
+<div class="player-box">
+    <img src="https://via.placeholder.com/400x400/1e40af/ffffff?text=Retro+Dance+Radio" class="static-cover" />
+    <div class="current-title" id="currentTrack">Загрузка...</div>
+    <button class="play-btn" id="playBtn">▶ Воспроизвести</button>
+</div>
 
-    <section class="requests-section">
-        <h2>Запросы треков</h2>
-        <iframe 
-            class="ios-iframe-fix"
-            src="https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests?theme=light" 
-            frameborder="0" allowtransparency="true" 
-            style="height: 850px; max-height: 850px;">
-        </iframe>
-    </section>
-</main>
+<div class="recent-box">
+    <div class="recent-title">Недавно проигранные</div>
+    <div id="recentList">Загрузка...</div>
+</div>
 
-<script src="js/player.js"></script>
+<div class="request-link-box">
+    <a class="request-link" href="https://radio.retrodanceradio.com/public/retro_dance_radio/requests" target="_blank">
+        Заказать песню
+    </a>
+</div>
+
+<script>
+// URLs
+const apiURL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
+const streamURL = "https://radio.retrodanceradio.com/radio/8000/retro_dance_radio.mp3";
+
+let audio = new Audio(streamURL);
+audio.preload = "none";
+
+document.getElementById("playBtn").onclick = () => {
+    audio.play().then(() => {
+        document.getElementById("playBtn").innerText = "⏸ Пауза";
+        document.getElementById("playBtn").onclick = () => {
+            audio.pause();
+            document.getElementById("playBtn").innerText = "▶ Воспроизвести";
+            document.getElementById("playBtn").onclick = () => audio.play();
+        };
+    });
+};
+
+function loadNowPlaying() {
+    fetch(apiURL)
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById("currentTrack").innerText = data.now_playing.song.text;
+
+            const recent = data.recent;
+            let html = "";
+            recent.forEach(s => {
+                html += `<div class="song-item">${s.song.text}</div>`;
+            });
+            document.getElementById("recentList").innerHTML = html;
+        })
+        .catch(() => {
+            document.getElementById("currentTrack").innerText = "Ошибка загрузки";
+        });
+}
+
+loadNowPlaying();
+setInterval(loadNowPlaying, 15000);
+</script>
+
 </body>
 </html>
