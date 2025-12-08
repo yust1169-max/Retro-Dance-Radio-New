@@ -1,57 +1,250 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Retro Dance Radio</title>
+  <meta charset="UTF-8">
+  <title>Retro Dance Radio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<link rel="stylesheet" href="css/style.css">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
+  <!-- iOS совместимость -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
 
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: #0b0b11;
+      color: white;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #000;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header img {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .container {
+      padding: 16px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    /* Большая кнопка Play */
+    .player-box {
+      background: #111;
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .play-btn {
+      width: 100%;
+      padding: 18px;
+      font-size: 20px;
+      font-weight: bold;
+      border: none;
+      border-radius: 50px;
+      background: linear-gradient(135deg, #00ffff, #ff00ff);
+      color: black;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+
+    audio {
+      display: none;
+    }
+
+    /* Сейчас играет */
+    .now-playing {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 15px;
+      background: #111;
+      padding: 14px;
+      border-radius: 16px;
+    }
+
+    .now-playing img {
+      width: 100px;
+      height: 100px;
+      border-radius: 16px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .track-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .track-title {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .track-artist {
+      font-size: 14px;
+      color: #aaa;
+      margin-top: 4px;
+    }
+
+    /* История треков */
+    .history {
+      margin-top: 20px;
+    }
+
+    .history h2 {
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #111;
+      padding: 10px;
+      border-radius: 14px;
+    }
+
+    .history-item img {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .history-text {
+      overflow: hidden;
+    }
+
+    .history-title {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .history-artist {
+      font-size: 13px;
+      color: #aaa;
+    }
+  </style>
 </head>
 <body>
 
-<div id="preloader">LOADING RADIO...</div>
-<div class="particles"></div>
-
 <header>
-  <div class="logo-container">
-    <img src="logo.png" alt="Logo">
-  </div>
+  <img src="logo.png" alt="Retro Dance Radio">
   <h1>Retro Dance Radio</h1>
 </header>
 
-<main class="radio-container">
+<div class="container">
 
-<section class="player-section play-hover">
-<iframe 
-  src="https://radio.retrodanceradio.com/public/retro_dance_radio/embed?text_color=00ffff&volume=18"
-  frameborder="0" allowtransparency="true"
-  style="width:100%; height:150px; border:0;">
-</iframe>
+  <!-- Плеер -->
+  <div class="player-box">
+    <div>▶ Нажми, чтобы слушать</div>
+    <button class="play-btn" id="playBtn">PLAY RADIO</button>
+    <audio id="radio" src="https://radio.retrodanceradio.com/listen/retro_dance_radio/radio.mp3" playsinline></audio>
 
-<div class="equalizer">
-  <span></span><span></span><span></span><span></span><span></span>
+    <!-- Сейчас играет -->
+    <div class="now-playing">
+      <img id="nowCover" src="logo.png">
+      <div class="track-info">
+        <div class="track-title" id="nowTitle">Загрузка...</div>
+        <div class="track-artist" id="nowArtist"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- История -->
+  <div class="history">
+    <h2>Ранее в эфире</h2>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
 </div>
 
-<section class="now-playing-big">
-  <img id="nowCover" src="logo.png">
-  <div class="now-info">
-    <div id="nowTitle">Загрузка...</div>
-    <div id="nowArtist"></div>
-  </div>
-</section>
+<script>
+  const radio = document.getElementById('radio');
+  const btn = document.getElementById('playBtn');
 
-<button id="shareBtn">📤 Поделиться треком</button>
+  let isPlaying = false;
 
-<section class="history-block">
-  <h2>🎚 Ранее в эфире</h2>
-  <div id="trackHistory" class="history-slider"></div>
-</section>
+  btn.onclick = () => {
+    if (!isPlaying) {
+      radio.play();
+      btn.textContent = 'STOP';
+      isPlaying = true;
+    } else {
+      radio.pause();
+      btn.textContent = 'PLAY RADIO';
+      isPlaying = false;
+    }
+  };
 
-</main>
+  async function loadNowPlaying() {
+    try {
+      const res = await fetch('https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio');
+      const data = await res.json();
 
-<script src="js/player.js"></script>
+      const now = data.now_playing.song;
+
+      document.getElementById('nowTitle').textContent = now.title || 'Unknown';
+      document.getElementById('nowArtist').textContent = now.artist || '';
+      document.getElementById('nowCover').src = now.art || 'logo.png';
+
+      const history = data.song_history;
+      const list = document.getElementById('historyList');
+      list.innerHTML = '';
+
+      history.slice(0, 5).forEach(song => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+
+        div.innerHTML = `
+          <img src="${song.song.art || 'logo.png'}">
+          <div class="history-text">
+            <div class="history-title">${song.song.title}</div>
+            <div class="history-artist">${song.song.artist}</div>
+          </div>
+        `;
+
+        list.appendChild(div);
+      });
+
+    } catch(e) {}
+  }
+
+  loadNowPlaying();
+  setInterval(loadNowPlaying, 10000);
+</script>
+
 </body>
 </html>
