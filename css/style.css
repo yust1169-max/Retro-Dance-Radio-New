@@ -1,0 +1,85 @@
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:black;
+  color:white;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(15px);
+  background: rgba(0,0,0,0.6);
+  padding:10px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  z-index:10;
+}
+
+.logo-container img {
+  width:40px;
+  height:40px;
+}
+
+.radio-container {
+  padding:15px;
+}
+
+.play-hover {
+  transition: transform .15s ease;
+}
+
+.play-hover:hover {
+  transform: scale(1.02);
+}
+
+.equalizer {
+  display:flex;
+  justify-content:center;
+  gap:4px;
+  margin:15px 0;
+}
+
+.equalizer span {
+  width:6px;
+  height:10px;
+  background:#00ffff;
+  animation:eq 1s infinite;
+}
+
+@keyframes eq {
+  0%,100%{height:10px}
+  50%{height:30px}
+}
+
+.now-playing-big {
+  display:flex;
+  gap:15px;
+  background:rgba(0,0,0,0.6);
+  border-radius:20px;
+  padding:15px;
+  margin:20px 0;
+  animation:pulseGlow 3s infinite;
+}
+
+@keyframes pulseGlow {
+  0%,100%{box-shadow:0 0 15px rgba(0,255,255,0.3)}
+  50%{box-shadow:0 0 35px rgba(0,255,255,0.6)}
+}
+
+.history-slider {
+  display:flex;
+  gap:15px;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+}
+
+.track-card {
+  min-width:140px;
+  background:#111;
+  border-radius:15px;
+  padding:10px;
+  text-align:center;
+  animation:fadeInUp .6s ease forwards;
+}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retro Dance Radio</title>
+
+<link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+
+</head>
+<body>
+
+<div id="preloader">LOADING RADIO...</div>
+<div class="particles"></div>
+
+<header>
+  <div class="logo-container">
+    <img src="logo.png" alt="Logo">
+  </div>
+  <h1>Retro Dance Radio</h1>
+</header>
+
+<main class="radio-container">
+
+<section class="player-section play-hover">
+<iframe 
+  src="https://radio.retrodanceradio.com/public/retro_dance_radio/embed?text_color=00ffff&volume=18"
+  frameborder="0" allowtransparency="true"
+  style="width:100%; height:150px; border:0;">
+</iframe>
+
+<div class="equalizer">
+  <span></span><span></span><span></span><span></span><span></span>
+</div>
+
+<section class="now-playing-big">
+  <img id="nowCover" src="logo.png">
+  <div class="now-info">
+    <div id="nowTitle">Загрузка...</div>
+    <div id="nowArtist"></div>
+  </div>
+</section>
+
+<button id="shareBtn">📤 Поделиться треком</button>
+
+<section class="history-block">
+  <h2>🎚 Ранее в эфире</h2>
+  <div id="trackHistory" class="history-slider"></div>
+</section>
+
+</main>
+
+<script src="js/player.js"></script>
+</body>
+</html>
