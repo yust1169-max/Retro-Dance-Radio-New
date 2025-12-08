@@ -10,12 +10,39 @@
             font-family: Arial, sans-serif;
             color: #fff;
             text-align: center;
-            padding: 50px 20px;
+            padding: 30px 20px;
         }
 
         h1 {
             font-size: 36px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+        }
+
+        #logo {
+            width: 150px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+        }
+
+        #player {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #trackInfo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #cover {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            background-color: rgba(255,255,255,0.2);
+            object-fit: cover;
         }
 
         #playBtn {
@@ -34,35 +61,64 @@
         }
 
         #currentTrack {
-            margin-top: 20px;
             font-size: 18px;
-        }
-
-        /* Для iPhone Safari: убираем рамки */
-        audio::-webkit-media-controls-panel {
-            background-color: transparent;
         }
     </style>
 </head>
 <body>
 
+    <img id="logo" src="logo.png" alt="Retro Dance Radio Logo">
+
     <h1>Retro Dance Radio</h1>
 
-    <!-- Аудио-плеер -->
     <div id="player">
-        <button id="playBtn">▶ Воспроизвести</button>
+        <div id="trackInfo">
+            <img id="cover" src="default_cover.png" alt="Обложка трека">
+            <button id="playBtn">▶ Воспроизвести</button>
+        </div>
         <p id="currentTrack">Трек: не определен</p>
     </div>
 
     <script>
-        // HTTPS поток — работает на Android и iPhone
-        const streamURL = "https://radio.retrodanceradio.com:8000/radio.mp3";
-
-        // Создаём объект Audio
-        const audio = new Audio();
-        audio.preload = "none";
-
         const btn = document.getElementById("playBtn");
         const currentTrackElement = document.getElementById("currentTrack");
+        const cover = document.getElementById("cover");
+        let audio = null;
 
-        //
+        btn.addEventListener('click', () => {
+            if (!audio) {
+                audio = new Audio("https://radio.retrodanceradio.com:8000/radio.mp3");
+                audio.preload = "none";
+            }
+
+            if (audio.paused) {
+                audio.play().then(() => {
+                    btn.innerText = "⏸ Пауза";
+                }).catch(err => {
+                    console.log("Ошибка воспроизведения:", err);
+                    alert("Нажмите кнопку ещё раз для воспроизведения (iOS требование).");
+                });
+            } else {
+                audio.pause();
+                btn.innerText = "▶ Воспроизвести";
+            }
+        });
+
+        // Пример: обновление текущего трека через API
+        // замените URL на реальный API вашего радио
+        setInterval(() => {
+            fetch("https://radio.retrodanceradio.com/api/nowplaying")
+                .then(res => res.json())
+                .then(data => {
+                    if(data.song) {
+                        currentTrackElement.innerText = "Трек: " + data.song.title;
+                        if(data.song.cover) cover.src = data.song.cover;
+                        else cover.src = "default_cover.png";
+                    }
+                })
+                .catch(err => console.log("Ошибка получения трека:", err));
+        }, 5000);
+    </script>
+
+</body>
+</html>
