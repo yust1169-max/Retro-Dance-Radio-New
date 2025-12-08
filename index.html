@@ -94,7 +94,7 @@ body {
 <div class="header">Retro Dance Radio</div>
 
 <div class="player-box">
-    <img src="https://via.placeholder.com/400x400/1e40af/ffffff?text=Retro+Dance+Radio" class="static-cover" />
+    <img src="logo.png" class="static-cover" />
     <div class="current-title" id="currentTrack">Загрузка...</div>
     <button class="play-btn" id="playBtn">▶ Воспроизвести</button>
 </div>
@@ -111,39 +111,44 @@ body {
 </div>
 
 <script>
-// URLs
 const apiURL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
 const streamURL = "https://radio.retrodanceradio.com/radio/8000/retro_dance_radio.mp3";
+
+const trackElem = document.getElementById("currentTrack");
+const recentElem = document.getElementById("recentList");
+const btn = document.getElementById("playBtn");
 
 let audio = new Audio(streamURL);
 audio.preload = "none";
 
-document.getElementById("playBtn").onclick = () => {
-    audio.play().then(() => {
-        document.getElementById("playBtn").innerText = "⏸ Пауза";
-        document.getElementById("playBtn").onclick = () => {
-            audio.pause();
-            document.getElementById("playBtn").innerText = "▶ Воспроизвести";
-            document.getElementById("playBtn").onclick = () => audio.play();
-        };
-    });
+btn.onclick = () => {
+    if (audio.paused) {
+        audio.play();
+        btn.innerText = "⏸ Пауза";
+    } else {
+        audio.pause();
+        btn.innerText = "▶ Воспроизвести";
+    }
 };
 
 function loadNowPlaying() {
     fetch(apiURL)
         .then(r => r.json())
         .then(data => {
-            document.getElementById("currentTrack").innerText = data.now_playing.song.text;
+            trackElem.innerText = data.now_playing.song.text || "Нет данных";
 
-            const recent = data.recent;
+            const history = data.song_history || [];
             let html = "";
-            recent.forEach(s => {
+
+            history.slice(0, 10).forEach(s => {
                 html += `<div class="song-item">${s.song.text}</div>`;
             });
-            document.getElementById("recentList").innerHTML = html;
+
+            recentElem.innerHTML = html || "Пока пусто";
         })
         .catch(() => {
-            document.getElementById("currentTrack").innerText = "Ошибка загрузки";
+            trackElem.innerText = "Ошибка соединения с сервером";
+            recentElem.innerHTML = "Не удалось загрузить список";
         });
 }
 
