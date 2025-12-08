@@ -37,6 +37,11 @@
             margin-top: 20px;
             font-size: 18px;
         }
+
+        /* Для iPhone Safari: убираем рамки */
+        audio::-webkit-media-controls-panel {
+            background-color: transparent;
+        }
     </style>
 </head>
 <body>
@@ -50,7 +55,7 @@
     </div>
 
     <script>
-        // Ссылка на поток
+        // HTTPS поток — работает на Android и iPhone
         const streamURL = "https://radio.retrodanceradio.com:8000/radio.mp3";
 
         // Создаём объект Audio
@@ -60,26 +65,4 @@
         const btn = document.getElementById("playBtn");
         const currentTrackElement = document.getElementById("currentTrack");
 
-        btn.onclick = () => {
-            if (audio.paused) {
-                audio.src = streamURL;
-                audio.play().catch(err => console.log("Ошибка воспроизведения:", err));
-                btn.innerText = "⏸ Пауза";
-            } else {
-                audio.pause();
-                btn.innerText = "▶ Воспроизвести";
-            }
-        };
-
-        // Пример: обновление текущего трека (если есть API)
-        // setInterval(() => {
-        //     fetch("https://radio.retrodanceradio.com/api/nowplaying")
-        //         .then(res => res.json())
-        //         .then(data => {
-        //             currentTrackElement.innerText = "Трек: " + data.song.title;
-        //         });
-        // }, 5000);
-    </script>
-
-</body>
-</html>
+        //
