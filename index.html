@@ -4,7 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Retro Dance Radio</title>
+
 <link rel="stylesheet" href="css/style.css">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Retro Dance Radio">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="apple-touch-startup-image" href="logo.png">
 </head>
 <body>
 
@@ -18,7 +25,7 @@
   <h2 id="trackTitle">Загрузка эфира...</h2>
   <button id="playBtn" class="play-btn">▶</button>
 
-  <audio id="radio" preload="none" playsinline>
+  <audio id="radio" preload="none" playsinline crossorigin="anonymous">
     <source src="https://radio.retrodanceradio.com/listen/retro_dance_radio/radio.mp3" type="audio/mpeg">
   </audio>
 </main>
@@ -34,5 +41,12 @@
 </section>
 
 <script src="js/player.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(() => console.log('Service Worker registered'))
+    .catch((e) => console.log('Service Worker failed:', e));
+}
+</script>
 </body>
 </html>
