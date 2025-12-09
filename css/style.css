@@ -12,15 +12,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px 10px;
+  padding: 15px 10px;
   border-bottom: 1px solid rgba(255,0,150,.3);
 }
 
 .logo {
-  position: absolute;
-  left: 20px;
-  top: 10px;
   height: 140px;
+  margin-right: 20px;
 }
 
 .site-title {
@@ -31,9 +29,23 @@ body {
   letter-spacing: 2px;
 }
 
+@media (max-width: 600px) {
+  .logo {
+    height: 80px;
+    margin-right: 10px;
+  }
+  .site-title {
+    font-size: 28px;
+  }
+  .site-header {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
 .player-area {
   text-align: center;
-  padding: 40px 15px;
+  padding: 30px 15px;
 }
 
 .cover {
@@ -57,11 +69,6 @@ body {
   color: white;
   cursor: pointer;
   margin-top: 15px;
-}
-
-#visualizer {
-  display: block;
-  margin: 25px auto 0;
 }
 
 .history-block,
