@@ -1,38 +1,107 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Retro Dance Radio</title>
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <title>Retro Dance Radio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    header {
+      background: #000;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo {
+      height: 80px;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin: 0;
+      color: #ff00ff;
+      text-shadow: 0 0 10px #ff00ff;
+    }
+
+    .player {
+      margin-top: 30px;
+    }
+
+    .btn {
+      font-size: 28px;
+      padding: 18px 60px;
+      border-radius: 50px;
+      border: none;
+      background: #ff00ff;
+      color: #000;
+      font-weight: bold;
+    }
+
+    .block {
+      margin: 40px auto;
+      max-width: 95%;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    iframe {
+      width: 100%;
+      border: none;
+    }
+  </style>
 </head>
+
 <body>
 
-<header class="site-header">
-  <img src="logo.png" class="logo" alt="Retro Dance Radio">
-  <div class="site-title">Retro Dance Radio</div>
+<header>
+  <img src="logo.png" class="logo" alt="Logo">
+  <h1>Retro Dance Radio</h1>
 </header>
 
-<main class="player-area">
-  <div id="cover" class="cover"></div>
-  <h2 id="trackTitle">Загрузка эфира...</h2>
-  <button id="playBtn" class="play-btn">▶</button>
-
+<div class="player">
   <audio id="radio" preload="none" playsinline>
     <source src="https://radio.retrodanceradio.com/listen/retro_dance_radio/radio.mp3" type="audio/mpeg">
   </audio>
-</main>
 
-<section class="history-block">
-  <h3>Играло ранее</h3>
-  <iframe src="https://radio.retrodanceradio.com/public/retro_dance_radio/history"></iframe>
-</section>
+  <button class="btn" onclick="playRadio()">PLAY / STOP</button>
+</div>
 
-<section class="requests-block">
-  <h3>Заказ песен</h3>
-  <iframe src="https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests"></iframe>
-</section>
+<div class="block">
+  <iframe height="320" src="https://radio.retrodanceradio.com/public/retro_dance_radio/history"></iframe>
+</div>
 
-<script src="js/player.js"></script>
+<div class="block">
+  <iframe height="850" src="https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests"></iframe>
+</div>
+
+<script>
+  let playing = false;
+  const radio = document.getElementById("radio");
+
+  function playRadio() {
+    if (!playing) {
+      radio.play().then(() => {
+        playing = true;
+      }).catch(() => {
+        alert("Нажми еще раз ▶");
+      });
+    } else {
+      radio.pause();
+      playing = false;
+    }
+  }
+</script>
+
 </body>
 </html>
