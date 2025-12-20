@@ -83,7 +83,7 @@
         }
 
         input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%;
+            -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%;
             background: white; cursor: pointer; border: 3px solid #010101;
         }
         
@@ -95,15 +95,6 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-        }
-
-        /* Плавное вращение обложки при игре */
-        .rotating {
-            animation: spin 20s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -207,48 +198,50 @@
                     <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-10 z-10 w-full">
                         {activeTab === 'player' ? (
                             <div className="w-full max-w-4xl animate-in fade-in zoom-in-95 duration-500">
-                                <div className="glass rounded-[40px] md:rounded-[56px] p-6 md:p-16 flex flex-col md:flex-row items-center gap-8 md:gap-16 border-white/10 relative overflow-hidden">
+                                <div className="glass rounded-[40px] md:rounded-[56px] p-6 md:p-12 flex flex-col md:flex-row items-center gap-6 md:gap-14 border-white/10 relative overflow-hidden">
                                     
                                     {/* Обложка */}
-                                    <div className="relative w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 flex-shrink-0 z-10">
+                                    <div className="relative w-44 h-44 sm:w-60 sm:h-60 md:w-72 md:h-72 flex-shrink-0 z-10">
                                         <div className="glow-overlay"></div>
                                         <img 
                                             src={meta.image} 
-                                            className={`w-full h-full object-cover rounded-[32px] md:rounded-[48px] relative z-10 border border-white/10 shadow-2xl transition-all duration-1000 ${isPlaying ? 'scale-105' : 'scale-100'}`} 
+                                            className={`w-full h-full object-cover rounded-[28px] md:rounded-[40px] relative z-10 border border-white/10 shadow-2xl transition-all duration-1000 ${isPlaying ? 'scale-105' : 'scale-100'}`} 
                                             onError={(e) => e.target.src = DEFAULT_COVER} 
                                         />
                                     </div>
 
-                                    <div className="flex-1 text-center md:text-left z-10 min-w-0 w-full pb-4">
-                                        <h2 className="text-2xl md:text-5xl font-black uppercase italic tracking-tighter leading-tight mb-2 text-white truncate text-shadow-lg">
+                                    <div className="flex-1 text-center md:text-left z-10 min-w-0 w-full pb-2">
+                                        {/* Уменьшенные заголовки */}
+                                        <h2 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter leading-tight mb-1 text-white truncate text-shadow-lg">
                                             {meta.song}
                                         </h2>
                                         
-                                        <p className="text-white/50 text-base md:text-xl font-bold uppercase italic mb-8 tracking-widest truncate">
+                                        <p className="text-white/40 text-sm md:text-lg font-bold uppercase italic mb-6 tracking-widest truncate">
                                             {meta.artist}
                                         </p>
                                         
-                                        <div className="flex flex-col sm:flex-row items-center gap-6 justify-center md:justify-start">
-                                            {/* Кнопка с динамическим состоянием */}
+                                        <div className="flex flex-col sm:flex-row items-center gap-5 justify-center md:justify-start">
+                                            {/* Кнопка Play */}
                                             <button 
                                                 onClick={togglePlay} 
-                                                className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 shadow-2xl ${
+                                                className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 shadow-2xl ${
                                                     isPlaying 
                                                     ? 'bg-pink-600 text-white playing-btn' 
                                                     : 'bg-white text-black hover:scale-105'
                                                 }`}
                                             >
                                                 {isPlaying ? (
-                                                    <Icon name="square" size={28} className="fill-current animate-in zoom-in duration-300" />
+                                                    <Icon name="square" size={24} className="fill-current animate-in zoom-in duration-300" />
                                                 ) : (
-                                                    <Icon name="play" size={36} className="ml-1.5 fill-current animate-in zoom-in duration-300" />
+                                                    <Icon name="play" size={30} className="ml-1 fill-current animate-in zoom-in duration-300" />
                                                 )}
                                             </button>
                                             
-                                            <div className="flex items-center gap-4 glass px-6 py-4 rounded-3xl w-full max-w-[200px] border-white/10 shadow-inner">
-                                                <Icon name={volume == 0 ? "volume-x" : "volume-2"} size={18} className="text-white/40" />
+                                            {/* Регулятор громкости */}
+                                            <div className="flex items-center gap-3 glass px-5 py-3 rounded-2xl w-full max-w-[180px] border-white/10 shadow-inner">
+                                                <Icon name={volume == 0 ? "volume-x" : "volume-2"} size={16} className="text-white/30" />
                                                 <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(e.target.value)} 
-                                                    className="w-full h-1.5 bg-white/10 rounded-full appearance-none accent-white cursor-pointer" />
+                                                    className="w-full h-1 bg-white/10 rounded-full appearance-none accent-white cursor-pointer" />
                                             </div>
                                         </div>
                                     </div>
@@ -257,13 +250,13 @@
                         ) : (
                             <div className="w-full max-w-lg space-y-3 pb-10">
                                 {history.map((item, i) => (
-                                    <div key={i} className="history-item p-4 rounded-[28px] flex items-center gap-4 border border-white/5">
-                                        <img src={item.song.art || DEFAULT_COVER} className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-xl shadow-lg flex-shrink-0" />
+                                    <div key={i} className="history-item p-4 rounded-[24px] flex items-center gap-4 border border-white/5">
+                                        <img src={item.song.art || DEFAULT_COVER} className="w-12 h-12 md:w-14 md:h-14 object-cover rounded-xl shadow-lg flex-shrink-0" />
                                         <div className="flex-1 min-w-0 text-left">
-                                            <h4 className="font-bold uppercase italic truncate text-[12px] md:text-[15px] text-white mb-0.5">{item.song.title}</h4>
-                                            <p className="text-[9px] md:text-[11px] text-white/40 uppercase font-black tracking-widest">{item.song.artist}</p>
+                                            <h4 className="font-bold uppercase italic truncate text-[12px] md:text-[14px] text-white mb-0.5">{item.song.title}</h4>
+                                            <p className="text-[9px] md:text-[10px] text-white/40 uppercase font-black tracking-widest">{item.song.artist}</p>
                                         </div>
-                                        <div className="text-[10px] font-black text-white/20 italic pr-2">
+                                        <div className="text-[9px] font-black text-white/20 italic pr-2">
                                             {new Date(item.played_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                         </div>
                                     </div>
@@ -272,7 +265,7 @@
                         )}
                     </main>
 
-                    <footer className="p-6 text-center text-[9px] font-black uppercase tracking-[0.6em] text-white/10 shrink-0">
+                    <footer className="p-6 text-center text-[8px] font-black uppercase tracking-[0.6em] text-white/10 shrink-0">
                         Retro Dance Radio
                     </footer>
                 </div>
