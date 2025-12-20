@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Retro Dance Radio | Прямой эфир</title>
     <!-- Подключаем шрифты и Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,7 +14,12 @@
     <!-- Подключаем иконки Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #010101; overflow: hidden; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #010101; 
+            overflow: hidden; 
+            touch-action: manipulation;
+        }
         
         .glass { 
             background: rgba(255, 255, 255, 0.03); 
@@ -39,13 +44,17 @@
 
         .bg-sphere {
             position: absolute;
-            width: 600px;
-            height: 600px;
+            width: 300px;
+            height: 300px;
             border-radius: 50%;
             background: radial-gradient(circle, rgba(236, 72, 153, 0.05) 0%, transparent 70%);
             filter: blur(80px);
             z-index: -1;
             animation: move 20s linear infinite;
+        }
+
+        @media (min-width: 768px) {
+            .bg-sphere { width: 600px; height: 600px; }
         }
 
         @keyframes move {
@@ -55,23 +64,34 @@
         }
 
         input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%;
+            -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%;
             background: white; cursor: pointer; border: 2px solid #010101;
             box-shadow: 0 0 10px rgba(255,255,255,0.5);
         }
         
         .text-shadow { text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
 
-        /* Специальные стили для элементов истории */
         .history-item {
             background: rgba(255, 255, 255, 0.04);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .history-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(8px);
-            box-shadow: -4px 0 20px rgba(236, 72, 153, 0.15);
+        
+        @media (hover: hover) {
+            .history-item:hover {
+                background: rgba(255, 255, 255, 0.1);
+                transform: translateX(8px);
+                box-shadow: -4px 0 20px rgba(236, 72, 153, 0.15);
+            }
         }
+
+        /* Плавная прокрутка для списка истории */
+        .history-scroll {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+        .history-scroll::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
@@ -112,7 +132,7 @@
                             listeners: data.listeners.total || 0,
                             image: np.song.art || DEFAULT_COVER
                         });
-                        if (data.song_history) setHistory(data.song_history.slice(0, 8));
+                        if (data.song_history) setHistory(data.song_history.slice(0, 10));
                     }
                 } catch (e) { console.error(e); }
             };
@@ -137,117 +157,111 @@
             };
 
             return (
-                <div className="min-h-screen text-white flex flex-col relative tracking-tight overflow-hidden">
+                <div className="min-h-screen text-white flex flex-col relative tracking-tight overflow-hidden bg-black">
                     <audio ref={audioRef} crossOrigin="anonymous" />
                     
                     {/* Декоративные сферы на фоне */}
-                    <div className="bg-sphere top-[-10%] left-[-10%]"></div>
-                    <div className="bg-sphere bottom-[-10%] right-[-10%]" style={{ animationDelay: '-10s', background: 'radial-gradient(circle, rgba(147, 51, 234, 0.05) 0%, transparent 70%)' }}></div>
+                    <div className="bg-sphere top-[-5%] left-[-5%]"></div>
+                    <div className="bg-sphere bottom-[-5%] right-[-5%]" style={{ animationDelay: '-10s', background: 'radial-gradient(circle, rgba(147, 51, 234, 0.05) 0%, transparent 70%)' }}></div>
                     
                     {/* Фон с размытием */}
                     <div className="fixed inset-0 -z-10 overflow-hidden">
-                        <img src={meta.image} className="w-full h-full object-cover opacity-[0.07] blur-[120px] scale-125 transition-all duration-1000" />
-                        <div className="absolute inset-0 bg-black/60"></div>
+                        <img src={meta.image} className="w-full h-full object-cover opacity-[0.1] blur-[80px] scale-150 transition-all duration-1000" />
+                        <div className="absolute inset-0 bg-black/40"></div>
                     </div>
 
-                    {/* Шапка */}
-                    <header className="p-6 flex justify-between items-center z-10 max-w-5xl mx-auto w-full">
-                        <div className="flex items-center gap-3 group cursor-pointer">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-pink-500 blur-md opacity-0 group-hover:opacity-40 transition-opacity"></div>
-                                <img src={LOGO_URL} className="h-6 w-6 object-contain bg-white rounded-lg p-1 relative z-10" />
-                            </div>
-                            <h1 className="font-black italic text-[11px] tracking-tighter uppercase opacity-70 group-hover:opacity-100 transition-opacity">Retro<span className="text-pink-500">Dance</span></h1>
+                    {/* Шапка (Mobile Optimized) */}
+                    <header className="p-4 md:p-6 flex flex-wrap justify-between items-center z-10 max-w-5xl mx-auto w-full gap-4">
+                        <div className="flex items-center gap-2 group cursor-pointer">
+                            <img src={LOGO_URL} className="h-5 w-5 md:h-6 md:w-6 object-contain bg-white rounded-md p-1" />
+                            <h1 className="font-black italic text-[10px] md:text-[11px] tracking-tighter uppercase">Retro<span className="text-pink-500">Dance</span></h1>
                         </div>
                         
-                        <nav className="flex glass rounded-2xl p-1 border-white/10">
+                        <nav className="flex glass rounded-full p-1 border-white/10 order-last sm:order-none w-full sm:w-auto justify-center">
                             {['player', 'history'].map(t => (
                                 <button key={t} onClick={() => setActiveTab(t)} 
-                                    className={`px-5 py-1.5 rounded-xl text-[9px] font-bold uppercase transition-all duration-300 ${activeTab === t ? 'bg-white/10 text-white shadow-inner' : 'text-white/20 hover:text-white/50'}`}>
+                                    className={`flex-1 sm:flex-none px-6 py-2 rounded-full text-[10px] font-bold uppercase transition-all duration-300 ${activeTab === t ? 'bg-white/10 text-white' : 'text-white/30'}`}>
                                     {t === 'player' ? 'Плеер' : 'История'}
                                 </button>
                             ))}
                         </nav>
 
-                        <div className="flex items-center gap-2 glass px-3 py-1.5 rounded-full border-white/10 shadow-lg">
-                            <div className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(236,72,153,0.8)]"></div>
-                            <span className="text-[8px] font-black uppercase text-white/40 tracking-widest">{meta.listeners}</span>
+                        <div className="flex items-center gap-2 glass px-3 py-1.5 rounded-full border-white/10">
+                            <div className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-pulse"></div>
+                            <span className="text-[9px] font-black uppercase text-white/50">{meta.listeners}</span>
                         </div>
                     </header>
 
-                    {/* Плеер */}
-                    <main className="flex-1 flex flex-col items-center justify-center p-6 z-10">
+                    {/* Контент */}
+                    <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 z-10 w-full overflow-hidden">
                         {activeTab === 'player' ? (
-                            <div className="w-full max-w-xl animate-in fade-in zoom-in-95 duration-1000">
-                                <div className="glass rounded-[32px] p-6 md:p-10 flex flex-col md:flex-row items-center gap-8 md:gap-12 relative overflow-hidden group">
-                                    <div className="absolute -top-24 -right-24 w-48 h-48 bg-pink-500/10 blur-[80px] rounded-full"></div>
-                                    
-                                    <div className="relative w-40 h-40 md:w-48 md:h-48 flex-shrink-0 z-10">
+                            <div className="w-full max-w-xl animate-in fade-in zoom-in-95 duration-700">
+                                <div className="glass rounded-[40px] p-6 md:p-10 flex flex-col md:flex-row items-center gap-6 md:gap-12 relative overflow-hidden group">
+                                    {/* Обложка */}
+                                    <div className="relative w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 flex-shrink-0 z-10">
                                         <div className="glow-overlay"></div>
-                                        <img src={meta.image} className="w-full h-full object-cover rounded-2xl relative z-10 border border-white/10 shadow-2xl transition-transform duration-700 group-hover:scale-[1.02]" onError={(e) => e.target.src = DEFAULT_COVER} />
+                                        <img src={meta.image} className="w-full h-full object-cover rounded-3xl relative z-10 border border-white/10 shadow-2xl" onError={(e) => e.target.src = DEFAULT_COVER} />
                                     </div>
 
-                                    <div className="flex-1 text-center md:text-left z-10 min-w-0">
-                                        <div className="mb-3">
-                                            <span className="text-[7px] font-black tracking-[0.5em] uppercase italic text-pink-500/50 bg-pink-500/5 px-2 py-1 rounded-md border border-pink-500/10">Now Playing</span>
+                                    {/* Информация */}
+                                    <div className="flex-1 text-center md:text-left z-10 min-w-0 w-full">
+                                        <div className="mb-4">
+                                            <span className="text-[8px] font-black tracking-[0.4em] uppercase italic text-pink-500 bg-pink-500/10 px-3 py-1.5 rounded-full">В эфире</span>
                                         </div>
                                         
-                                        <h2 className="text-base md:text-lg font-bold uppercase italic tracking-tight leading-tight mb-1 text-white/90 truncate text-shadow">
+                                        <h2 className="text-xl md:text-2xl font-bold uppercase italic tracking-tight leading-tight mb-2 text-white truncate text-shadow">
                                             {meta.song}
                                         </h2>
                                         
-                                        <p className="text-white/50 text-xs md:text-sm font-semibold uppercase italic mb-8 tracking-wide truncate opacity-80">
+                                        <p className="text-white/60 text-sm md:text-base font-semibold uppercase italic mb-8 tracking-wide truncate">
                                             {meta.artist}
                                         </p>
                                         
-                                        <div className="flex flex-col md:flex-row items-center gap-6 justify-center md:justify-start">
-                                            <button onClick={togglePlay} className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)] group/btn">
+                                        <div className="flex flex-col sm:flex-row items-center gap-6 justify-center md:justify-start">
+                                            <button onClick={togglePlay} className="w-20 h-20 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)]">
                                                 {isPlaying ? 
-                                                    <Icon name="square" size={18} className="fill-current group-hover/btn:scale-110 transition-transform" /> : 
-                                                    <Icon name="play" size={24} className="ml-1 fill-current group-hover/btn:scale-110 transition-transform" />
+                                                    <Icon name="square" size={24} className="fill-current" /> : 
+                                                    <Icon name="play" size={32} className="ml-1 fill-current" />
                                                 }
                                             </button>
                                             
-                                            <div className="flex items-center gap-4 glass px-5 py-3 rounded-2xl w-full max-w-[150px] border-white/10">
-                                                <Icon name={volume == 0 ? "volume-x" : "volume-2"} size={14} className="text-white/30" />
+                                            <div className="flex items-center gap-4 glass px-6 py-4 rounded-3xl w-full max-w-[180px] border-white/10">
+                                                <Icon name={volume == 0 ? "volume-x" : "volume-2"} size={16} className="text-white/40" />
                                                 <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(e.target.value)} 
-                                                    className="w-full h-1 bg-white/10 rounded-full appearance-none accent-white cursor-pointer" />
+                                                    className="w-full h-1.5 bg-white/10 rounded-full appearance-none accent-white cursor-pointer" />
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="w-full max-w-md space-y-3 animate-in slide-in-from-bottom-4 duration-700">
+                            <div className="w-full max-w-md space-y-3 animate-in slide-in-from-bottom-4 duration-700 history-scroll pb-10">
                                 {history.length > 0 ? history.map((item, i) => (
-                                    <div key={i} className="history-item p-3 rounded-[20px] flex items-center gap-5 border border-white/5 group relative overflow-hidden">
-                                        {/* Обложка (больше и четче) */}
-                                        <div className="relative w-12 h-12 flex-shrink-0">
-                                            <img src={item.song.art || DEFAULT_COVER} className="w-full h-full object-cover rounded-xl shadow-lg group-hover:scale-105 transition-transform" />
+                                    <div key={i} className="history-item p-4 rounded-[24px] flex items-center gap-4 border border-white/5">
+                                        <div className="relative w-14 h-14 flex-shrink-0">
+                                            <img src={item.song.art || DEFAULT_COVER} className="w-full h-full object-cover rounded-xl shadow-lg" />
                                         </div>
                                         
-                                        {/* Текст (ярче и крупнее) */}
                                         <div className="flex-1 min-w-0 text-left">
-                                            <h4 className="font-bold uppercase italic truncate text-[11px] md:text-[12px] text-white tracking-wide mb-0.5 group-hover:text-pink-400 transition-colors">
+                                            <h4 className="font-bold uppercase italic truncate text-[12px] md:text-[13px] text-white tracking-wide mb-1">
                                                 {item.song.title}
                                             </h4>
-                                            <p className="text-[9px] text-white/60 uppercase font-black tracking-widest group-hover:text-white/80 transition-colors">
+                                            <p className="text-[10px] text-white/50 uppercase font-black tracking-widest">
                                                 {item.song.artist}
                                             </p>
                                         </div>
 
-                                        {/* Время (заметнее) */}
-                                        <div className="text-[9px] font-black text-white/30 pr-3 italic group-hover:text-white/60 transition-colors">
+                                        <div className="text-[10px] font-black text-white/30 pr-2 italic">
                                             {new Date(item.played_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                         </div>
                                     </div>
-                                )) : <div className="text-center py-20 opacity-20 text-[10px] uppercase tracking-[1em] italic animate-pulse">Syncing...</div>}
+                                )) : <div className="text-center py-20 opacity-20 text-[10px] uppercase tracking-[1em] italic animate-pulse">Загрузка истории...</div>}
                             </div>
                         )}
                     </main>
 
-                    <footer className="p-8 text-center text-[7px] font-bold uppercase tracking-[0.8em] text-white/10 z-10 transition-opacity hover:opacity-100 opacity-30">
-                        &copy; 2025 Retro Dance Radio • Premium Stream
+                    <footer className="p-6 text-center text-[8px] font-bold uppercase tracking-[0.5em] text-white/10 z-10">
+                        &copy; 2025 Retro Dance Radio
                     </footer>
                 </div>
             );
