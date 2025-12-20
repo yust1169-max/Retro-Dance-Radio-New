@@ -22,7 +22,6 @@
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: #010101; 
-            /* Разрешаем прокрутку только по вертикали для мобильных */
             overflow-x: hidden;
             overflow-y: auto;
             touch-action: pan-y;
@@ -34,6 +33,17 @@
             backdrop-filter: blur(40px); 
             border: 1px solid rgba(255, 255, 255, 0.05); 
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Анимация пульсации кнопки при проигрывании */
+        @keyframes pulse-play {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+
+        .playing-btn {
+            animation: pulse-play 2s infinite;
         }
 
         .glow-overlay {
@@ -63,7 +73,7 @@
 
         @media (min-width: 768px) {
             .bg-sphere { width: 700px; height: 700px; }
-            body { overflow: hidden; } /* На десктопе оставляем без прокрутки */
+            body { overflow: hidden; }
         }
 
         @keyframes move {
@@ -79,18 +89,21 @@
         
         .text-shadow-lg { text-shadow: 0 4px 20px rgba(0,0,0,0.6); }
 
-        .history-item {
-            background: rgba(255, 255, 255, 0.04);
-            transition: all 0.2s ease;
-        }
-
-        /* Адаптивная высота контента для мобильных */
         .main-container {
             padding-top: var(--sat);
             padding-bottom: var(--sab);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+        }
+
+        /* Плавное вращение обложки при игре */
+        .rotating {
+            animation: spin 20s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -108,7 +121,7 @@
         const Icon = ({ name, size = 18, className = "" }) => {
             useEffect(() => {
                 if (window.lucide) window.lucide.createIcons();
-            }, [name]);
+            }, [name, className]);
             return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
         };
 
@@ -141,14 +154,14 @@
                 fetchNowPlaying();
                 const interval = setInterval(fetchNowPlaying, 15000);
                 return () => clearInterval(interval);
-            }, [isPlaying]);
+            }, []);
 
             useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume]);
 
             const togglePlay = () => {
                 if (!isPlaying) {
                     audioRef.current.src = MAIN_STREAM_URL;
-                    audioRef.current.play();
+                    audioRef.current.play().catch(e => console.log("Audio play failed", e));
                 } else {
                     audioRef.current.pause();
                     audioRef.current.src = ""; 
@@ -160,16 +173,14 @@
                 <div className="main-container text-white relative bg-black">
                     <audio ref={audioRef} crossOrigin="anonymous" />
                     
-                    {/* Фон */}
                     <div className="bg-sphere top-0 left-0"></div>
                     <div className="bg-sphere bottom-0 right-0" style={{ animationDelay: '-10s', background: 'radial-gradient(circle, rgba(147, 51, 234, 0.05) 0%, transparent 70%)' }}></div>
                     
                     <div className="fixed inset-0 -z-10">
-                        <img src={meta.image} className="w-full h-full object-cover opacity-[0.15] blur-[80px] scale-150" />
+                        <img src={meta.image} className="w-full h-full object-cover opacity-[0.15] blur-[80px] scale-150 transition-all duration-1000" />
                         <div className="absolute inset-0 bg-black/40"></div>
                     </div>
 
-                    {/* Хедер */}
                     <header className="p-4 md:p-8 flex justify-between items-center z-10 w-full max-w-6xl mx-auto shrink-0">
                         <div className="flex items-center gap-2">
                             <img src={LOGO_URL} className="h-6 w-6 md:h-8 md:w-8 object-contain bg-white rounded-lg p-1" />
@@ -182,7 +193,6 @@
                         </div>
                     </header>
 
-                    {/* Табы */}
                     <nav className="flex justify-center p-2 z-10 shrink-0">
                         <div className="glass rounded-full p-1.5 border-white/10 flex w-full max-w-xs sm:w-auto">
                             {['player', 'history'].map(t => (
@@ -194,19 +204,21 @@
                         </div>
                     </nav>
 
-                    {/* Основная часть */}
                     <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-10 z-10 w-full">
                         {activeTab === 'player' ? (
                             <div className="w-full max-w-4xl animate-in fade-in zoom-in-95 duration-500">
                                 <div className="glass rounded-[40px] md:rounded-[56px] p-6 md:p-16 flex flex-col md:flex-row items-center gap-8 md:gap-16 border-white/10 relative overflow-hidden">
                                     
-                                    {/* Обложка (уменьшена для мобильных, чтобы влезла кнопка) */}
+                                    {/* Обложка */}
                                     <div className="relative w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 flex-shrink-0 z-10">
                                         <div className="glow-overlay"></div>
-                                        <img src={meta.image} className="w-full h-full object-cover rounded-[32px] md:rounded-[48px] relative z-10 border border-white/10 shadow-2xl" onError={(e) => e.target.src = DEFAULT_COVER} />
+                                        <img 
+                                            src={meta.image} 
+                                            className={`w-full h-full object-cover rounded-[32px] md:rounded-[48px] relative z-10 border border-white/10 shadow-2xl transition-all duration-1000 ${isPlaying ? 'scale-105' : 'scale-100'}`} 
+                                            onError={(e) => e.target.src = DEFAULT_COVER} 
+                                        />
                                     </div>
 
-                                    {/* Инфо */}
                                     <div className="flex-1 text-center md:text-left z-10 min-w-0 w-full pb-4">
                                         <h2 className="text-2xl md:text-5xl font-black uppercase italic tracking-tighter leading-tight mb-2 text-white truncate text-shadow-lg">
                                             {meta.song}
@@ -217,11 +229,20 @@
                                         </p>
                                         
                                         <div className="flex flex-col sm:flex-row items-center gap-6 justify-center md:justify-start">
-                                            <button onClick={togglePlay} className="w-20 h-20 md:w-24 md:h-24 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-90 transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-                                                {isPlaying ? 
-                                                    <Icon name="square" size={28} className="fill-current" /> : 
-                                                    <Icon name="play" size={36} className="ml-1.5 fill-current" />
-                                                }
+                                            {/* Кнопка с динамическим состоянием */}
+                                            <button 
+                                                onClick={togglePlay} 
+                                                className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 shadow-2xl ${
+                                                    isPlaying 
+                                                    ? 'bg-pink-600 text-white playing-btn' 
+                                                    : 'bg-white text-black hover:scale-105'
+                                                }`}
+                                            >
+                                                {isPlaying ? (
+                                                    <Icon name="square" size={28} className="fill-current animate-in zoom-in duration-300" />
+                                                ) : (
+                                                    <Icon name="play" size={36} className="ml-1.5 fill-current animate-in zoom-in duration-300" />
+                                                )}
                                             </button>
                                             
                                             <div className="flex items-center gap-4 glass px-6 py-4 rounded-3xl w-full max-w-[200px] border-white/10 shadow-inner">
