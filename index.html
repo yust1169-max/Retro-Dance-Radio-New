@@ -14,15 +14,15 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://radio.retrodanceradio.com/">
     
-    <!-- Я заменил ссылку на логотип на более "дружелюбную" для ботов -->
-    <meta property="og:image" content="https://i.ibb.co/m5ZzW2T/logo-retro.png">
-    <meta property="og:image:secure_url" content="https://i.ibb.co/m5ZzW2T/logo-retro.png">
+    <!-- Используем logo.png, который вы положили в корень GitHub -->
+    <meta property="og:image" content="https://radio.retrodanceradio.com/logo.png">
+    <meta property="og:image:secure_url" content="https://radio.retrodanceradio.com/logo.png">
     <meta property="og:image:type" content="image/png">
-    <meta property="og:image:width" content="600">
-    <meta property="og:image:height" content="600">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://i.ibb.co/m5ZzW2T/logo-retro.png">
+    <meta name="twitter:image" content="https://radio.retrodanceradio.com/logo.png">
 
     <!-- Библиотеки -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -47,8 +47,8 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // В самом приложении тоже обновляем константу логотипа
-        const LOGO_URL = "https://i.ibb.co/m5ZzW2T/logo-retro.png";
+        // Логотип теперь берется из вашего репозитория
+        const LOGO_URL = "./logo.png";
         const API_URL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
         const REQUESTS_EMBED_URL = "https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests";
         const DEFAULT_COVER = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000&auto=format&fit=crop";
