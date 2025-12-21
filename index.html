@@ -1,279 +1,261 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Retro Dance Radio | Прямой эфир</title>
-    <!-- Подключаем шрифты и Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    <!-- Подключаем React и Babel -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Подключаем иконки Lucide -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        :root {
-            --sat: env(safe-area-inset-top);
-            --sab: env(safe-area-inset-bottom);
+const { useState, useEffect, useRef } = React;
+
+const LOGO_URL = "https://i.postimg.cc/28VKXjCx/logo.png";
+const API_URL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
+// Ссылка для встраивания заказов
+const REQUESTS_EMBED_URL = "https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests";
+const DEFAULT_COVER = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000&auto=format&fit=crop";
+
+const STREAMS = {
+    high: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio.mp3",
+    low: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio64.AAC"
+};
+
+// Вспомогательный компонент для иконок Lucide
+const Icon = ({ name, size = 18, className = "" }) => {
+    useEffect(() => {
+        if (window.lucide) window.lucide.createIcons();
+    }, [name, className]);
+    return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+};
+
+function App() {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [volume, setVolume] = useState(0.8);
+    const [quality, setQuality] = useState('high');
+    const [activeTab, setActiveTab] = useState('player');
+    const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", listeners: 0, image: DEFAULT_COVER });
+    const [history, setHistory] = useState([]);
+    const audioRef = useRef(null);
+
+    // Получение данных об эфире
+    const fetchNowPlaying = async () => {
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            if (data && data.now_playing) {
+                const np = data.now_playing;
+                setMeta({
+                    song: np.song.title || "Эфир",
+                    artist: np.song.artist || "Retro Dance Radio",
+                    listeners: data.listeners.total || 0,
+                    image: np.song.art || DEFAULT_COVER
+                });
+                if (data.song_history) setHistory(data.song_history.slice(0, 10));
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    useEffect(() => {
+        fetchNowPlaying();
+        const interval = setInterval(fetchNowPlaying, 15000);
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => { 
+        if (audioRef.current) audioRef.current.volume = volume; 
+    }, [volume]);
+
+    const toggleQuality = () => {
+        const newQuality = quality === 'high' ? 'low' : 'high';
+        setQuality(newQuality);
+        if (isPlaying) {
+            audioRef.current.src = STREAMS[newQuality];
+            audioRef.current.play().catch(e => console.log("Ошибка смены качества", e));
         }
+    };
 
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #010101; 
-            overflow-x: hidden;
-            overflow-y: auto;
-            touch-action: pan-y;
-            min-height: 100vh;
+    const togglePlay = () => {
+        if (!isPlaying) {
+            audioRef.current.src = STREAMS[quality];
+            audioRef.current.play().catch(e => console.log("Ошибка воспроизведения", e));
+        } else {
+            audioRef.current.pause();
+            audioRef.current.src = ""; 
         }
-        
-        .glass { 
-            background: rgba(255, 255, 255, 0.03); 
-            backdrop-filter: blur(40px); 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
+        setIsPlaying(!isPlaying);
+    };
 
-        /* Анимация пульсации кнопки при проигрывании */
-        @keyframes pulse-play {
-            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
-            70% { box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-        }
+    return (
+        <div className="main-container text-white relative bg-black flex flex-col min-h-screen font-sans overflow-x-hidden">
+            <audio ref={audioRef} crossOrigin="anonymous" />
+            
+            {/* Декоративные фоновые элементы */}
+            <div className="bg-sphere top-0 left-0"></div>
+            <div className="bg-sphere bottom-0 right-0" style={{ animationDelay: '-10s', background: 'radial-gradient(circle, rgba(147, 51, 234, 0.05) 0%, transparent 70%)' }}></div>
+            
+            {/* Динамический фон на основе обложки */}
+            <div className="fixed inset-0 -z-10">
+                <img src={meta.image} className="w-full h-full object-cover opacity-[0.15] blur-[80px] scale-150 transition-all duration-1000" />
+                <div className="absolute inset-0 bg-black/40"></div>
+            </div>
 
-        .playing-btn {
-            animation: pulse-play 2s infinite;
-        }
+            {/* Шапка */}
+            <header className="p-4 md:p-8 flex justify-between items-center z-10 w-full max-w-6xl mx-auto shrink-0">
+                <div className="flex items-center gap-2">
+                    <img src={LOGO_URL} className="h-6 w-6 md:h-8 md:w-8 object-contain bg-white rounded-lg p-1" />
+                    <h1 className="font-black italic text-[10px] md:text-[14px] uppercase tracking-tighter">Retro<span className="text-pink-500">Dance</span></h1>
+                </div>
+                
+                <div className="flex items-center gap-2 glass px-3 py-1.5 rounded-full border-white/10">
+                    <div className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(236,72,153,1)]"></div>
+                    <span className="text-[10px] font-black uppercase text-white/60">{meta.listeners} слушателей</span>
+                </div>
+            </header>
 
-        .glow-overlay {
-            position: absolute;
-            inset: -20px;
-            background: radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, transparent 70%);
-            filter: blur(40px);
-            z-index: 0;
-            animation: pulse-glow 8s ease-in-out infinite;
-        }
+            {/* Навигация */}
+            <nav className="flex justify-center p-2 z-10 shrink-0">
+                <div className="glass rounded-full p-1.5 border-white/10 flex flex-wrap justify-center w-full max-w-sm sm:w-auto">
+                    {[
+                        { id: 'player', label: 'Плеер' },
+                        { id: 'history', label: 'История' },
+                        { id: 'request', label: 'Заказать песню' }
+                    ].map(t => (
+                        <button key={t.id} onClick={() => setActiveTab(t.id)} 
+                            className={`px-4 sm:px-6 py-2 rounded-full text-[11px] font-black uppercase transition-all m-0.5 ${activeTab === t.id ? 'bg-white/10 text-white shadow-lg' : 'text-white/30'}`}>
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
+            </nav>
 
-        @keyframes pulse-glow {
-            0%, 100% { opacity: 0.5; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.1); }
-        }
+            {/* Основной контент */}
+            <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-10 z-10 w-full">
+                
+                {/* Виджет плеера */}
+                {activeTab === 'player' && (
+                    <div className="w-full max-w-4xl animate-in fade-in zoom-in-95 duration-500">
+                        <div className="glass rounded-[40px] md:rounded-[56px] p-6 md:p-12 flex flex-col md:flex-row items-center gap-6 md:gap-14 border-white/10 relative overflow-hidden">
+                            <div className="relative w-44 h-44 sm:w-60 sm:h-60 md:w-72 md:h-72 flex-shrink-0 z-10">
+                                <div className="glow-overlay"></div>
+                                <img 
+                                    src={meta.image} 
+                                    className={`w-full h-full object-cover rounded-[28px] md:rounded-[40px] relative z-10 border border-white/10 shadow-2xl transition-all duration-1000 ${isPlaying ? 'scale-105' : 'scale-100'}`} 
+                                    onError={(e) => e.target.src = DEFAULT_COVER} 
+                                />
+                            </div>
 
-        .bg-sphere {
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(236, 72, 153, 0.06) 0%, transparent 70%);
-            filter: blur(60px);
-            z-index: -1;
-            animation: move 20s linear infinite;
-        }
-
-        @media (min-width: 768px) {
-            .bg-sphere { width: 700px; height: 700px; }
-            body { overflow: hidden; }
-        }
-
-        @keyframes move {
-            0% { transform: translate(-10%, -10%); }
-            50% { transform: translate(15%, 10%); }
-            100% { transform: translate(-10%, -10%); }
-        }
-
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%;
-            background: white; cursor: pointer; border: 3px solid #010101;
-        }
-        
-        .text-shadow-lg { text-shadow: 0 4px 20px rgba(0,0,0,0.6); }
-
-        .main-container {
-            padding-top: var(--sat);
-            padding-bottom: var(--sab);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-
-        const LOGO_URL = "https://i.postimg.cc/28VKXjCx/logo.png";
-        const MAIN_STREAM_URL = "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio.mp3";
-        const API_URL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
-        const DEFAULT_COVER = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000&auto=format&fit=crop";
-
-        const Icon = ({ name, size = 18, className = "" }) => {
-            useEffect(() => {
-                if (window.lucide) window.lucide.createIcons();
-            }, [name, className]);
-            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
-        };
-
-        function App() {
-            const [isPlaying, setIsPlaying] = useState(false);
-            const [volume, setVolume] = useState(0.8);
-            const [activeTab, setActiveTab] = useState('player');
-            const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", listeners: 0, image: DEFAULT_COVER });
-            const [history, setHistory] = useState([]);
-            const audioRef = useRef(null);
-
-            const fetchNowPlaying = async () => {
-                try {
-                    const res = await fetch(API_URL);
-                    const data = await res.json();
-                    if (data && data.now_playing) {
-                        const np = data.now_playing;
-                        setMeta({
-                            song: np.song.title || "Эфир",
-                            artist: np.song.artist || "Retro Dance Radio",
-                            listeners: data.listeners.total || 0,
-                            image: np.song.art || DEFAULT_COVER
-                        });
-                        if (data.song_history) setHistory(data.song_history.slice(0, 10));
-                    }
-                } catch (e) { console.error(e); }
-            };
-
-            useEffect(() => {
-                fetchNowPlaying();
-                const interval = setInterval(fetchNowPlaying, 15000);
-                return () => clearInterval(interval);
-            }, []);
-
-            useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume]);
-
-            const togglePlay = () => {
-                if (!isPlaying) {
-                    audioRef.current.src = MAIN_STREAM_URL;
-                    audioRef.current.play().catch(e => console.log("Audio play failed", e));
-                } else {
-                    audioRef.current.pause();
-                    audioRef.current.src = ""; 
-                }
-                setIsPlaying(!isPlaying);
-            };
-
-            return (
-                <div className="main-container text-white relative bg-black">
-                    <audio ref={audioRef} crossOrigin="anonymous" />
-                    
-                    <div className="bg-sphere top-0 left-0"></div>
-                    <div className="bg-sphere bottom-0 right-0" style={{ animationDelay: '-10s', background: 'radial-gradient(circle, rgba(147, 51, 234, 0.05) 0%, transparent 70%)' }}></div>
-                    
-                    <div className="fixed inset-0 -z-10">
-                        <img src={meta.image} className="w-full h-full object-cover opacity-[0.15] blur-[80px] scale-150 transition-all duration-1000" />
-                        <div className="absolute inset-0 bg-black/40"></div>
-                    </div>
-
-                    <header className="p-4 md:p-8 flex justify-between items-center z-10 w-full max-w-6xl mx-auto shrink-0">
-                        <div className="flex items-center gap-2">
-                            <img src={LOGO_URL} className="h-6 w-6 md:h-8 md:w-8 object-contain bg-white rounded-lg p-1" />
-                            <h1 className="font-black italic text-[10px] md:text-[14px] uppercase tracking-tighter">Retro<span className="text-pink-500">Dance</span></h1>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 glass px-3 py-1.5 rounded-full border-white/10">
-                            <div className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(236,72,153,1)]"></div>
-                            <span className="text-[10px] font-black uppercase text-white/60">{meta.listeners}</span>
-                        </div>
-                    </header>
-
-                    <nav className="flex justify-center p-2 z-10 shrink-0">
-                        <div className="glass rounded-full p-1.5 border-white/10 flex w-full max-w-xs sm:w-auto">
-                            {['player', 'history'].map(t => (
-                                <button key={t} onClick={() => setActiveTab(t)} 
-                                    className={`flex-1 sm:flex-none px-6 py-2 rounded-full text-[11px] font-black uppercase transition-all ${activeTab === t ? 'bg-white/10 text-white shadow-lg' : 'text-white/30'}`}>
-                                    {t === 'player' ? 'Плеер' : 'История'}
-                                </button>
-                            ))}
-                        </div>
-                    </nav>
-
-                    <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-10 z-10 w-full">
-                        {activeTab === 'player' ? (
-                            <div className="w-full max-w-4xl animate-in fade-in zoom-in-95 duration-500">
-                                <div className="glass rounded-[40px] md:rounded-[56px] p-6 md:p-12 flex flex-col md:flex-row items-center gap-6 md:gap-14 border-white/10 relative overflow-hidden">
-                                    
-                                    {/* Обложка */}
-                                    <div className="relative w-44 h-44 sm:w-60 sm:h-60 md:w-72 md:h-72 flex-shrink-0 z-10">
-                                        <div className="glow-overlay"></div>
-                                        <img 
-                                            src={meta.image} 
-                                            className={`w-full h-full object-cover rounded-[28px] md:rounded-[40px] relative z-10 border border-white/10 shadow-2xl transition-all duration-1000 ${isPlaying ? 'scale-105' : 'scale-100'}`} 
-                                            onError={(e) => e.target.src = DEFAULT_COVER} 
-                                        />
-                                    </div>
-
-                                    <div className="flex-1 text-center md:text-left z-10 min-w-0 w-full pb-2">
-                                        {/* Уменьшенные заголовки */}
-                                        <h2 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter leading-tight mb-1 text-white truncate text-shadow-lg">
-                                            {meta.song}
-                                        </h2>
-                                        
-                                        <p className="text-white/40 text-sm md:text-lg font-bold uppercase italic mb-6 tracking-widest truncate">
-                                            {meta.artist}
-                                        </p>
-                                        
-                                        <div className="flex flex-col sm:flex-row items-center gap-5 justify-center md:justify-start">
-                                            {/* Кнопка Play */}
-                                            <button 
-                                                onClick={togglePlay} 
-                                                className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 shadow-2xl ${
-                                                    isPlaying 
-                                                    ? 'bg-pink-600 text-white playing-btn' 
-                                                    : 'bg-white text-black hover:scale-105'
-                                                }`}
-                                            >
-                                                {isPlaying ? (
-                                                    <Icon name="square" size={24} className="fill-current animate-in zoom-in duration-300" />
-                                                ) : (
-                                                    <Icon name="play" size={30} className="ml-1 fill-current animate-in zoom-in duration-300" />
-                                                )}
-                                            </button>
-                                            
-                                            {/* Регулятор громкости */}
-                                            <div className="flex items-center gap-3 glass px-5 py-3 rounded-2xl w-full max-w-[180px] border-white/10 shadow-inner">
-                                                <Icon name={volume == 0 ? "volume-x" : "volume-2"} size={16} className="text-white/30" />
-                                                <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(e.target.value)} 
-                                                    className="w-full h-1 bg-white/10 rounded-full appearance-none accent-white cursor-pointer" />
-                                            </div>
+                            <div className="flex-1 text-center md:text-left z-10 min-w-0 w-full pb-2">
+                                <h2 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter leading-tight mb-1 text-white truncate text-shadow-lg">
+                                    {meta.song}
+                                </h2>
+                                <p className="text-white/40 text-sm md:text-lg font-bold uppercase italic mb-6 tracking-widest truncate">
+                                    {meta.artist}
+                                </p>
+                                <div className="flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start">
+                                    <button 
+                                        onClick={togglePlay} 
+                                        className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 shadow-2xl ${
+                                            isPlaying ? 'bg-pink-600 text-white' : 'bg-white text-black hover:scale-105'
+                                        }`}
+                                    >
+                                        {isPlaying ? (
+                                            <Icon name="square" size={24} className="fill-current" />
+                                        ) : (
+                                            <Icon name="play" size={30} className="ml-1 fill-current" />
+                                        )}
+                                    </button>
+                                    <div className="flex items-center gap-3">
+                                        <button 
+                                            onClick={toggleQuality}
+                                            className="glass px-4 py-3 rounded-2xl border-white/10 shadow-inner text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-colors"
+                                        >
+                                            <span className={quality === 'high' ? 'text-pink-500' : 'text-white/40'}>HQ</span>
+                                            <span className="mx-1 text-white/10">|</span>
+                                            <span className={quality === 'low' ? 'text-pink-500' : 'text-white/40'}>64K</span>
+                                        </button>
+                                        <div className="flex items-center gap-3 glass px-5 py-3 rounded-2xl w-full max-w-[150px] border-white/10 shadow-inner">
+                                            <Icon name={volume == 0 ? "volume-x" : "volume-2"} size={14} className="text-white/30" />
+                                            <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(e.target.value)} 
+                                                className="w-full h-1 bg-white/10 rounded-full appearance-none accent-white cursor-pointer" />
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="w-full max-w-lg space-y-3 pb-10">
-                                {history.map((item, i) => (
-                                    <div key={i} className="history-item p-4 rounded-[24px] flex items-center gap-4 border border-white/5">
-                                        <img src={item.song.art || DEFAULT_COVER} className="w-12 h-12 md:w-14 md:h-14 object-cover rounded-xl shadow-lg flex-shrink-0" />
-                                        <div className="flex-1 min-w-0 text-left">
-                                            <h4 className="font-bold uppercase italic truncate text-[12px] md:text-[14px] text-white mb-0.5">{item.song.title}</h4>
-                                            <p className="text-[9px] md:text-[10px] text-white/40 uppercase font-black tracking-widest">{item.song.artist}</p>
-                                        </div>
-                                        <div className="text-[9px] font-black text-white/20 italic pr-2">
-                                            {new Date(item.played_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                        </div>
-                                    </div>
-                                ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* История песен */}
+                {activeTab === 'history' && (
+                    <div className="w-full max-w-lg space-y-3 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {history.map((item, i) => (
+                            <div key={i} className="p-4 rounded-[24px] flex items-center gap-4 border border-white/5 glass">
+                                <img src={item.song.art || DEFAULT_COVER} className="w-12 h-12 md:w-14 md:h-14 object-cover rounded-xl shadow-lg flex-shrink-0" />
+                                <div className="flex-1 min-w-0 text-left">
+                                    <h4 className="font-bold uppercase italic truncate text-[12px] md:text-[14px] text-white mb-0.5">{item.song.title}</h4>
+                                    <p className="text-[9px] md:text-[10px] text-white/40 uppercase font-black tracking-widest">{item.song.artist}</p>
+                                </div>
+                                <div className="text-[9px] font-black text-white/20 italic pr-2">
+                                    {new Date(item.played_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </div>
                             </div>
-                        )}
-                    </main>
+                        ))}
+                    </div>
+                )}
 
-                    <footer className="p-6 text-center text-[8px] font-black uppercase tracking-[0.6em] text-white/10 shrink-0">
-                        Retro Dance Radio
-                    </footer>
+                {/* Интегрированный заказ песен через iframe */}
+                {activeTab === 'request' && (
+                    <div className="w-full max-w-4xl animate-in fade-in slide-in-from-bottom-8 duration-700">
+                        <div className="glass rounded-[32px] md:rounded-[48px] border-white/10 overflow-hidden shadow-2xl relative">
+                            {/* Заглушка фона для iframe, чтобы он не был белым при загрузке */}
+                            <div className="absolute inset-0 bg-black/20 -z-10"></div>
+                            
+                            <iframe 
+                                src={REQUESTS_EMBED_URL} 
+                                frameBorder="0" 
+                                allowTransparency="true" 
+                                className="w-full h-[600px] md:h-[800px] border-0"
+                                style={{ 
+                                    filter: 'contrast(1.1) brightness(0.9)', 
+                                    backgroundColor: 'transparent' 
+                                }}
+                            ></iframe>
+                            
+                            <div className="p-4 bg-black/40 border-t border-white/5 text-center">
+                                <p className="text-[9px] uppercase font-black tracking-[0.3em] text-white/30 italic">
+                                    Система автоматического приема заявок AzuraCast
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </main>
+
+            {/* Футер */}
+            <footer className="p-8 md:p-16 text-center z-10 shrink-0 border-t border-white/5 mt-auto">
+                <div className="max-w-4xl mx-auto space-y-8">
+                    <div className="flex flex-col items-center">
+                        <h2 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter text-white mb-2">
+                            Retro <span className="text-pink-500">Dance</span> Radio
+                        </h2>
+                        <div className="h-1.5 w-16 bg-pink-500 rounded-full shadow-[0_0_15px_rgba(236,72,153,0.5)]"></div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div className="flex justify-center md:justify-end">
+                            <a href="mailto:retrodanceradiomusic@gmail.com" className="group flex items-center gap-4 glass px-8 py-4 rounded-2xl border-white/10 hover:border-pink-500/50 transition-all duration-300">
+                                <Icon name="mail" size={20} className="text-pink-500 group-hover:scale-125 transition-transform" />
+                                <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-white">retrodanceradiomusic@gmail.com</span>
+                            </a>
+                        </div>
+                        <div className="flex justify-center md:justify-start">
+                            <div className="glass px-8 py-4 rounded-2xl border-white/10 text-center">
+                                <p className="text-[10px] md:text-xs font-black uppercase tracking-[0.4em] text-white/50 leading-loose">
+                                    © 2025 Все права защищены
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="pt-8 opacity-20">
+                        <p className="text-[10px] uppercase font-black tracking-[1.5em] text-white">Broadcast Professional System</p>
+                    </div>
                 </div>
-            );
-        }
+            </footer>
+        </div>
+    );
+}
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
