@@ -16,7 +16,7 @@
     <meta property="og:description" content="Лучшая танцевальная музыка прошлых десятилетий. Прямой эфир 24/7.">
     <meta property="og:image" content="https://i.postimg.cc/28VKXjCx/logo.png">
 
-    <!-- Библиотеки -->
+    <!-- Библиотеки (Используем надежные CDN с атрибутом crossorigin) -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -25,15 +25,43 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { background-color: #000; font-family: 'Inter', sans-serif; margin: 0; color: white; overflow-x: hidden; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .bg-sphere { position: fixed; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(236, 72, 153, 0.05) 0%, transparent 70%); z-index: -1; filter: blur(100px); animation: move 20s infinite alternate; }
+        
+        body { 
+            background-color: #2d2d2d; 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            color: white; 
+            overflow-x: hidden; 
+        }
+
+        .glass-bordeaux { 
+            background: rgba(128, 0, 32, 0.85); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .bg-sphere { 
+            position: fixed; 
+            width: 60vw; 
+            height: 60vw; 
+            background: radial-gradient(circle, rgba(128, 0, 32, 0.2) 0%, transparent 70%); 
+            z-index: -1; 
+            filter: blur(100px); 
+            animation: move 20s infinite alternate; 
+        }
+
         @keyframes move { from { transform: translate(-10%, -10%); } to { transform: translate(10%, 10%); } }
         
-        input[type=range] { accent-color: #ec4899; cursor: pointer; }
+        input[type=range] { accent-color: #ffffff; cursor: pointer; }
         .text-shadow-lg { text-shadow: 0 4px 12px rgba(0,0,0,0.5); }
         
-        /* Бегущая строка */
         .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; position: relative; }
         .marquee-text { display: inline-block; animation: marquee 15s linear infinite; padding-right: 100px; }
         @keyframes marquee { 
@@ -41,7 +69,6 @@
             100% { transform: translateX(-50%); } 
         }
 
-        /* Стили для кнопок битрейта */
         .bitrate-btn {
             font-weight: 900;
             font-style: italic;
@@ -49,20 +76,16 @@
             border: 2px solid transparent;
         }
         .bitrate-btn.active {
-            color: #ec4899;
-            background: rgba(236, 72, 153, 0.15);
-            border-color: rgba(236, 72, 153, 0.5);
-            box-shadow: 0 0 20px rgba(236, 72, 153, 0.3);
+            color: #fff;
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
             transform: scale(1.05);
         }
         .bitrate-btn.inactive {
-            color: rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.02);
-            border-color: rgba(255, 255, 255, 0.05);
-        }
-        .bitrate-btn.inactive:hover {
             color: rgba(255, 255, 255, 0.4);
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.1);
+            border-color: rgba(255, 255, 255, 0.05);
         }
     </style>
 </head>
@@ -91,23 +114,11 @@
             const [isPlaying, setIsPlaying] = useState(false);
             const [volume, setVolume] = useState(0.8);
             const [previousVolume, setPreviousVolume] = useState(0.8);
-            const [quality, setQuality] = useState('high'); 
+            const [quality, setQuality] = useState('high');
             const [activeTab, setActiveTab] = useState('player');
             const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", listeners: 0, image: DEFAULT_COVER });
             const [history, setHistory] = useState([]);
-            const [isIOS, setIsIOS] = useState(false);
             const audioRef = useRef(null);
-
-            useEffect(() => {
-                // Проверка на iOS
-                const userAgent = window.navigator.userAgent.toLowerCase();
-                const isIphone = /iphone|ipad|ipod/.test(userAgent);
-                setIsIOS(isIphone);
-
-                fetchNowPlaying();
-                const interval = setInterval(fetchNowPlaying, 15000);
-                return () => clearInterval(interval);
-            }, []);
 
             const fetchNowPlaying = async () => {
                 try {
@@ -123,19 +134,21 @@
                         });
                         if (data.song_history) setHistory(data.song_history.slice(0, 10));
                     }
-                } catch (e) { console.error("Ошибка API:", e); }
+                } catch (e) { console.error("API Error:", e); }
             };
 
-            useEffect(() => { 
-                if (audioRef.current && !isIOS) {
-                    audioRef.current.volume = volume; 
-                }
-            }, [volume, isIOS]);
+            useEffect(() => {
+                fetchNowPlaying();
+                const interval = setInterval(fetchNowPlaying, 15000);
+                return () => clearInterval(interval);
+            }, []);
+
+            useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume]);
 
             const togglePlay = () => {
                 if (!isPlaying) {
                     audioRef.current.src = STREAMS[quality];
-                    audioRef.current.play().catch(e => console.log("Ошибка воспроизведения", e));
+                    audioRef.current.play().catch(e => console.log("Play Error", e));
                 } else {
                     audioRef.current.pause();
                     audioRef.current.src = "";
@@ -144,29 +157,22 @@
             };
 
             const toggleMute = () => {
-                if (isIOS) {
-                    // На iOS mute работает через свойство muted
-                    audioRef.current.muted = !audioRef.current.muted;
-                    setVolume(audioRef.current.muted ? 0 : 1);
+                if (volume > 0) {
+                    setPreviousVolume(volume);
+                    setVolume(0);
                 } else {
-                    if (volume > 0) {
-                        setPreviousVolume(volume);
-                        setVolume(0);
-                    } else {
-                        setVolume(previousVolume || 0.8);
-                    }
+                    setVolume(previousVolume || 0.8);
                 }
             };
 
             const changeQuality = (newQuality) => {
                 if (quality === newQuality) return;
                 setQuality(newQuality);
-                
                 if (isPlaying && audioRef.current) {
                     audioRef.current.pause();
                     audioRef.current.src = STREAMS[newQuality];
                     audioRef.current.load();
-                    audioRef.current.play().catch(e => console.error("Play error:", e));
+                    audioRef.current.play().catch(e => console.error("Quality switch error:", e));
                 }
             };
 
@@ -176,32 +182,27 @@
                     <div className="bg-sphere top-0 left-0"></div>
                     
                     <div className="fixed inset-0 -z-10">
-                        <img src={meta.image} className="w-full h-full object-cover opacity-20 blur-[100px] scale-125" alt="" />
-                        <div className="absolute inset-0 bg-black/60"></div>
+                        <img src={meta.image} className="w-full h-full object-cover opacity-10 blur-[100px] scale-125" alt="" />
                     </div>
 
                     <header className="p-6 md:p-10 flex justify-between items-center max-w-6xl mx-auto w-full z-10">
                         <div className="flex items-center gap-4">
-                            <div className="h-20 w-20 md:h-24 md:w-24 bg-white rounded-2xl shadow-2xl flex items-center justify-center overflow-hidden border-2 border-white">
-                                <img 
-                                    src={LOGO_SRC} 
-                                    className="h-full w-full object-contain p-1" 
-                                    alt="Retro Logo" 
-                                />
+                            <div className="h-16 w-16 md:h-20 md:w-20 bg-white rounded-2xl shadow-2xl flex items-center justify-center overflow-hidden border-2 border-white">
+                                <img src={LOGO_SRC} className="h-full w-full object-contain p-1" alt="Retro Logo" />
                             </div>
-                            <h1 className="font-black italic text-xl md:text-3xl uppercase tracking-tighter">Retro<span className="text-pink-500">Dance</span></h1>
+                            <h1 className="font-black italic text-xl md:text-3xl uppercase tracking-tighter">Retro<span className="text-white opacity-50">Dance</span></h1>
                         </div>
-                        <div className="glass px-5 py-2.5 rounded-full flex items-center gap-3">
-                            <Icon name="headphones" size={24} className="text-pink-500 animate-pulse" />
+                        <div className="glass-nav px-5 py-2.5 rounded-full flex items-center gap-3">
+                            <Icon name="headphones" size={24} className="text-white animate-pulse" />
                             <span className="text-xl font-black">{meta.listeners}</span>
                         </div>
                     </header>
 
                     <nav className="flex justify-center p-4 z-10">
-                        <div className="glass rounded-full p-1.5 flex gap-1">
+                        <div className="glass-nav rounded-full p-1.5 flex gap-1">
                             {['player', 'history', 'request'].map(id => (
                                 <button key={id} onClick={() => setActiveTab(id)} 
-                                    className={`px-6 py-3 rounded-full text-[10px] font-black uppercase transition-all tracking-widest ${activeTab === id ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/50'}`}>
+                                    className={`px-6 py-3 rounded-full text-[10px] font-black uppercase transition-all tracking-widest ${activeTab === id ? 'bg-white/20 text-white' : 'text-white/30 hover:text-white/50'}`}>
                                     {id === 'player' ? 'Плеер' : id === 'history' ? 'История' : 'Заказать'}
                                 </button>
                             ))}
@@ -210,7 +211,7 @@
 
                     <main className="flex-1 flex flex-col items-center justify-center p-4 z-10 w-full max-w-5xl mx-auto">
                         {activeTab === 'player' && (
-                            <div className="w-full flex flex-col md:flex-row items-center gap-8 md:gap-16 glass p-8 md:p-16 rounded-[40px] md:rounded-[60px]">
+                            <div className="w-full flex flex-col md:flex-row items-center gap-8 md:gap-16 glass-bordeaux p-8 md:p-16 rounded-[40px] md:rounded-[60px] shadow-2xl">
                                 <div className="relative group">
                                     <img src={meta.image} className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-[30px] md:rounded-[45px] shadow-2xl transition-transform duration-700" alt="Cover" />
                                 </div>
@@ -222,51 +223,24 @@
                                             </h2>
                                         </div>
                                     </div>
-                                    <p className="text-pink-500 text-sm md:text-xl font-bold uppercase tracking-[0.2em] mb-10 opacity-80 truncate">{meta.artist}</p>
+                                    <p className="text-white/60 text-sm md:text-xl font-bold uppercase tracking-[0.2em] mb-10 truncate">{meta.artist}</p>
                                     
                                     <div className="flex flex-col sm:flex-row items-center gap-8 justify-center md:justify-start">
-                                        <button onClick={togglePlay} className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all ${isPlaying ? 'bg-pink-600 shadow-[0_0_30px_rgba(236,72,153,0.5)]' : 'bg-white text-black hover:scale-110 shadow-xl'}`}>
-                                            {isPlaying ? <Icon name="square" size={28} /> : <Icon name="play" size={32} className="ml-1" />}
+                                        <button onClick={togglePlay} className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all ${isPlaying ? 'bg-white text-maroon-900 shadow-[0_0_30px_rgba(255,255,255,0.3)]' : 'bg-white text-black hover:scale-110 shadow-xl'}`}>
+                                            {isPlaying ? <Icon name="square" size={28} className="text-[#800020]" /> : <Icon name="play" size={32} className="ml-1 text-[#800020]" />}
                                         </button>
                                         
-                                        <div className="flex flex-col gap-5 w-full max-w-[300px]">
-                                            <div className="flex items-center gap-4 bg-white/5 px-5 py-3 rounded-2xl min-h-[56px]">
-                                                <button onClick={toggleMute} className="flex items-center justify-center hover:scale-110 transition-transform p-2">
-                                                    <Icon 
-                                                        name={volume === 0 ? "volume-x" : (volume < 0.5 ? "volume-1" : "volume-2")} 
-                                                        size={28} 
-                                                        className="text-pink-500" 
-                                                    />
+                                        <div className="flex flex-col gap-5 w-full max-w-[280px]">
+                                            <div className="flex items-center gap-4 bg-black/20 px-5 py-3 rounded-2xl">
+                                                <button onClick={toggleMute} className="flex items-center justify-center hover:scale-110 transition-transform">
+                                                    <Icon name={volume === 0 ? "volume-x" : (volume < 0.5 ? "volume-1" : "volume-2")} size={20} className="text-white" />
                                                 </button>
-                                                {!isIOS && (
-                                                    <input 
-                                                        type="range" 
-                                                        min="0" 
-                                                        max="1" 
-                                                        step="0.01" 
-                                                        value={volume} 
-                                                        onChange={(e) => setVolume(parseFloat(e.target.value))} 
-                                                        className="w-full h-1.5" 
-                                                    />
-                                                )}
-                                                {isIOS && (
-                                                    <span className="text-[10px] uppercase font-black opacity-40 ml-2 tracking-widest">Громкость на кнопках</span>
-                                                )}
+                                                <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-full h-1.5" />
                                             </div>
                                             
                                             <div className="flex gap-2 w-full">
-                                                <button 
-                                                    onClick={() => changeQuality('high')} 
-                                                    className={`bitrate-btn flex-1 py-5 rounded-xl text-3xl ${quality === 'high' ? 'active' : 'inactive'}`}
-                                                >
-                                                    128K
-                                                </button>
-                                                <button 
-                                                    onClick={() => changeQuality('low')} 
-                                                    className={`bitrate-btn flex-1 py-5 rounded-xl text-3xl ${quality === 'low' ? 'active' : 'inactive'}`}
-                                                >
-                                                    64K
-                                                </button>
+                                                <button onClick={() => changeQuality('high')} className={`bitrate-btn flex-1 py-4 rounded-xl text-2xl ${quality === 'high' ? 'active' : 'inactive'}`}>128K</button>
+                                                <button onClick={() => changeQuality('low')} className={`bitrate-btn flex-1 py-4 rounded-xl text-2xl ${quality === 'low' ? 'active' : 'inactive'}`}>64K</button>
                                             </div>
                                         </div>
                                     </div>
@@ -277,11 +251,11 @@
                         {activeTab === 'history' && (
                             <div className="w-full max-w-xl space-y-3">
                                 {history.map((item, i) => (
-                                    <div key={i} className="glass p-4 rounded-2xl flex items-center gap-4 hover:bg-white/5 transition-colors">
+                                    <div key={i} className="glass-bordeaux p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors">
                                         <img src={item.song.art || DEFAULT_COVER} className="w-12 h-12 rounded-lg object-cover" alt="" />
                                         <div className="flex-1 min-w-0">
                                             <h4 className="font-bold text-sm truncate uppercase tracking-tight">{item.song.title}</h4>
-                                            <p className="text-[10px] text-pink-500 font-bold uppercase truncate">{item.song.artist}</p>
+                                            <p className="text-[10px] text-white/50 font-bold uppercase truncate">{item.song.artist}</p>
                                         </div>
                                         <span className="text-[10px] opacity-30 font-bold">{new Date(item.played_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                     </div>
@@ -290,7 +264,7 @@
                         )}
 
                         {activeTab === 'request' && (
-                            <div className="w-full h-[600px] glass rounded-[40px] overflow-hidden shadow-2xl">
+                            <div className="w-full h-[600px] glass-bordeaux rounded-[40px] overflow-hidden shadow-2xl">
                                 <iframe src={REQUESTS_EMBED_URL} className="w-full h-full border-0" allowTransparency="true"></iframe>
                             </div>
                         )}
@@ -303,8 +277,11 @@
             );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+            const root = ReactDOM.createRoot(rootElement);
+            root.render(<App />);
+        }
     </script>
 </body>
 </html>
