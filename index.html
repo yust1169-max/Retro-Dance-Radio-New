@@ -58,9 +58,32 @@
             border-radius: 25% !important;
         }
 
-        /* Плавная анимация появления лого */
         .logo-glow {
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Контейнер для бегущей строки */
+        .marquee-container {
+            display: flex;
+            overflow: hidden;
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+
+        .marquee-content {
+            display: inline-block;
+            white-space: nowrap;
+            animation: marquee 15s linear infinite;
+            padding-left: 20px;
+        }
+
+        .marquee-content:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
         }
     </style>
 </head>
@@ -85,6 +108,34 @@
                 if (window.lucide) window.lucide.createIcons();
             }, [name, size]);
             return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
+        };
+
+        // Компонент бегущей строки
+        const ScrollingText = ({ text, className }) => {
+            const containerRef = useRef(null);
+            const [shouldScroll, setShouldScroll] = useState(false);
+
+            useEffect(() => {
+                // Если текст длиннее контейнера, включаем прокрутку
+                if (containerRef.current) {
+                    const isLong = containerRef.current.scrollWidth > containerRef.current.clientWidth;
+                    setShouldScroll(isLong);
+                }
+            }, [text]);
+
+            if (!shouldScroll) {
+                return <h2 ref={containerRef} className={`${className} truncate overflow-hidden`}>{text}</h2>;
+            }
+
+            return (
+                <div ref={containerRef} className="marquee-container w-full">
+                    <div className="marquee-content flex">
+                        <h2 className={className}>{text}</h2>
+                        {/* Дубликат для бесшовной петли */}
+                        <h2 className={`${className} ml-20`}>{text}</h2>
+                    </div>
+                </div>
+            );
         };
 
         function App() {
@@ -170,7 +221,6 @@
                     </div>
 
                     <header className="p-4 md:p-8 flex justify-between items-center max-w-7xl mx-auto w-full z-20">
-                        {/* Максимально увеличенный логотип */}
                         <div className="flex items-center gap-4 flex-shrink-0">
                             <img 
                                 src={LOGO_URL} 
@@ -185,7 +235,6 @@
                             </div>
                         </div>
                         
-                        {/* Иконка наушников в крайнем правом углу */}
                         <div className="glass px-4 py-2 rounded-full flex items-center gap-2 ml-auto shadow-lg border-white/10">
                             <Icon name="headphones" size={16} className="text-pink-500" />
                             <span className="text-[11px] font-black tracking-widest">{meta.listeners}</span>
@@ -211,9 +260,11 @@
                                 </div>
                                 
                                 <div className="text-center md:text-left flex-1 min-w-0 w-full">
-                                    <h2 className="text-2xl md:text-3xl lg:text-5xl font-black uppercase italic mb-2 leading-tight truncate overflow-hidden tracking-tight">
-                                        {meta.song}
-                                    </h2>
+                                    {/* Название песни с поддержкой прокрутки */}
+                                    <ScrollingText 
+                                        text={meta.song} 
+                                        className="text-2xl md:text-3xl lg:text-5xl font-black uppercase italic mb-2 leading-tight tracking-tight" 
+                                    />
                                     <p className="text-red-600 font-bold uppercase tracking-[0.2em] mb-10 truncate text-sm md:text-base">
                                         {meta.artist}
                                     </p>
