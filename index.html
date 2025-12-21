@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- === МЕТАТЕГИ ДЛЯ TELEGRAM И СОЦСЕТЕЙ === -->
+    <!-- === МЕТАТЕГИ ДЛЯ TELEGRAM / VK === -->
     <title>Retro Dance Radio — Включай энергию прошлого!</title>
     <meta name="description" content="Легендарные хиты Eurodance и Disco в одном плеере. Слушай онлайн без рекламы.">
     
@@ -14,16 +14,7 @@
     <meta property="og:site_name" content="Retro Dance Radio">
     <meta property="og:title" content="Retro Dance Radio — Ретро хиты 80-90-00х">
     <meta property="og:description" content="Лучшая танцевальная музыка прошлых десятилетий. Прямой эфир 24/7.">
-    
-    <!-- Гарантированная ссылка на логотип для превью -->
-    <meta property="og:image" content="https://i.ibb.co/m5ZzW2T/logo-retro.png">
-    <meta property="og:image:secure_url" content="https://i.ibb.co/m5ZzW2T/logo-retro.png">
-    <meta property="og:image:type" content="image/png">
-    <meta property="og:image:width" content="600">
-    <meta property="og:image:height" content="600">
-
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://i.ibb.co/m5ZzW2T/logo-retro.png">
+    <meta property="og:image" content="https://i.postimg.cc/28VKXjCx/logo.png">
 
     <!-- Библиотеки -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -38,15 +29,40 @@
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
         .bg-sphere { position: fixed; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(236, 72, 153, 0.05) 0%, transparent 70%); z-index: -1; filter: blur(100px); animation: move 20s infinite alternate; }
         @keyframes move { from { transform: translate(-10%, -10%); } to { transform: translate(10%, 10%); } }
-        input[type=range] { accent-color: #ec4899; }
+        
+        input[type=range] { accent-color: #ec4899; cursor: pointer; }
         .text-shadow-lg { text-shadow: 0 4px 12px rgba(0,0,0,0.5); }
         
-        /* Бегущая строка для длинных названий */
+        /* Бегущая строка */
         .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; position: relative; }
-        .marquee-text { display: inline-block; padding-left: 0%; animation: marquee 15s linear infinite; }
+        .marquee-text { display: inline-block; animation: marquee 15s linear infinite; padding-right: 100px; }
         @keyframes marquee { 
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); } 
+        }
+
+        /* Стили для кнопок битрейта */
+        .bitrate-btn {
+            font-weight: 900;
+            font-style: italic;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+        }
+        .bitrate-btn.active {
+            color: #ec4899;
+            background: rgba(236, 72, 153, 0.15);
+            border-color: rgba(236, 72, 153, 0.5);
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.3);
+            transform: scale(1.05);
+        }
+        .bitrate-btn.inactive {
+            color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.02);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+        .bitrate-btn.inactive:hover {
+            color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.05);
         }
     </style>
 </head>
@@ -56,7 +72,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const LOGO_URL = "https://i.ibb.co/m5ZzW2T/logo-retro.png";
+        const LOGO_SRC = "https://i.postimg.cc/28VKXjCx/logo.png";
         const API_URL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
         const REQUESTS_EMBED_URL = "https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests";
         const DEFAULT_COVER = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000&auto=format&fit=crop";
@@ -74,7 +90,8 @@
         function App() {
             const [isPlaying, setIsPlaying] = useState(false);
             const [volume, setVolume] = useState(0.8);
-            const [quality, setQuality] = useState('high');
+            const [previousVolume, setPreviousVolume] = useState(0.8);
+            const [quality, setQuality] = useState('high'); // 'high' = 128K, 'low' = 64K
             const [activeTab, setActiveTab] = useState('player');
             const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", listeners: 0, image: DEFAULT_COVER });
             const [history, setHistory] = useState([]);
@@ -116,35 +133,51 @@
                 setIsPlaying(!isPlaying);
             };
 
-            const toggleQuality = () => {
-                const newQuality = quality === 'high' ? 'low' : 'high';
+            const toggleMute = () => {
+                if (volume > 0) {
+                    setPreviousVolume(volume);
+                    setVolume(0);
+                } else {
+                    setVolume(previousVolume || 0.8);
+                }
+            };
+
+            const changeQuality = (newQuality) => {
+                if (quality === newQuality) return;
                 setQuality(newQuality);
-                if (isPlaying) {
+                
+                if (isPlaying && audioRef.current) {
+                    audioRef.current.pause();
                     audioRef.current.src = STREAMS[newQuality];
-                    audioRef.current.play();
+                    audioRef.current.load();
+                    audioRef.current.play().catch(e => console.error("Play error:", e));
                 }
             };
 
             return (
                 <div className="flex flex-col min-h-screen relative overflow-x-hidden">
-                    <audio ref={audioRef} crossOrigin="anonymous" />
+                    <audio id="main-audio" ref={audioRef} crossOrigin="anonymous" />
                     <div className="bg-sphere top-0 left-0"></div>
                     
                     <div className="fixed inset-0 -z-10">
-                        <img src={meta.image} className="w-full h-full object-cover opacity-20 blur-[100px] scale-125 transition-all duration-1000" alt="" />
+                        <img src={meta.image} className="w-full h-full object-cover opacity-20 blur-[100px] scale-125" alt="" />
                         <div className="absolute inset-0 bg-black/60"></div>
                     </div>
 
                     <header className="p-6 md:p-10 flex justify-between items-center max-w-6xl mx-auto w-full z-10">
                         <div className="flex items-center gap-4">
-                            {/* Возвращен большой логотип */}
-                            <img src={LOGO_URL} className="h-16 w-16 md:h-24 md:w-24 bg-white rounded-2xl p-2 shadow-2xl" alt="Logo" />
+                            <div className="h-20 w-20 md:h-24 md:w-24 bg-white rounded-2xl shadow-2xl flex items-center justify-center overflow-hidden border-2 border-white">
+                                <img 
+                                    src={LOGO_SRC} 
+                                    className="h-full w-full object-contain p-1" 
+                                    alt="Retro Logo" 
+                                />
+                            </div>
                             <h1 className="font-black italic text-xl md:text-3xl uppercase tracking-tighter">Retro<span className="text-pink-500">Dance</span></h1>
                         </div>
                         <div className="glass px-5 py-2.5 rounded-full flex items-center gap-3">
-                            {/* Возвращены наушники вместо надписи Онлайн */}
-                            <Icon name="headphones" size={18} className="text-pink-500 animate-pulse" />
-                            <span className="text-xs font-bold uppercase tracking-widest">{meta.listeners} СЛУШАТЕЛЕЙ</span>
+                            <Icon name="headphones" size={24} className="text-pink-500 animate-pulse" />
+                            <span className="text-xl font-black">{meta.listeners}</span>
                         </div>
                     </header>
 
@@ -153,7 +186,7 @@
                             {['player', 'history', 'request'].map(id => (
                                 <button key={id} onClick={() => setActiveTab(id)} 
                                     className={`px-6 py-3 rounded-full text-[10px] font-black uppercase transition-all tracking-widest ${activeTab === id ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/50'}`}>
-                                    {id === 'player' ? 'Плеер' : id === 'history' ? 'История' : 'Заказать трек'}
+                                    {id === 'player' ? 'Плеер' : id === 'history' ? 'История' : 'Заказать'}
                                 </button>
                             ))}
                         </div>
@@ -162,34 +195,50 @@
                     <main className="flex-1 flex flex-col items-center justify-center p-4 z-10 w-full max-w-5xl mx-auto">
                         {activeTab === 'player' && (
                             <div className="w-full flex flex-col md:flex-row items-center gap-8 md:gap-16 glass p-8 md:p-16 rounded-[40px] md:rounded-[60px]">
-                                <img src={meta.image} className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-[30px] md:rounded-[45px] shadow-2xl transition-transform duration-700 hover:scale-105" alt="Cover" />
+                                <div className="relative group">
+                                    <img src={meta.image} className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-[30px] md:rounded-[45px] shadow-2xl transition-transform duration-700" alt="Cover" />
+                                </div>
                                 <div className="text-center md:text-left flex-1 min-w-0">
-                                    {/* Бегущая строка для песни */}
                                     <div className="marquee-container mb-2">
-                                        <div className={meta.song.length > 20 ? "marquee-text" : ""}>
-                                            <h2 className="text-2xl md:text-5xl font-black uppercase italic tracking-tighter text-shadow-lg pr-12">
-                                                {meta.song} {meta.song.length > 20 && meta.song}
+                                        <div className={meta.song.length > 15 ? "marquee-text" : ""}>
+                                            <h2 className="text-2xl md:text-5xl font-black uppercase italic tracking-tighter text-shadow-lg inline-block">
+                                                {meta.song}&nbsp;&nbsp;&nbsp;&nbsp;{meta.song.length > 15 ? meta.song : ""}
                                             </h2>
                                         </div>
                                     </div>
                                     <p className="text-pink-500 text-sm md:text-xl font-bold uppercase tracking-[0.2em] mb-10 opacity-80 truncate">{meta.artist}</p>
                                     
                                     <div className="flex flex-col sm:flex-row items-center gap-8 justify-center md:justify-start">
-                                        <button onClick={togglePlay} className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all ${isPlaying ? 'bg-pink-600 shadow-[0_0_30px_rgba(236,72,153,0.5)]' : 'bg-white text-black hover:scale-110'}`}>
+                                        <button onClick={togglePlay} className={`w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all ${isPlaying ? 'bg-pink-600 shadow-[0_0_30px_rgba(236,72,153,0.5)]' : 'bg-white text-black hover:scale-110 shadow-xl'}`}>
                                             {isPlaying ? <Icon name="square" size={28} /> : <Icon name="play" size={32} className="ml-1" />}
                                         </button>
                                         
-                                        <div className="flex flex-col gap-5 w-full max-w-[240px]">
-                                            {/* Громкость с активным динамиком */}
+                                        <div className="flex flex-col gap-5 w-full max-w-[280px]">
                                             <div className="flex items-center gap-4 bg-white/5 px-5 py-3 rounded-2xl">
-                                                <Icon name="volume-2" size={20} className="text-pink-500" />
-                                                <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(e.target.value)} className="w-full h-1.5" />
+                                                <button onClick={toggleMute} className="flex items-center justify-center hover:scale-110 transition-transform">
+                                                    <Icon 
+                                                        name={volume === 0 ? "volume-x" : (volume < 0.5 ? "volume-1" : "volume-2")} 
+                                                        size={20} 
+                                                        className="text-pink-500" 
+                                                    />
+                                                </button>
+                                                <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-full h-1.5" />
                                             </div>
                                             
-                                            {/* Кнопка качества 64к / 128к */}
-                                            <button onClick={toggleQuality} className="glass py-2 px-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] text-white/60 hover:text-white transition-colors border border-white/5">
-                                                Битрейт: <span className="text-pink-500">{quality === 'high' ? '128 KBPS' : '64 KBPS'}</span>
-                                            </button>
+                                            <div className="flex gap-2 w-full">
+                                                <button 
+                                                    onClick={() => changeQuality('high')} 
+                                                    className={`bitrate-btn flex-1 py-4 rounded-xl text-2xl ${quality === 'high' ? 'active' : 'inactive'}`}
+                                                >
+                                                    128K
+                                                </button>
+                                                <button 
+                                                    onClick={() => changeQuality('low')} 
+                                                    className={`bitrate-btn flex-1 py-4 rounded-xl text-2xl ${quality === 'low' ? 'active' : 'inactive'}`}
+                                                >
+                                                    64K
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
