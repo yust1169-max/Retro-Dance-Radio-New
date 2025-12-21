@@ -22,6 +22,7 @@
             margin: 0;
             color: white;
             -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
 
         .glass {
@@ -35,7 +36,7 @@
             position: fixed;
             width: 50vw;
             height: 50vw;
-            background: radial-gradient(circle, rgba(236, 72, 153, 0.08) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.05) 0%, transparent 70%);
             z-index: -1;
             filter: blur(60px);
             animation: moveSphere 25s infinite alternate ease-in-out;
@@ -47,7 +48,15 @@
         }
 
         input[type=range] {
-            accent-color: #ec4899;
+            accent-color: #ef4444; 
+        }
+
+        /* Стиль активной кнопки Стоп (красный квадрат) */
+        .play-btn-active {
+            background-color: #ef4444 !important;
+            color: white !important;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+            border-radius: 25% !important;
         }
     </style>
 </head>
@@ -68,11 +77,8 @@
         };
 
         const Icon = ({ name, size = 18, className = "" }) => {
-            const iconRef = useRef(null);
             useEffect(() => {
-                if (window.lucide) {
-                    window.lucide.createIcons();
-                }
+                if (window.lucide) window.lucide.createIcons();
             }, [name, size]);
             return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
         };
@@ -111,7 +117,7 @@
 
             useEffect(() => {
                 updateData();
-                const timer = setInterval(updateData, 15000);
+                const timer = setInterval(updateData, 10000); 
                 return () => clearInterval(timer);
             }, []);
 
@@ -132,76 +138,87 @@
                 }
             };
 
-            const handleQuality = () => {
-                const next = quality === 'high' ? 'low' : 'high';
-                setQuality(next);
+            const handleQuality = (q) => {
+                if (quality === q) return;
+                setQuality(q);
                 if (isPlaying) {
-                    audioRef.current.src = STREAMS[next];
+                    audioRef.current.src = STREAMS[q];
                     audioRef.current.play().catch(console.error);
                 }
             };
 
             return (
-                <div className="min-h-screen flex flex-col relative overflow-hidden bg-black">
+                <div className="min-h-screen flex flex-col relative bg-black">
                     <audio ref={audioRef} crossOrigin="anonymous" />
                     <div className="bg-sphere top-0 left-0"></div>
 
-                    {/* Background Layer */}
                     <div className="fixed inset-0 -z-10 overflow-hidden">
-                        <img src={meta.image} className="w-full h-full object-cover opacity-20 blur-[120px] scale-150 transition-all duration-1000" alt="" />
-                        <div className="absolute inset-0 bg-black/60"></div>
+                        <img src={meta.image} className="w-full h-full object-cover opacity-20 blur-[100px] scale-125" alt="" />
+                        <div className="absolute inset-0 bg-black/70"></div>
                     </div>
 
-                    {/* Header */}
-                    <header className="p-6 flex justify-between items-center max-w-6xl mx-auto w-full z-20">
-                        <div className="flex items-center gap-3">
-                            <img src={LOGO_URL} className="h-8 w-8 bg-white rounded-lg p-1 shadow-lg" alt="L" />
-                            <h1 className="font-black italic uppercase text-lg tracking-tighter">
+                    <header className="p-4 md:p-6 flex justify-between items-center max-w-6xl mx-auto w-full z-20">
+                        {/* Логотип увеличен на 30% (h-11 вместо h-8) */}
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                            <img src={LOGO_URL} className="h-10 w-10 md:h-11 md:w-11 bg-white rounded-lg p-1.5 shadow-lg" alt="L" />
+                            <h1 className="font-black italic uppercase text-base md:text-xl tracking-tighter">
                                 Retro<span className="text-pink-500">Dance</span>
                             </h1>
                         </div>
-                        <div className="glass px-4 py-2 rounded-full flex items-center gap-2">
-                            <div className="w-2 h-2 bg-pink-500 rounded-full animate-pulse shadow-[0_0_8px_#ec4899]"></div>
-                            <span className="text-[10px] font-black uppercase opacity-70 tracking-widest">{meta.listeners} СЛУШАТЕЛЕЙ</span>
+                        
+                        <div className="glass px-3 py-1.5 rounded-full flex items-center gap-2 ml-auto">
+                            <Icon name="headphones" size={14} className="text-pink-500" />
+                            <span className="text-[10px] font-black tracking-widest">{meta.listeners}</span>
                         </div>
                     </header>
 
-                    {/* Nav */}
-                    <nav className="flex justify-center p-4 z-20">
+                    <nav className="flex justify-center p-2 md:p-4 z-20">
                         <div className="glass rounded-full p-1 flex gap-1">
                             {['player', 'history', 'request'].map(id => (
                                 <button key={id} onClick={() => setTab(id)} 
-                                    className={`px-6 py-2 rounded-full text-[10px] font-black uppercase transition-all ${tab === id ? 'bg-white/10 text-white shadow-xl' : 'text-white/30 hover:text-white/60'}`}>
+                                    className={`px-4 md:px-6 py-2 rounded-full text-[10px] font-black uppercase transition-all ${tab === id ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/60'}`}>
                                     {id === 'player' ? 'Плеер' : id === 'history' ? 'История' : 'Заказать'}
                                 </button>
                             ))}
                         </div>
                     </nav>
 
-                    {/* Main */}
-                    <main className="flex-1 flex flex-col items-center justify-center p-6 z-20 w-full max-w-6xl mx-auto">
+                    <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 z-20 w-full max-w-6xl mx-auto">
                         {tab === 'player' && (
-                            <div className="w-full max-w-3xl glass rounded-[40px] md:rounded-[60px] p-8 md:p-12 flex flex-col md:flex-row items-center gap-10 shadow-2xl animate-in fade-in zoom-in-95 duration-700">
-                                <div className="relative group flex-shrink-0">
-                                    <div className={`absolute inset-0 bg-pink-500/20 blur-3xl rounded-full transition-opacity duration-1000 ${isPlaying ? 'opacity-100' : 'opacity-0'}`}></div>
-                                    <img src={meta.image} className={`w-48 h-48 md:w-64 md:h-64 object-cover rounded-[35px] shadow-2xl relative z-10 transition-transform duration-1000 ${isPlaying ? 'scale-105 rotate-1' : 'scale-100'}`} alt="C" />
+                            <div className="w-full max-w-3xl glass rounded-[40px] p-6 md:p-10 flex flex-col md:flex-row items-center gap-8 shadow-2xl">
+                                <div className="flex-shrink-0">
+                                    <img src={meta.image} className="w-44 h-44 md:w-56 md:h-56 object-cover rounded-[30px] shadow-2xl" alt="C" />
                                 </div>
-                                <div className="text-center md:text-left flex-1 min-w-0">
-                                    <h2 className="text-2xl md:text-4xl font-black uppercase italic mb-2 leading-tight truncate drop-shadow-md">{meta.song}</h2>
-                                    <p className="text-white/40 font-bold uppercase tracking-[0.2em] mb-8 truncate text-sm">{meta.artist}</p>
+                                
+                                <div className="text-center md:text-left flex-1 min-w-0 w-full">
+                                    <h2 className="text-xl md:text-2xl lg:text-3xl font-black uppercase italic mb-1 leading-tight truncate overflow-hidden">
+                                        {meta.song}
+                                    </h2>
+                                    <p className="text-red-600 font-bold uppercase tracking-wider mb-6 truncate text-xs md:text-sm">
+                                        {meta.artist}
+                                    </p>
                                     
-                                    <div className="flex flex-wrap items-center gap-6 justify-center md:justify-start">
-                                        <button onClick={handlePlay} className="w-20 h-20 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)]">
-                                            {isPlaying ? <Icon name="pause" size={32} /> : <Icon name="play" size={32} className="ml-1" />}
+                                    <div className="flex flex-wrap items-center gap-4 md:gap-6 justify-center md:justify-start">
+                                        <button 
+                                            onClick={handlePlay} 
+                                            className={`w-16 h-16 md:w-20 md:h-20 flex items-center justify-center transition-all duration-300 shadow-xl ${isPlaying ? 'play-btn-active' : 'bg-white text-black hover:scale-105 rounded-full'}`}
+                                        >
+                                            {isPlaying ? <Icon name="square" size={28} /> : <Icon name="play" size={32} className="ml-1" />}
                                         </button>
-                                        <div className="flex flex-col gap-4">
-                                            <div className="flex items-center gap-3 glass px-4 py-2 rounded-2xl">
-                                                <Icon name="volume-2" size={16} className="opacity-30" />
-                                                <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(e.target.value)} className="w-24 cursor-pointer" />
+                                        
+                                        <div className="flex flex-col gap-3">
+                                            <div className="flex items-center gap-3 glass px-3 py-1.5 rounded-xl">
+                                                <Icon name="volume-2" size={14} className="opacity-30" />
+                                                <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(e.target.value)} className="w-20 md:w-24 cursor-pointer" />
                                             </div>
-                                            <button onClick={handleQuality} className="text-[9px] font-black uppercase tracking-widest opacity-40 hover:opacity-100 transition-opacity">
-                                                Качество: <span className="text-pink-500">{quality === 'high' ? '128K' : '64K'}</span>
-                                            </button>
+                                            <div className="flex gap-4 justify-center md:justify-start">
+                                                <button onClick={() => handleQuality('high')} className={`text-[11px] font-black uppercase tracking-tighter transition-all ${quality === 'high' ? 'text-pink-500' : 'opacity-40 hover:opacity-100'}`}>
+                                                    128K
+                                                </button>
+                                                <button onClick={() => handleQuality('low')} className={`text-[11px] font-black uppercase tracking-tighter transition-all ${quality === 'low' ? 'text-pink-500' : 'opacity-40 hover:opacity-100'}`}>
+                                                    64K
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -209,34 +226,33 @@
                         )}
 
                         {tab === 'history' && (
-                            <div className="w-full max-w-xl space-y-3 animate-in fade-in slide-in-from-bottom-5 duration-500">
+                            <div className="w-full max-w-xl space-y-2">
                                 {history.map((h, i) => (
-                                    <div key={i} className="glass p-4 rounded-2xl flex items-center gap-4 border-white/5 hover:bg-white/5 transition-colors">
-                                        <img src={h.song.art || DEFAULT_ART} className="w-12 h-12 rounded-xl object-cover shadow-lg" alt="H" />
+                                    <div key={i} className="glass p-3 rounded-xl flex items-center gap-4 border-white/5">
+                                        <img src={h.song.art || DEFAULT_ART} className="w-10 h-10 rounded-lg object-cover" alt="H" />
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="text-sm font-bold uppercase truncate">{h.song.title}</h4>
-                                            <p className="text-[10px] opacity-40 uppercase font-black truncate tracking-tighter">{h.song.artist}</p>
+                                            <h4 className="text-xs font-bold uppercase truncate">{h.song.title}</h4>
+                                            <p className="text-[9px] text-red-500 uppercase font-black truncate">{h.song.artist}</p>
                                         </div>
-                                        <span className="text-[10px] opacity-20 font-bold">{new Date(h.played_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                        <span className="text-[9px] opacity-30 font-bold">{new Date(h.played_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                     </div>
                                 ))}
                             </div>
                         )}
 
                         {tab === 'request' && (
-                            <div className="w-full max-w-4xl h-[650px] glass rounded-[40px] overflow-hidden shadow-2xl animate-in fade-in duration-700">
+                            <div className="w-full max-w-4xl h-[500px] md:h-[600px] glass rounded-[30px] overflow-hidden">
                                 <iframe src={REQUESTS_URL} className="w-full h-full border-0" allowTransparency="true"></iframe>
                             </div>
                         )}
                     </main>
 
-                    {/* Footer */}
-                    <footer className="p-10 text-center z-20 mt-auto">
-                        <div className="flex flex-col items-center gap-4">
-                            <a href="mailto:retrodanceradiomusic@gmail.com" className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-pink-500 transition-all border-b border-white/0 hover:border-pink-500/50 pb-1">
+                    <footer className="p-6 text-center z-20 mt-auto">
+                        <div className="flex flex-col items-center gap-2">
+                            <a href="mailto:retrodanceradiomusic@gmail.com" className="text-[9px] font-black uppercase tracking-widest text-white/40 hover:text-red-500 transition-all">
                                 retrodanceradiomusic@gmail.com
                             </a>
-                            <p className="opacity-10 text-[9px] font-black uppercase tracking-[1.2em] mt-4">
+                            <p className="opacity-10 text-[8px] font-black uppercase tracking-[1em] mt-2">
                                 Retro Dance Radio &copy; 2025
                             </p>
                         </div>
