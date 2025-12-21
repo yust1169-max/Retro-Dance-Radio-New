@@ -17,7 +17,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
         body {
-            background-color: #1a1a1a; /* Глубокий серый фон вместо черного */
+            background-color: #1a1a1a;
             font-family: 'Inter', sans-serif;
             margin: 0;
             color: white;
@@ -32,7 +32,6 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Специальный фон для плеера - темно-бордовый */
         .player-card {
             background: linear-gradient(145deg, #4c0519 0%, #2d0a14 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -68,7 +67,6 @@
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
         }
 
-        /* Контейнер для бегущей строки */
         .marquee-container {
             display: flex;
             overflow: hidden;
@@ -144,6 +142,8 @@
         function App() {
             const [isPlaying, setIsPlaying] = useState(false);
             const [volume, setVolume] = useState(0.8);
+            const [prevVolume, setPrevVolume] = useState(0.8);
+            const [isMuted, setIsMuted] = useState(false);
             const [quality, setQuality] = useState('high');
             const [tab, setTab] = useState('player');
             const [isIOS, setIsIOS] = useState(false);
@@ -187,9 +187,9 @@
 
             useEffect(() => {
                 if (audioRef.current && !isIOS) {
-                    audioRef.current.volume = volume;
+                    audioRef.current.volume = isMuted ? 0 : volume;
                 }
-            }, [volume, isIOS]);
+            }, [volume, isMuted, isIOS]);
 
             const handlePlay = () => {
                 if (!isPlaying) {
@@ -201,6 +201,29 @@
                     audioRef.current.pause();
                     audioRef.current.src = "";
                     setIsPlaying(false);
+                }
+            };
+
+            const toggleMute = () => {
+                if (isMuted) {
+                    const restoredVol = prevVolume > 0 ? prevVolume : 0.8;
+                    setVolume(restoredVol);
+                    setIsMuted(false);
+                } else {
+                    setPrevVolume(volume);
+                    setVolume(0);
+                    setIsMuted(true);
+                }
+            };
+
+            const handleVolumeChange = (newVal) => {
+                const val = parseFloat(newVal);
+                setVolume(val);
+                if (val > 0) {
+                    setIsMuted(false);
+                    setPrevVolume(val);
+                } else {
+                    setIsMuted(true);
                 }
             };
 
@@ -218,7 +241,6 @@
                     <audio ref={audioRef} crossOrigin="anonymous" />
                     <div className="bg-sphere top-0 left-0"></div>
 
-                    {/* Фоновое изображение теперь более приглушенное на сером фоне */}
                     <div className="fixed inset-0 -z-10 overflow-hidden">
                         <img src={meta.image} className="w-full h-full object-cover opacity-10 blur-[120px] scale-125" alt="" />
                         <div className="absolute inset-0 bg-[#1a1a1a]/80"></div>
@@ -283,8 +305,21 @@
                                         <div className="flex flex-col gap-5">
                                             {!isIOS && (
                                                 <div className="flex items-center gap-4 bg-black/20 px-5 py-3 rounded-2xl border border-white/5">
-                                                    <Icon name="volume-2" size={18} className="opacity-40" />
-                                                    <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(e.target.value)} className="w-28 md:w-40 cursor-pointer" />
+                                                    <button 
+                                                        onClick={toggleMute}
+                                                        className="transition-transform active:scale-90 hover:opacity-100 opacity-60"
+                                                    >
+                                                        <Icon name={isMuted ? "volume-x" : "volume-2"} size={18} className={isMuted ? "text-red-500" : "text-white"} />
+                                                    </button>
+                                                    <input 
+                                                        type="range" 
+                                                        min="0" 
+                                                        max="1" 
+                                                        step="0.01" 
+                                                        value={volume} 
+                                                        onChange={(e) => handleVolumeChange(e.target.value)} 
+                                                        className="w-28 md:w-40 cursor-pointer" 
+                                                    />
                                                 </div>
                                             )}
                                             
