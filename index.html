@@ -2,7 +2,6 @@ const { useState, useEffect, useRef } = React;
 
 const LOGO_URL = "https://i.postimg.cc/28VKXjCx/logo.png";
 const API_URL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
-// Ссылка для встраивания заказов
 const REQUESTS_EMBED_URL = "https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests";
 const DEFAULT_COVER = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000&auto=format&fit=crop";
 
@@ -15,8 +14,8 @@ const STREAMS = {
 const Icon = ({ name, size = 18, className = "" }) => {
     useEffect(() => {
         if (window.lucide) window.lucide.createIcons();
-    }, [name, className]);
-    return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+    }, [name, className, size]);
+    return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
 };
 
 function App() {
@@ -43,7 +42,7 @@ function App() {
                 });
                 if (data.song_history) setHistory(data.song_history.slice(0, 10));
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("Ошибка API:", e); }
     };
 
     useEffect(() => {
@@ -60,6 +59,7 @@ function App() {
         const newQuality = quality === 'high' ? 'low' : 'high';
         setQuality(newQuality);
         if (isPlaying) {
+            const currentTime = audioRef.current.currentTime;
             audioRef.current.src = STREAMS[newQuality];
             audioRef.current.play().catch(e => console.log("Ошибка смены качества", e));
         }
@@ -122,7 +122,6 @@ function App() {
             {/* Основной контент */}
             <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-10 z-10 w-full">
                 
-                {/* Виджет плеера */}
                 {activeTab === 'player' && (
                     <div className="w-full max-w-4xl animate-in fade-in zoom-in-95 duration-500">
                         <div className="glass rounded-[40px] md:rounded-[56px] p-6 md:p-12 flex flex-col md:flex-row items-center gap-6 md:gap-14 border-white/10 relative overflow-hidden">
@@ -176,7 +175,6 @@ function App() {
                     </div>
                 )}
 
-                {/* История песен */}
                 {activeTab === 'history' && (
                     <div className="w-full max-w-lg space-y-3 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {history.map((item, i) => (
@@ -194,13 +192,10 @@ function App() {
                     </div>
                 )}
 
-                {/* Интегрированный заказ песен через iframe */}
                 {activeTab === 'request' && (
                     <div className="w-full max-w-4xl animate-in fade-in slide-in-from-bottom-8 duration-700">
                         <div className="glass rounded-[32px] md:rounded-[48px] border-white/10 overflow-hidden shadow-2xl relative">
-                            {/* Заглушка фона для iframe, чтобы он не был белым при загрузке */}
                             <div className="absolute inset-0 bg-black/20 -z-10"></div>
-                            
                             <iframe 
                                 src={REQUESTS_EMBED_URL} 
                                 frameBorder="0" 
@@ -211,7 +206,6 @@ function App() {
                                     backgroundColor: 'transparent' 
                                 }}
                             ></iframe>
-                            
                             <div className="p-4 bg-black/40 border-t border-white/5 text-center">
                                 <p className="text-[9px] uppercase font-black tracking-[0.3em] text-white/30 italic">
                                     Система автоматического приема заявок AzuraCast
