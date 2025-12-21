@@ -54,6 +54,7 @@
 
         input[type=range] {
             accent-color: #ef4444; 
+            cursor: pointer;
         }
 
         .play-btn-active {
@@ -108,10 +109,13 @@
         };
 
         const Icon = ({ name, size = 18, className = "" }) => {
+            const iconRef = useRef(null);
             useEffect(() => {
-                if (window.lucide) window.lucide.createIcons();
-            }, [name, size]);
-            return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            }, [name, size, className]);
+            return <i ref={iconRef} data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
         };
 
         const ScrollingText = ({ text, className }) => {
@@ -204,7 +208,8 @@
                 }
             };
 
-            const toggleMute = () => {
+            const toggleMute = (e) => {
+                e.stopPropagation(); // Предотвращаем всплытие
                 if (isMuted) {
                     const restoredVol = prevVolume > 0 ? prevVolume : 0.8;
                     setVolume(restoredVol);
@@ -304,12 +309,17 @@
                                         
                                         <div className="flex flex-col gap-5">
                                             {!isIOS && (
-                                                <div className="flex items-center gap-4 bg-black/20 px-5 py-3 rounded-2xl border border-white/5">
+                                                <div className="flex items-center gap-4 bg-black/20 px-5 py-3 rounded-2xl border border-white/5 relative">
                                                     <button 
                                                         onClick={toggleMute}
-                                                        className="transition-transform active:scale-90 hover:opacity-100 opacity-60"
+                                                        className="relative z-30 p-1 transition-all active:scale-90 hover:opacity-100 opacity-70 group"
+                                                        title={isMuted ? "Включить звук" : "Выключить звук"}
                                                     >
-                                                        <Icon name={isMuted ? "volume-x" : "volume-2"} size={18} className={isMuted ? "text-red-500" : "text-white"} />
+                                                        <Icon 
+                                                            name={isMuted ? "volume-x" : "volume-2"} 
+                                                            size={20} 
+                                                            className={isMuted ? "text-red-500" : "text-white group-hover:text-pink-400"} 
+                                                        />
                                                     </button>
                                                     <input 
                                                         type="range" 
@@ -318,7 +328,7 @@
                                                         step="0.01" 
                                                         value={volume} 
                                                         onChange={(e) => handleVolumeChange(e.target.value)} 
-                                                        className="w-28 md:w-40 cursor-pointer" 
+                                                        className="w-28 md:w-40 relative z-10" 
                                                     />
                                                 </div>
                                             )}
