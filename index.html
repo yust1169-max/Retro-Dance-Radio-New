@@ -17,7 +17,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
         body {
-            background-color: #000;
+            background-color: #1a1a1a; /* Глубокий серый фон вместо черного */
             font-family: 'Inter', sans-serif;
             margin: 0;
             color: white;
@@ -26,19 +26,25 @@
         }
 
         .glass {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Специальный фон для плеера - темно-бордовый */
+        .player-card {
+            background: linear-gradient(145deg, #4c0519 0%, #2d0a14 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .bg-sphere {
             position: fixed;
             width: 50vw;
             height: 50vw;
-            background: radial-gradient(circle, rgba(236, 72, 153, 0.05) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.08) 0%, transparent 70%);
             z-index: -1;
-            filter: blur(60px);
+            filter: blur(80px);
             animation: moveSphere 25s infinite alternate ease-in-out;
         }
 
@@ -54,12 +60,12 @@
         .play-btn-active {
             background-color: #ef4444 !important;
             color: white !important;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.6);
             border-radius: 25% !important;
         }
 
         .logo-glow {
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
         }
 
         /* Контейнер для бегущей строки */
@@ -110,13 +116,11 @@
             return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
         };
 
-        // Компонент бегущей строки
         const ScrollingText = ({ text, className }) => {
             const containerRef = useRef(null);
             const [shouldScroll, setShouldScroll] = useState(false);
 
             useEffect(() => {
-                // Если текст длиннее контейнера, включаем прокрутку
                 if (containerRef.current) {
                     const isLong = containerRef.current.scrollWidth > containerRef.current.clientWidth;
                     setShouldScroll(isLong);
@@ -131,7 +135,6 @@
                 <div ref={containerRef} className="marquee-container w-full">
                     <div className="marquee-content flex">
                         <h2 className={className}>{text}</h2>
-                        {/* Дубликат для бесшовной петли */}
                         <h2 className={`${className} ml-20`}>{text}</h2>
                     </div>
                 </div>
@@ -211,13 +214,14 @@
             };
 
             return (
-                <div className="min-h-screen flex flex-col relative bg-black">
+                <div className="min-h-screen flex flex-col relative">
                     <audio ref={audioRef} crossOrigin="anonymous" />
                     <div className="bg-sphere top-0 left-0"></div>
 
+                    {/* Фоновое изображение теперь более приглушенное на сером фоне */}
                     <div className="fixed inset-0 -z-10 overflow-hidden">
-                        <img src={meta.image} className="w-full h-full object-cover opacity-20 blur-[100px] scale-125" alt="" />
-                        <div className="absolute inset-0 bg-black/70"></div>
+                        <img src={meta.image} className="w-full h-full object-cover opacity-10 blur-[120px] scale-125" alt="" />
+                        <div className="absolute inset-0 bg-[#1a1a1a]/80"></div>
                     </div>
 
                     <header className="p-4 md:p-8 flex justify-between items-center max-w-7xl mx-auto w-full z-20">
@@ -228,24 +232,24 @@
                                 alt="Logo" 
                             />
                             <div className="flex flex-col">
-                                <h1 className="font-black italic uppercase text-xl md:text-3xl tracking-tighter leading-none">
+                                <h1 className="font-black italic uppercase text-xl md:text-3xl tracking-tighter leading-none text-white">
                                     Retro<span className="text-pink-500">Dance</span>
                                 </h1>
-                                <span className="text-[8px] md:text-[10px] uppercase font-bold tracking-[0.3em] opacity-50 mt-1">Radio Station</span>
+                                <span className="text-[8px] md:text-[10px] uppercase font-bold tracking-[0.3em] opacity-40 mt-1">Radio Station</span>
                             </div>
                         </div>
                         
-                        <div className="glass px-4 py-2 rounded-full flex items-center gap-2 ml-auto shadow-lg border-white/10">
+                        <div className="glass px-4 py-2 rounded-full flex items-center gap-2 ml-auto shadow-lg">
                             <Icon name="headphones" size={16} className="text-pink-500" />
-                            <span className="text-[11px] font-black tracking-widest">{meta.listeners}</span>
+                            <span className="text-[11px] font-black tracking-widest text-white">{meta.listeners}</span>
                         </div>
                     </header>
 
                     <nav className="flex justify-center p-2 md:p-4 z-20">
-                        <div className="glass rounded-full p-1 flex gap-1">
+                        <div className="glass rounded-full p-1.5 flex gap-1 bg-white/5">
                             {['player', 'history', 'request'].map(id => (
                                 <button key={id} onClick={() => setTab(id)} 
-                                    className={`px-5 md:px-10 py-3 rounded-full text-[10px] font-black uppercase transition-all tracking-wider ${tab === id ? 'bg-white/10 text-white shadow-inner' : 'text-white/30 hover:text-white/60'}`}>
+                                    className={`px-5 md:px-10 py-3 rounded-full text-[10px] font-black uppercase transition-all tracking-wider ${tab === id ? 'bg-white/10 text-white shadow-lg' : 'text-white/30 hover:text-white/60'}`}>
                                     {id === 'player' ? 'Плеер' : id === 'history' ? 'История' : 'Заказать'}
                                 </button>
                             ))}
@@ -254,18 +258,17 @@
 
                     <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 z-20 w-full max-w-6xl mx-auto">
                         {tab === 'player' && (
-                            <div className="w-full max-w-4xl glass rounded-[50px] p-6 md:p-14 flex flex-col md:flex-row items-center gap-12 shadow-2xl border-white/5">
+                            <div className="w-full max-w-4xl player-card rounded-[50px] p-6 md:p-14 flex flex-col md:flex-row items-center gap-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
                                 <div className="flex-shrink-0">
                                     <img src={meta.image} className="w-52 h-52 md:w-72 md:h-72 object-cover rounded-[40px] shadow-2xl transition-all duration-700" alt="Cover" />
                                 </div>
                                 
                                 <div className="text-center md:text-left flex-1 min-w-0 w-full">
-                                    {/* Название песни с поддержкой прокрутки */}
                                     <ScrollingText 
                                         text={meta.song} 
-                                        className="text-2xl md:text-3xl lg:text-5xl font-black uppercase italic mb-2 leading-tight tracking-tight" 
+                                        className="text-2xl md:text-3xl lg:text-5xl font-black uppercase italic mb-2 leading-tight tracking-tight text-white" 
                                     />
-                                    <p className="text-red-600 font-bold uppercase tracking-[0.2em] mb-10 truncate text-sm md:text-base">
+                                    <p className="text-red-500 font-bold uppercase tracking-[0.2em] mb-10 truncate text-sm md:text-base opacity-90">
                                         {meta.artist}
                                     </p>
                                     
@@ -279,17 +282,17 @@
                                         
                                         <div className="flex flex-col gap-5">
                                             {!isIOS && (
-                                                <div className="flex items-center gap-4 glass px-5 py-3 rounded-2xl border-white/5">
-                                                    <Icon name="volume-2" size={18} className="opacity-30" />
+                                                <div className="flex items-center gap-4 bg-black/20 px-5 py-3 rounded-2xl border border-white/5">
+                                                    <Icon name="volume-2" size={18} className="opacity-40" />
                                                     <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(e.target.value)} className="w-28 md:w-40 cursor-pointer" />
                                                 </div>
                                             )}
                                             
                                             <div className="flex gap-8 justify-center md:justify-start px-2">
-                                                <button onClick={() => handleQuality('high')} className={`text-[13px] font-black uppercase tracking-widest transition-all ${quality === 'high' ? 'text-pink-500 underline underline-offset-8 decoration-2' : 'opacity-40 hover:opacity-100'}`}>
+                                                <button onClick={() => handleQuality('high')} className={`text-[13px] font-black uppercase tracking-widest transition-all ${quality === 'high' ? 'text-pink-400 underline underline-offset-8 decoration-2' : 'opacity-40 hover:opacity-100 text-white'}`}>
                                                     128K
                                                 </button>
-                                                <button onClick={() => handleQuality('low')} className={`text-[13px] font-black uppercase tracking-widest transition-all ${quality === 'low' ? 'text-pink-500 underline underline-offset-8 decoration-2' : 'opacity-40 hover:opacity-100'}`}>
+                                                <button onClick={() => handleQuality('low')} className={`text-[13px] font-black uppercase tracking-widest transition-all ${quality === 'low' ? 'text-pink-400 underline underline-offset-8 decoration-2' : 'opacity-40 hover:opacity-100 text-white'}`}>
                                                     64K
                                                 </button>
                                             </div>
@@ -302,20 +305,20 @@
                         {tab === 'history' && (
                             <div className="w-full max-w-2xl space-y-3">
                                 {history.map((h, i) => (
-                                    <div key={i} className="glass p-5 rounded-3xl flex items-center gap-6 border-white/5 hover:bg-white/5 transition-colors">
+                                    <div key={i} className="player-card p-5 rounded-3xl flex items-center gap-6 border-white/5 hover:bg-white/5 transition-colors shadow-lg">
                                         <img src={h.song.art || DEFAULT_ART} className="w-14 h-14 rounded-2xl object-cover shadow-lg" alt="H" />
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="text-sm font-bold uppercase truncate tracking-tight">{h.song.title}</h4>
-                                            <p className="text-[11px] text-red-500 uppercase font-black truncate tracking-widest mt-1 opacity-80">{h.song.artist}</p>
+                                            <h4 className="text-sm font-bold uppercase truncate tracking-tight text-white">{h.song.title}</h4>
+                                            <p className="text-[11px] text-red-400 uppercase font-black truncate tracking-widest mt-1 opacity-80">{h.song.artist}</p>
                                         </div>
-                                        <span className="text-[10px] opacity-30 font-bold glass px-3 py-1 rounded-full">{new Date(h.played_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                        <span className="text-[10px] opacity-40 font-bold bg-black/20 px-3 py-1 rounded-full text-white">{new Date(h.played_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                     </div>
                                 ))}
                             </div>
                         )}
 
                         {tab === 'request' && (
-                            <div className="w-full max-w-5xl h-[600px] md:h-[700px] glass rounded-[40px] overflow-hidden shadow-2xl border-white/5">
+                            <div className="w-full max-w-5xl h-[600px] md:h-[700px] glass rounded-[40px] overflow-hidden shadow-2xl bg-[#1a1a1a]">
                                 <iframe src={REQUESTS_URL} className="w-full h-full border-0" allowTransparency="true"></iframe>
                             </div>
                         )}
@@ -323,11 +326,11 @@
 
                     <footer className="p-10 text-center z-20 mt-auto">
                         <div className="flex flex-col items-center gap-4">
-                            <a href="mailto:retrodanceradiomusic@gmail.com" className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-red-500 transition-all">
+                            <a href="mailto:retrodanceradiomusic@gmail.com" className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 hover:text-red-500 transition-all">
                                 retrodanceradiomusic@gmail.com
                             </a>
-                            <div className="h-px w-10 bg-white/10 my-2"></div>
-                            <p className="opacity-10 text-[9px] font-black uppercase tracking-[1.5em] mt-2">
+                            <div className="h-px w-10 bg-white/5 my-2"></div>
+                            <p className="opacity-5 text-[9px] font-black uppercase tracking-[1.5em] mt-2 text-white">
                                 Retro Dance Radio &copy; 2025
                             </p>
                         </div>
