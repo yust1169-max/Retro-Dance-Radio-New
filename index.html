@@ -91,11 +91,23 @@
             const [isPlaying, setIsPlaying] = useState(false);
             const [volume, setVolume] = useState(0.8);
             const [previousVolume, setPreviousVolume] = useState(0.8);
-            const [quality, setQuality] = useState('high'); // 'high' = 128K, 'low' = 64K
+            const [quality, setQuality] = useState('high'); 
             const [activeTab, setActiveTab] = useState('player');
             const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", listeners: 0, image: DEFAULT_COVER });
             const [history, setHistory] = useState([]);
+            const [isIOS, setIsIOS] = useState(false);
             const audioRef = useRef(null);
+
+            useEffect(() => {
+                // Проверка на iOS
+                const userAgent = window.navigator.userAgent.toLowerCase();
+                const isIphone = /iphone|ipad|ipod/.test(userAgent);
+                setIsIOS(isIphone);
+
+                fetchNowPlaying();
+                const interval = setInterval(fetchNowPlaying, 15000);
+                return () => clearInterval(interval);
+            }, []);
 
             const fetchNowPlaying = async () => {
                 try {
@@ -114,13 +126,11 @@
                 } catch (e) { console.error("Ошибка API:", e); }
             };
 
-            useEffect(() => {
-                fetchNowPlaying();
-                const interval = setInterval(fetchNowPlaying, 15000);
-                return () => clearInterval(interval);
-            }, []);
-
-            useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume]);
+            useEffect(() => { 
+                if (audioRef.current && !isIOS) {
+                    audioRef.current.volume = volume; 
+                }
+            }, [volume, isIOS]);
 
             const togglePlay = () => {
                 if (!isPlaying) {
@@ -134,11 +144,17 @@
             };
 
             const toggleMute = () => {
-                if (volume > 0) {
-                    setPreviousVolume(volume);
-                    setVolume(0);
+                if (isIOS) {
+                    // На iOS mute работает через свойство muted
+                    audioRef.current.muted = !audioRef.current.muted;
+                    setVolume(audioRef.current.muted ? 0 : 1);
                 } else {
-                    setVolume(previousVolume || 0.8);
+                    if (volume > 0) {
+                        setPreviousVolume(volume);
+                        setVolume(0);
+                    } else {
+                        setVolume(previousVolume || 0.8);
+                    }
                 }
             };
 
@@ -213,28 +229,41 @@
                                             {isPlaying ? <Icon name="square" size={28} /> : <Icon name="play" size={32} className="ml-1" />}
                                         </button>
                                         
-                                        <div className="flex flex-col gap-5 w-full max-w-[280px]">
-                                            <div className="flex items-center gap-4 bg-white/5 px-5 py-3 rounded-2xl">
-                                                <button onClick={toggleMute} className="flex items-center justify-center hover:scale-110 transition-transform">
+                                        <div className="flex flex-col gap-5 w-full max-w-[300px]">
+                                            <div className="flex items-center gap-4 bg-white/5 px-5 py-3 rounded-2xl min-h-[56px]">
+                                                <button onClick={toggleMute} className="flex items-center justify-center hover:scale-110 transition-transform p-2">
                                                     <Icon 
                                                         name={volume === 0 ? "volume-x" : (volume < 0.5 ? "volume-1" : "volume-2")} 
-                                                        size={20} 
+                                                        size={28} 
                                                         className="text-pink-500" 
                                                     />
                                                 </button>
-                                                <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-full h-1.5" />
+                                                {!isIOS && (
+                                                    <input 
+                                                        type="range" 
+                                                        min="0" 
+                                                        max="1" 
+                                                        step="0.01" 
+                                                        value={volume} 
+                                                        onChange={(e) => setVolume(parseFloat(e.target.value))} 
+                                                        className="w-full h-1.5" 
+                                                    />
+                                                )}
+                                                {isIOS && (
+                                                    <span className="text-[10px] uppercase font-black opacity-40 ml-2 tracking-widest">Громкость на кнопках</span>
+                                                )}
                                             </div>
                                             
                                             <div className="flex gap-2 w-full">
                                                 <button 
                                                     onClick={() => changeQuality('high')} 
-                                                    className={`bitrate-btn flex-1 py-4 rounded-xl text-2xl ${quality === 'high' ? 'active' : 'inactive'}`}
+                                                    className={`bitrate-btn flex-1 py-5 rounded-xl text-3xl ${quality === 'high' ? 'active' : 'inactive'}`}
                                                 >
                                                     128K
                                                 </button>
                                                 <button 
                                                     onClick={() => changeQuality('low')} 
-                                                    className={`bitrate-btn flex-1 py-4 rounded-xl text-2xl ${quality === 'low' ? 'active' : 'inactive'}`}
+                                                    className={`bitrate-btn flex-1 py-5 rounded-xl text-3xl ${quality === 'low' ? 'active' : 'inactive'}`}
                                                 >
                                                     64K
                                                 </button>
