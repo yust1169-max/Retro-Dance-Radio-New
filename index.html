@@ -117,7 +117,7 @@
         
         const STREAMS = {
             high: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio.mp3",
-            low: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio32.AAC" // ОБНОВЛЕНО НА 32
+            low: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio32.AAC"
         };
 
         const Icon = ({ name, size = 18, className = "" }) => {
@@ -249,9 +249,14 @@
                                     <p className="text-white/30 text-xs md:text-lg font-bold uppercase tracking-[0.2em] mb-8 truncate">{meta.artist}</p>
                                     
                                     <div className="flex flex-col sm:flex-row items-center gap-6 justify-center md:justify-start">
-                                        <button onClick={togglePlay} className="w-20 h-20 shrink-0 rounded-full flex items-center justify-center bg-white text-black active:scale-90 transition-transform shadow-xl">
-                                            {/* ОБНОВЛЕНЫ ИКОНКИ: PLAY И PAUSE */}
-                                            {isPlaying ? <Icon name="pause" size={28} className="text-[#40000a]" /> : <Icon name="play" size={28} className="ml-1 text-[#40000a]" />}
+                                        
+                                        {/* ТОЛЬКО ТУТ ИЗМЕНЕНИЯ: ЦВЕТ И ИКОНКА */}
+                                        <button 
+                                            onClick={togglePlay} 
+                                            className={`w-20 h-20 shrink-0 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl active:scale-90
+                                            ${isPlaying ? 'bg-yellow-400 text-black' : 'bg-white text-black'}`}
+                                        >
+                                            {isPlaying ? <Icon name="pause" size={28} className="fill-current" /> : <Icon name="play" size={28} className="ml-1 fill-current" />}
                                         </button>
                                         
                                         <div className="flex flex-col gap-4 w-full max-w-[220px]">
