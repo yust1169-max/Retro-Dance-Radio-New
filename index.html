@@ -1,107 +1,42 @@
 <!DOCTYPE html>
-<html lang="ru" prefix="og: http://ogp.me/ns#">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Retro Dance Radio — Включай энергию!</title>
     
-    <title>Retro Dance Radio — Включай энергию прошлого!</title>
-    
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/28VKXjCx/logo.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Retro Dance">
-    <meta name="theme-color" content="#1a1a1a">
-
-    <meta name="description" content="Легендарные хиты Eurodance и Disco в одном плеере. Слушай онлайн без рекламы.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://radio.retrodanceradio.com/">
-    <meta property="og:site_name" content="Retro Dance Radio">
-    <meta property="og:title" content="Retro Dance Radio — Ретро хиты 80-90-00х">
-    <meta property="og:description" content="Лучшая танцевальная музыка прошлых десятилетий. Прямой эфир 24/7.">
-    <meta property="og:image" content="https://i.postimg.cc/28VKXjCx/logo.png">
-
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        
         body { 
-            background-color: #121212;
-            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; 
-            margin: 0; 
+            background-color: #0a0a0a; 
+            font-family: 'Inter', sans-serif; 
             color: white; 
-            overflow-x: hidden;
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
+            margin: 0; 
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-
+        
         .glass-bordeaux { 
-            background: rgba(60, 0, 15, 0.85);
-            backdrop-filter: blur(25px); 
-            -webkit-backdrop-filter: blur(25px); 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
+            background: rgba(45, 0, 10, 0.95);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .glass-nav {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
+        .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; position: relative; }
+        .marquee-text { display: inline-block; animation: marquee 12s linear infinite; padding-right: 60px; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-        .bg-sphere { 
-            position: fixed; 
-            width: 80vw; 
-            height: 80vw; 
-            background: radial-gradient(circle, rgba(128, 0, 32, 0.1) 0%, transparent 70%); 
-            z-index: -1; 
-            filter: blur(100px); 
-            animation: move 25s infinite alternate; 
-        }
-
-        @keyframes move { from { transform: translate(-15%, -15%); } to { transform: translate(15%, 15%); } }
-        
-        input[type=range] { accent-color: #ffffff; cursor: pointer; }
-        
-        .marquee-container { 
-            overflow: hidden; 
-            white-space: nowrap; 
-            width: 100%; 
-            position: relative;
-            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-        }
-        .marquee-text { 
-            display: inline-block; 
-            animation: marquee 12s linear infinite; 
-            padding-right: 60px; 
-            will-change: transform;
-        }
-        @keyframes marquee { 
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); } 
-        }
-
-        .bitrate-btn {
-            font-weight: 900;
-            font-style: italic;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
-            border: 1px solid transparent;
-        }
-        .bitrate-btn.active {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-        .bitrate-btn.inactive {
-            color: rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.2);
-        }
+        /* Кастомный скролл для истории, чтобы помещалось много песен */
+        .history-container::-webkit-scrollbar { width: 4px; }
+        .history-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -110,76 +45,51 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const LOGO_SRC = "https://i.postimg.cc/28VKXjCx/logo.png";
         const API_URL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
-        const REQUESTS_EMBED_URL = "https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests";
-        const DEFAULT_COVER = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000&auto=format&fit=crop";
-        
         const STREAMS = {
             high: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio.mp3",
-            low: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio32.AAC" // ОБНОВЛЕНО НА 32
+            low: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio32.AAC"
         };
 
-        const Icon = ({ name, size = 18, className = "" }) => {
-            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name, className, size]);
-            return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
+        const Icon = ({ name, size = 24, className = "" }) => {
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name, className]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
         };
 
         function App() {
             const [isPlaying, setIsPlaying] = useState(false);
-            const [volume, setVolume] = useState(0.8);
             const [quality, setQuality] = useState('high');
             const [activeTab, setActiveTab] = useState('player');
-            const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", listeners: 0, image: DEFAULT_COVER });
+            const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", image: "https://i.postimg.cc/28VKXjCx/logo.png" });
             const [history, setHistory] = useState([]);
-            const [isIOS, setIsIOS] = useState(false);
             const audioRef = useRef(null);
 
-            useEffect(() => {
-                const checkIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-                setIsIOS(checkIOS);
-                fetchNowPlaying();
-                const interval = setInterval(fetchNowPlaying, 15000);
-                return () => clearInterval(interval);
-            }, []);
-
-            const fetchNowPlaying = async () => {
+            const fetchData = async () => {
                 try {
                     const res = await fetch(API_URL);
                     const data = await res.json();
-                    if (data && data.now_playing) {
-                        const np = data.now_playing;
+                    if (data) {
                         setMeta({
-                            song: np.song.title || "Эфир",
-                            artist: np.song.artist || "Retro Dance Radio",
-                            listeners: data.listeners.total || 0,
-                            image: np.song.art || DEFAULT_COVER
+                            song: data.now_playing.song.title || "Эфир",
+                            artist: data.now_playing.song.artist || "Retro Dance Radio",
+                            image: data.now_playing.song.art
                         });
-                        if (data.song_history) setHistory(data.song_history.slice(0, 10));
+                        // Берем до 20 последних треков
+                        if (data.song_history) setHistory(data.song_history.slice(0, 20));
                     }
-                } catch (e) { console.error("API Error:", e); }
+                } catch (e) { console.error("Ошибка API"); }
             };
 
             useEffect(() => {
-                if ('mediaSession' in navigator) {
-                    navigator.mediaSession.metadata = new MediaMetadata({
-                        title: meta.song,
-                        artist: meta.artist,
-                        album: 'Retro Dance Radio',
-                        artwork: [{ src: meta.image, sizes: '512x512', type: 'image/png' }]
-                    });
-                    navigator.mediaSession.setActionHandler('play', togglePlay);
-                    navigator.mediaSession.setActionHandler('pause', togglePlay);
-                }
-            }, [meta, isPlaying]);
-
-            useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume]);
+                fetchData();
+                const interval = setInterval(fetchData, 15000);
+                return () => clearInterval(interval);
+            }, []);
 
             const togglePlay = () => {
                 if (!isPlaying) {
                     audioRef.current.src = STREAMS[quality];
-                    audioRef.current.play().catch(e => console.log("Play Error", e));
+                    audioRef.current.play().catch(console.error);
                     setIsPlaying(true);
                 } else {
                     audioRef.current.pause();
@@ -188,115 +98,90 @@
                 }
             };
 
-            const changeQuality = (newQuality) => {
-                if (quality === newQuality) return;
-                setQuality(newQuality);
-                if (isPlaying && audioRef.current) {
+            const changeQuality = (q) => {
+                setQuality(q);
+                if (isPlaying) {
                     audioRef.current.pause();
-                    audioRef.current.src = STREAMS[newQuality];
-                    audioRef.current.load();
+                    audioRef.current.src = STREAMS[q];
                     audioRef.current.play();
                 }
             };
 
             return (
-                <div className="flex flex-col min-h-screen relative">
+                <div className="w-full max-w-sm px-4">
                     <audio ref={audioRef} crossOrigin="anonymous" />
-                    <div className="bg-sphere top-0 left-0"></div>
                     
-                    <div className="fixed inset-0 -z-10">
-                        <img src={meta.image} className="w-full h-full object-cover opacity-5 blur-[120px] scale-150" alt="" />
-                    </div>
-
-                    <header className="p-6 flex justify-between items-center max-w-6xl mx-auto w-full z-10">
-                        <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 bg-white rounded-xl shadow-2xl flex items-center justify-center overflow-hidden">
-                                <img src={LOGO_SRC} className="h-full w-full object-contain p-1" alt="Logo" />
-                            </div>
-                            <h1 className="font-black italic text-xl uppercase tracking-tighter">Retro<span className="opacity-30">Dance</span></h1>
+                    <div className="glass-bordeaux rounded-[50px] p-6 shadow-2xl flex flex-col items-center min-h-[620px]">
+                        
+                        {/* Табы */}
+                        <div className="flex gap-2 mb-8 bg-black/30 p-1.5 rounded-full w-full border border-white/5">
+                            <button onClick={() => setActiveTab('player')} 
+                                className={`flex-1 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'player' ? 'bg-white/10 text-white' : 'text-white/20'}`}>
+                                Плеер
+                            </button>
+                            <button onClick={() => setActiveTab('history')} 
+                                className={`flex-1 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'history' ? 'bg-white/10 text-white' : 'text-white/20'}`}>
+                                История
+                            </button>
                         </div>
-                        <div className="glass-nav px-3 py-1.5 rounded-full flex items-center gap-2">
-                            <Icon name="headphones" size={16} className="animate-pulse" />
-                            <span className="text-sm font-black">{meta.listeners}</span>
-                        </div>
-                    </header>
 
-                    <nav className="flex justify-center p-2 z-10">
-                        <div className="glass-nav rounded-full p-1 flex gap-1">
-                            {['player', 'history', 'request'].map(id => (
-                                <button key={id} onClick={() => setActiveTab(id)} 
-                                    className={`px-4 py-2 rounded-full text-[9px] font-black uppercase transition-all tracking-widest ${activeTab === id ? 'bg-white/10 text-white' : 'text-white/20'}`}>
-                                    {id === 'player' ? 'Плеер' : id === 'history' ? 'История' : 'Заказать'}
+                        {activeTab === 'player' ? (
+                            <div className="flex flex-col items-center w-full animate-in fade-in duration-500">
+                                {/* Обложка */}
+                                <div className="relative mb-8 group">
+                                    <img src={meta.image} className={`w-64 h-64 object-cover rounded-[40px] shadow-2xl transition-transform duration-500 ${isPlaying ? 'scale-105' : 'scale-100'}`} alt="Cover" />
+                                </div>
+
+                                {/* Название и Артист */}
+                                <div className="w-full text-center mb-8 h-20 overflow-hidden">
+                                    <div className="marquee-container">
+                                        <div className="marquee-text">
+                                            <h2 className="text-3xl font-black uppercase italic tracking-tighter">{meta.song}&nbsp;&nbsp;&nbsp;&nbsp;{meta.song}</h2>
+                                        </div>
+                                    </div>
+                                    <p className="text-white/30 font-bold uppercase tracking-[0.2em] text-[10px] mt-2 truncate px-4">{meta.artist}</p>
+                                </div>
+
+                                {/* КНОПКА PLAY (ЖЕЛТЕЕТ ПРИ ВКЛЮЧЕНИИ) */}
+                                <button 
+                                    onClick={togglePlay} 
+                                    className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl mb-10 active:scale-90
+                                        ${isPlaying ? 'bg-yellow-400 text-black shadow-yellow-400/30' : 'bg-white text-black'}`}
+                                >
+                                    {isPlaying ? <Icon name="pause" size={44} className="fill-current" /> : <Icon name="play" size={44} className="ml-1.5 fill-current" />}
                                 </button>
-                            ))}
-                        </div>
-                    </nav>
 
-                    <main className="flex-1 flex flex-col items-center justify-center p-4 z-10 w-full max-w-5xl mx-auto">
-                        {activeTab === 'player' && (
-                            <div className="w-full flex flex-col md:flex-row items-center gap-8 md:gap-12 glass-bordeaux p-6 md:p-12 rounded-[40px] shadow-2xl overflow-hidden">
-                                <div className="relative shrink-0">
-                                    <img src={meta.image} className="w-60 h-60 md:w-80 md:h-80 object-cover rounded-[30px] shadow-2xl" alt="Cover" />
+                                {/* Переключатель качества */}
+                                <div className="flex gap-2 w-full mt-auto">
+                                    <button onClick={() => changeQuality('high')} 
+                                        className={`flex-1 py-3 rounded-2xl font-black text-[10px] transition-all border ${quality === 'high' ? 'bg-white text-black border-white' : 'bg-transparent text-white/20 border-white/5'}`}>128K MP3</button>
+                                    <button onClick={() => changeQuality('low')} 
+                                        className={`flex-1 py-3 rounded-2xl font-black text-[10px] transition-all border ${quality === 'low' ? 'bg-white text-black border-white' : 'bg-transparent text-white/20 border-white/5'}`}>32K AAC</button>
                                 </div>
-                                <div className="text-center md:text-left flex-1 min-w-0 w-full overflow-hidden">
-                                    <div className="marquee-container mb-1">
-                                        <div className={meta.song.length > 12 ? "marquee-text" : ""}>
-                                            <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter inline-block">
-                                                {meta.song}&nbsp;&nbsp;&nbsp;&nbsp;{meta.song.length > 12 ? meta.song : ""}
-                                            </h2>
-                                        </div>
-                                    </div>
-                                    <p className="text-white/30 text-xs md:text-lg font-bold uppercase tracking-[0.2em] mb-8 truncate">{meta.artist}</p>
-                                    
-                                    <div className="flex flex-col sm:flex-row items-center gap-6 justify-center md:justify-start">
-                                        <button onClick={togglePlay} className="w-20 h-20 shrink-0 rounded-full flex items-center justify-center bg-white text-black active:scale-90 transition-transform shadow-xl">
-                                            {/* ОБНОВЛЕНЫ ИКОНКИ: PLAY И PAUSE */}
-                                            {isPlaying ? <Icon name="pause" size={28} className="text-[#40000a]" /> : <Icon name="play" size={28} className="ml-1 text-[#40000a]" />}
-                                        </button>
-                                        
-                                        <div className="flex flex-col gap-4 w-full max-w-[220px]">
-                                            {!isIOS && (
-                                                <div className="flex items-center gap-3 bg-black/30 px-4 py-2 rounded-2xl transition-opacity animate-in fade-in">
-                                                    <Icon name="volume-2" size={14} className="opacity-40" />
-                                                    <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-full h-1" />
-                                                </div>
-                                            )}
-                                            
-                                            <div className="flex gap-2">
-                                                <button onClick={() => changeQuality('high')} className={`bitrate-btn flex-1 py-2 rounded-lg ${quality === 'high' ? 'active' : 'inactive'}`}>128K</button>
-                                                <button onClick={() => changeQuality('low')} className={`bitrate-btn flex-1 py-2 rounded-lg ${quality === 'low' ? 'active' : 'inactive'}`}>32K</button>
+                            </div>
+                        ) : (
+                            /* ИСТОРИЯ НА 20 ПЕСЕН */
+                            <div className="w-full flex flex-col h-[480px] animate-in slide-in-from-right duration-300">
+                                <h3 className="text-center font-black uppercase tracking-[0.4em] text-[9px] mb-6 opacity-30">Последние 20 треков</h3>
+                                <div className="flex-1 overflow-y-auto history-container pr-1">
+                                    {history.length > 0 ? history.map((item, i) => (
+                                        <div key={i} className="flex items-center gap-3 mb-3 p-2.5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                                            <img src={item.song.art} className="w-10 h-10 rounded-xl object-cover" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[11px] font-black uppercase truncate leading-none mb-1.5">{item.song.title}</p>
+                                                <p className="text-[9px] font-bold uppercase text-white/30 truncate tracking-wider">{item.song.artist}</p>
                                             </div>
+                                            <span className="text-[8px] opacity-20 font-black">
+                                                {new Date(item.played_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                            </span>
                                         </div>
-                                    </div>
+                                    )) : <p className="text-center text-[10px] opacity-20 mt-10">Загрузка истории...</p>}
                                 </div>
                             </div>
                         )}
-
-                        {activeTab === 'history' && (
-                            <div className="w-full max-w-md space-y-2 pb-10">
-                                {history.map((item, i) => (
-                                    <div key={i} className="glass-bordeaux p-3 rounded-xl flex items-center gap-3">
-                                        <img src={item.song.art || DEFAULT_COVER} className="w-10 h-10 rounded-lg object-cover" alt="" />
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-bold text-xs truncate uppercase tracking-tight">{item.song.title}</h4>
-                                            <p className="text-[9px] text-white/40 font-bold uppercase truncate">{item.song.artist}</p>
-                                        </div>
-                                        <span className="text-[9px] opacity-20 font-bold">{new Date(item.played_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {activeTab === 'request' && (
-                            <div className="w-full h-[550px] glass-bordeaux rounded-[30px] overflow-hidden">
-                                <iframe src={REQUESTS_EMBED_URL} className="w-full h-full border-0" allowTransparency="true"></iframe>
-                            </div>
-                        )}
-                    </main>
-
-                    <footer className="p-8 text-center mt-auto opacity-10">
-                        <p className="text-[9px] font-black uppercase tracking-[1em]">Retro Dance Radio &copy; 2025</p>
-                    </footer>
+                    </div>
+                    
+                    <p className="mt-6 text-center text-[8px] font-black uppercase tracking-[1.5em] opacity-10">Retro Dance Radio 2025</p>
                 </div>
             );
         }
