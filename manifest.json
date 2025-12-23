@@ -1,0 +1,16 @@
+{
+  "short_name": "RetroDance",
+  "name": "Retro Dance Radio",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/28VKXjCx/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#1a1a1a",
+  "background_color": "#121212"
+}
