@@ -250,13 +250,14 @@
                                     
                                     <div className="flex flex-col sm:flex-row items-center gap-6 justify-center md:justify-start">
                                         
-                                        {/* ТОЛЬКО ТУТ ИЗМЕНЕНИЯ: ЦВЕТ И ИКОНКА */}
+                                        {/* ИЗМЕНЕННАЯ КНОПКА PLAY/PAUSE */}
                                         <button 
+                                            key={isPlaying ? 'btn-pause' : 'btn-play'}
                                             onClick={togglePlay} 
                                             className={`w-20 h-20 shrink-0 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl active:scale-90
                                             ${isPlaying ? 'bg-yellow-400 text-black' : 'bg-white text-black'}`}
                                         >
-                                            {isPlaying ? <Icon name="pause" size={28} className="fill-current" /> : <Icon name="play" size={28} className="ml-1 fill-current" />}
+                                            {isPlaying ? <Icon name="pause" size={32} /> : <Icon name="play" size={32} className="ml-1" />}
                                         </button>
                                         
                                         <div className="flex flex-col gap-4 w-full max-w-[220px]">
