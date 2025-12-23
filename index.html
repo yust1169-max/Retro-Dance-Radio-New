@@ -135,14 +135,35 @@
             const [isIOS, setIsIOS] = useState(false);
             const audioRef = useRef(null);
 
+            // Функция восстановления потока при смене сети
+            const reconnect = () => {
+                if (isPlaying && audioRef.current) {
+                    console.log("Восстановление соединения...");
+                    const currentVol = audioRef.current.volume;
+                    audioRef.current.pause();
+                    // Добавляем timestamp для обхода кэша
+                    audioRef.current.src = `${STREAMS[quality]}?t=${Date.now()}`;
+                    audioRef.current.load();
+                    audioRef.current.volume = currentVol;
+                    audioRef.current.play().catch(e => console.log("Reconnect failed", e));
+                }
+            };
+
             useEffect(() => {
                 const checkIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
                 setIsIOS(checkIOS);
                 fetchNowPlaying();
+
+                // Авто-реконнект при появлении интернета
+                window.addEventListener('online', reconnect);
+                
                 const interval = setInterval(fetchNowPlaying, 15000);
-                return () => clearInterval(interval);
-            }, []);
+                return () => {
+                    clearInterval(interval);
+                    window.removeEventListener('online', reconnect);
+                };
+            }, [isPlaying, quality]);
 
             const fetchNowPlaying = async () => {
                 try {
@@ -178,7 +199,7 @@
 
             const togglePlay = () => {
                 if (!isPlaying) {
-                    audioRef.current.src = STREAMS[quality];
+                    audioRef.current.src = `${STREAMS[quality]}?t=${Date.now()}`;
                     audioRef.current.play().catch(e => console.log("Play Error", e));
                     setIsPlaying(true);
                 } else {
@@ -193,7 +214,7 @@
                 setQuality(newQuality);
                 if (isPlaying && audioRef.current) {
                     audioRef.current.pause();
-                    audioRef.current.src = STREAMS[newQuality];
+                    audioRef.current.src = `${STREAMS[newQuality]}?t=${Date.now()}`;
                     audioRef.current.load();
                     audioRef.current.play();
                 }
@@ -201,7 +222,13 @@
 
             return (
                 <div className="flex flex-col min-h-screen relative">
-                    <audio ref={audioRef} crossOrigin="anonymous" />
+                    <audio 
+                        ref={audioRef} 
+                        crossOrigin="anonymous" 
+                        onError={() => isPlaying && setTimeout(reconnect, 2000)}
+                        onStalled={() => isPlaying && reconnect()}
+                    />
+                    
                     <div className="bg-sphere top-0 left-0"></div>
                     
                     <div className="fixed inset-0 -z-10">
@@ -249,8 +276,6 @@
                                     <p className="text-white/30 text-xs md:text-lg font-bold uppercase tracking-[0.2em] mb-8 truncate">{meta.artist}</p>
                                     
                                     <div className="flex flex-col sm:flex-row items-center gap-6 justify-center md:justify-start">
-                                        
-                                        {/* ИЗМЕНЕННАЯ КНОПКА PLAY/PAUSE */}
                                         <button 
                                             key={isPlaying ? 'btn-pause' : 'btn-play'}
                                             onClick={togglePlay} 
