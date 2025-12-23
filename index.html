@@ -7,6 +7,7 @@
     
     <title>Retro Dance Radio — Включай энергию прошлого!</title>
     
+    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/28VKXjCx/logo.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -133,19 +134,19 @@
             const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", listeners: 0, image: DEFAULT_COVER });
             const [history, setHistory] = useState([]);
             const [isIOS, setIsIOS] = useState(false);
+            const [isOnline, setIsOnline] = useState(navigator.onLine);
             const audioRef = useRef(null);
 
-            // Функция восстановления потока при смене сети
+            // Функция восстановления потока
             const reconnect = () => {
                 if (isPlaying && audioRef.current) {
-                    console.log("Восстановление соединения...");
+                    console.log("Восстановление связи...");
                     const currentVol = audioRef.current.volume;
                     audioRef.current.pause();
-                    // Добавляем timestamp для обхода кэша
                     audioRef.current.src = `${STREAMS[quality]}?t=${Date.now()}`;
                     audioRef.current.load();
                     audioRef.current.volume = currentVol;
-                    audioRef.current.play().catch(e => console.log("Reconnect failed", e));
+                    audioRef.current.play().catch(e => console.log("Reconnect error", e));
                 }
             };
 
@@ -155,13 +156,17 @@
                 setIsIOS(checkIOS);
                 fetchNowPlaying();
 
-                // Авто-реконнект при появлении интернета
-                window.addEventListener('online', reconnect);
+                const handleOnline = () => { setIsOnline(true); reconnect(); };
+                const handleOffline = () => setIsOnline(false);
+
+                window.addEventListener('online', handleOnline);
+                window.addEventListener('offline', handleOffline);
                 
                 const interval = setInterval(fetchNowPlaying, 15000);
                 return () => {
                     clearInterval(interval);
-                    window.removeEventListener('online', reconnect);
+                    window.removeEventListener('online', handleOnline);
+                    window.removeEventListener('offline', handleOffline);
                 };
             }, [isPlaying, quality]);
 
@@ -236,11 +241,14 @@
                     </div>
 
                     <header className="p-6 flex justify-between items-center max-w-6xl mx-auto w-full z-10">
-                        <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 bg-white rounded-xl shadow-2xl flex items-center justify-center overflow-hidden">
-                                <img src={LOGO_SRC} className="h-full w-full object-contain p-1" alt="Logo" />
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-3">
+                                <div className="h-12 w-12 bg-white rounded-xl shadow-2xl flex items-center justify-center overflow-hidden">
+                                    <img src={LOGO_SRC} className="h-full w-full object-contain p-1" alt="Logo" />
+                                </div>
+                                <h1 className="font-black italic text-xl uppercase tracking-tighter">Retro<span className="opacity-30">Dance</span></h1>
                             </div>
-                            <h1 className="font-black italic text-xl uppercase tracking-tighter">Retro<span className="opacity-30">Dance</span></h1>
+                            {!isOnline && <span className="text-[10px] text-red-500 font-black animate-pulse uppercase">Нет сети</span>}
                         </div>
                         <div className="glass-nav px-3 py-1.5 rounded-full flex items-center gap-2">
                             <Icon name="headphones" size={16} className="animate-pulse" />
@@ -334,6 +342,11 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
+
+        // Регистрация Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(() => console.log("PWA Active"));
+        }
     </script>
 </body>
 </html>
