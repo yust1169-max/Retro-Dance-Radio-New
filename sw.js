@@ -1,22 +1,19 @@
-self.addEventListener('install', (e) => {
+// sw.js - Service Worker для Retro Dance Radio
+const CACHE_NAME = 'radio-cache-v2';
+
+self.addEventListener('install', (event) => {
     self.skipWaiting();
 });
 
-self.addEventListener('activate', (e) => {
-    e.waitUntil(clients.claim());
+self.addEventListener('activate', (event) => {
+    event.waitUntil(clients.claim());
 });
 
-self.addEventListener('fetch', (e) => {
-    const url = e.request.url;
-
-    // Проверяем, что запрос идет именно к вашему потоку
+self.addEventListener('fetch', (event) => {
+    const url = event.request.url;
     if (url.includes('radio.AAC')) {
-        e.respondWith(
-            fetch(e.request).catch(() => {
-                // Это ключевой момент! 
-                // Если интернет упал, мы отдаем браузеру пустой ответ.
-                // Плеер на сайте получит ошибку и благодаря нашему коду 
-                // в index.html (onStalled/onError) сам нажмет "переподключить".
+        event.respondWith(
+            fetch(event.request).catch(() => {
                 return new Response();
             })
         );
