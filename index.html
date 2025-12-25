@@ -49,16 +49,17 @@
             const audioRef = useRef(null);
             const isPlayingRef = useRef(false);
 
-            // Функция жесткого перезапуска
+            // ИСПРАВЛЕННАЯ ФУНКЦИЯ RECONNECT
             const forceReconnect = () => {
                 if (isPlayingRef.current && audioRef.current) {
-                    console.log("Фоновое восстановление...");
+                    const currentVol = audioRef.current.volume;
                     audioRef.current.pause();
-                    audioRef.current.src = ""; 
-                    audioRef.current.load();
-                    audioRef.current.src = `${STREAMS[quality]}?t=${Date.now()}`;
+                    audioRef.current.src = ""; // Очищаем старый буфер
+                    audioRef.current.load(); // Принудительная выгрузка
+                    audioRef.current.src = `${STREAMS[quality]}?t=${Date.now()}`; // Новая ссылка с анти-кэшем
+                    audioRef.current.volume = currentVol;
                     audioRef.current.play().catch(() => {
-                        console.log("Ожидание сети для автозапуска...");
+                        console.log("Сбой автозапуска в фоне");
                     });
                 }
             };
@@ -66,21 +67,18 @@
             useEffect(() => {
                 isPlayingRef.current = isPlaying;
 
-                // Регистрация Service Worker
                 if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.register('sw.js').then(() => console.log("SW Registered"));
                 }
 
-                // Управление через экран блокировки
                 if ('mediaSession' in navigator) {
                     navigator.mediaSession.setActionHandler('play', togglePlay);
                     navigator.mediaSession.setActionHandler('pause', togglePlay);
                 }
 
-                // События для оживления в фоне
                 const handleOnline = () => isPlayingRef.current && forceReconnect();
                 const handleVisibility = () => {
-                    if (document.visibilityState === 'visible' && isPlayingRef.current && (audioRef.current?.paused)) {
+                    if (document.visibilityState === 'visible' && isPlayingRef.current && (audioRef.current?.paused || audioRef.current?.readyState < 2)) {
                         forceReconnect();
                     }
                 };
@@ -125,7 +123,8 @@
                     } catch (e) {}
                 };
                 fetchMeta();
-                setInterval(fetchMeta, 15000);
+                const interval = setInterval(fetchMeta, 15000);
+                return () => clearInterval(interval);
             }, []);
 
             return (
@@ -175,7 +174,7 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
-        setTimeout(() => lucide.createIcons(), 1000);
+        setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 1000);
     </script>
 </body>
 </html>
