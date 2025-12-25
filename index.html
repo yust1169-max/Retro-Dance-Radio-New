@@ -20,14 +20,42 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { background-color: #0f0f0f; font-family: 'Inter', sans-serif; margin: 0; color: white; overflow-x: hidden; padding-top: env(safe-area-inset-top); }
-        .glass-card { background: rgba(40, 0, 10, 0.8); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .bg-glow { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100vw; height: 100vw; background: radial-gradient(circle, rgba(128, 0, 32, 0.15) 0%, transparent 70%); z-index: -1; filter: blur(80px); }
-        .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; position: relative; mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent); }
+        
+        body { 
+            background-color: #0f0f0f;
+            font-family: 'Inter', -apple-system, sans-serif; 
+            margin: 0; color: white; overflow: hidden;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .glass-card { 
+            background: rgba(40, 0, 10, 0.8);
+            backdrop-filter: blur(30px); 
+            -webkit-backdrop-filter: blur(30px); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+        }
+
+        .bg-glow { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 100vw; height: 100vw; 
+            background: radial-gradient(circle, rgba(128, 0, 32, 0.15) 0%, transparent 70%); 
+            z-index: -1; filter: blur(80px); 
+        }
+
+        .marquee-container { 
+            overflow: hidden; white-space: nowrap; width: 100%; position: relative;
+            mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+        }
         .marquee-text { display: inline-block; animation: marquee 15s linear infinite; padding-right: 50px; }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
         .btn-active { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); }
         .btn-inactive { background: rgba(0, 0, 0, 0.3); color: rgba(255, 255, 255, 0.3); }
+
+        /* Твой стиль ползунка */
+        input[type="range"] { -webkit-appearance: none; appearance: none; background: rgba(255,255,255,0.1); border-radius: 10px; height: 4px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; background: white; border-radius: 50%; cursor: pointer; border: 2px solid #800020; }
     </style>
 </head>
 <body>
@@ -45,38 +73,27 @@
         function App() {
             const [isPlaying, setIsPlaying] = useState(false);
             const [quality, setQuality] = useState('high');
-            const [meta, setMeta] = useState({ song: "Эфир", artist: "Retro Dance Radio", image: "https://i.postimg.cc/28VKXjCx/logo.png" });
+            const [volume, setVolume] = useState(0.7); // Состояние громкости
+            const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Dance Radio", image: "https://i.postimg.cc/28VKXjCx/logo.png" });
             const audioRef = useRef(null);
             const isPlayingRef = useRef(false);
 
-            // ИСПРАВЛЕННАЯ ФУНКЦИЯ RECONNECT
+            // КРИТИЧЕСКАЯ ФУНКЦИЯ (Reconnect)
             const forceReconnect = () => {
                 if (isPlayingRef.current && audioRef.current) {
-                    const currentVol = audioRef.current.volume;
+                    const vol = audioRef.current.volume;
                     audioRef.current.pause();
-                    audioRef.current.src = ""; // Очищаем старый буфер
-                    audioRef.current.load(); // Принудительная выгрузка
-                    audioRef.current.src = `${STREAMS[quality]}?t=${Date.now()}`; // Новая ссылка с анти-кэшем
-                    audioRef.current.volume = currentVol;
-                    audioRef.current.play().catch(() => {
-                        console.log("Сбой автозапуска в фоне");
-                    });
+                    audioRef.current.src = ""; 
+                    audioRef.current.load();
+                    audioRef.current.src = `${STREAMS[quality]}?t=${Date.now()}`;
+                    audioRef.current.volume = vol;
+                    audioRef.current.play().catch(() => {});
                 }
             };
 
             useEffect(() => {
                 isPlayingRef.current = isPlaying;
-
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('sw.js').then(() => console.log("SW Registered"));
-                }
-
-                if ('mediaSession' in navigator) {
-                    navigator.mediaSession.setActionHandler('play', togglePlay);
-                    navigator.mediaSession.setActionHandler('pause', togglePlay);
-                }
-
-                const handleOnline = () => isPlayingRef.current && forceReconnect();
+                const handleOnline = () => isPlayingRef.current && setTimeout(forceReconnect, 1500);
                 const handleVisibility = () => {
                     if (document.visibilityState === 'visible' && isPlayingRef.current && (audioRef.current?.paused || audioRef.current?.readyState < 2)) {
                         forceReconnect();
@@ -86,16 +103,36 @@
                 window.addEventListener('online', handleOnline);
                 document.addEventListener('visibilitychange', handleVisibility);
 
+                const watcher = setInterval(() => {
+                    if (isPlayingRef.current && audioRef.current && (audioRef.current.paused || audioRef.current.readyState === 0)) {
+                        forceReconnect();
+                    }
+                }, 4000);
+
                 return () => {
                     window.removeEventListener('online', handleOnline);
                     document.removeEventListener('visibilitychange', handleVisibility);
+                    clearInterval(watcher);
                 };
             }, [isPlaying, quality]);
+
+            useEffect(() => {
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.metadata = new MediaMetadata({
+                        title: meta.song,
+                        artist: meta.artist,
+                        artwork: [{ src: meta.image, sizes: '512x512', type: 'image/png' }]
+                    });
+                    navigator.mediaSession.setActionHandler('play', togglePlay);
+                    navigator.mediaSession.setActionHandler('pause', togglePlay);
+                }
+            }, [meta]);
 
             const togglePlay = () => {
                 if (!isPlaying) {
                     audioRef.current.src = `${STREAMS[quality]}?t=${Date.now()}`;
-                    audioRef.current.play();
+                    audioRef.current.volume = volume;
+                    audioRef.current.play().catch(console.error);
                     setIsPlaying(true);
                 } else {
                     audioRef.current.pause();
@@ -104,27 +141,29 @@
                 }
             };
 
+            const handleVolumeChange = (e) => {
+                const val = parseFloat(e.target.value);
+                setVolume(val);
+                if (audioRef.current) audioRef.current.volume = val;
+            };
+
             useEffect(() => {
                 const fetchMeta = async () => {
                     try {
                         const res = await fetch(API_URL);
                         const data = await res.json();
                         if (data.now_playing) {
-                            const np = data.now_playing;
-                            setMeta({ song: np.song.title, artist: np.song.artist, image: np.song.art });
-                            if ('mediaSession' in navigator) {
-                                navigator.mediaSession.metadata = new MediaMetadata({
-                                    title: np.song.title,
-                                    artist: np.song.artist,
-                                    artwork: [{ src: np.song.art, sizes: '512x512', type: 'image/png' }]
-                                });
-                            }
+                            setMeta({
+                                song: data.now_playing.song.title,
+                                artist: data.now_playing.song.artist,
+                                image: data.now_playing.song.art
+                            });
                         }
                     } catch (e) {}
                 };
                 fetchMeta();
-                const interval = setInterval(fetchMeta, 15000);
-                return () => clearInterval(interval);
+                const itv = setInterval(fetchMeta, 15000);
+                return () => clearInterval(itv);
             }, []);
 
             return (
@@ -132,21 +171,26 @@
                     <audio 
                         ref={audioRef} 
                         crossOrigin="anonymous" 
-                        onStalled={forceReconnect} 
-                        onEnded={forceReconnect}
-                        onError={() => isPlayingRef.current && setTimeout(forceReconnect, 3000)}
+                        onStalled={forceReconnect}
                     />
                     
                     <div className="bg-glow"></div>
                     
                     <header className="absolute top-8 flex items-center gap-3">
                         <img src="https://i.postimg.cc/28VKXjCx/logo.png" className="w-10 h-10 bg-white rounded-lg p-1 shadow-lg" />
-                        <span className="font-black italic uppercase tracking-widest text-xs">Retro Dance Radio</span>
+                        <span className="font-black italic uppercase tracking-widest text-sm">Retro Dance Radio</span>
                     </header>
 
                     <main className="w-full max-w-md">
                         <div className="glass-card rounded-[40px] p-8 shadow-2xl text-center">
-                            <img src={meta.image} className="w-full aspect-square object-cover rounded-[30px] shadow-2xl mb-8" />
+                            <div className="relative mb-8 group">
+                                <img src={meta.image} className="w-full aspect-square object-cover rounded-[30px] shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]" />
+                                {isPlaying && (
+                                    <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center text-black shadow-xl animate-bounce">
+                                        <i data-lucide="music" style={{width: 20, height: 20}}></i>
+                                    </div>
+                                )}
+                            </div>
 
                             <div className="marquee-container mb-2">
                                 <div className="marquee-text">
@@ -154,11 +198,22 @@
                                     <h2 className="text-2xl font-black uppercase italic tracking-tighter inline-block">{meta.song}</h2>
                                 </div>
                             </div>
-                            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-10 truncate">{meta.artist}</p>
+                            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-8 truncate">{meta.artist}</p>
+
+                            {/* Громкость */}
+                            <div className="flex items-center gap-3 mb-10 px-4">
+                                <i data-lucide="volume-1" className="text-white/20" size={14}></i>
+                                <input type="range" min="0" max="1" step="0.01" value={volume} onChange={handleVolumeChange} className="w-full cursor-pointer" />
+                                <i data-lucide="volume-2" className="text-white/20" size={14}></i>
+                            </div>
                             
                             <div className="flex flex-col items-center gap-8">
-                                <button onClick={togglePlay} className={`w-24 h-24 rounded-full flex items-center justify-center transition-all shadow-2xl ${isPlaying ? 'bg-white text-black' : 'bg-red-700 text-white'}`}>
-                                    {isPlaying ? <i data-lucide="pause" size={40}></i> : <i data-lucide="play" size={40} className="ml-2"></i>}
+                                <button 
+                                    onClick={togglePlay}
+                                    className={`w-24 h-24 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-2xl 
+                                    ${isPlaying ? 'bg-white text-black' : 'bg-red-700 text-white'}`}
+                                >
+                                    {isPlaying ? <i data-lucide="pause" style={{width: 40, height: 40}}></i> : <i data-lucide="play" style={{width: 40, height: 40, marginLeft: 6}}></i>}
                                 </button>
                                 
                                 <div className="flex gap-2 w-full max-w-[180px]">
@@ -168,6 +223,10 @@
                             </div>
                         </div>
                     </main>
+
+                    <footer className="absolute bottom-8 opacity-20 text-[8px] font-black uppercase tracking-[1em]">
+                        Broadcasting via AzuraCast
+                    </footer>
                 </div>
             );
         }
