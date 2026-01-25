@@ -41,15 +41,14 @@
             const db = getFirestore(app);
             const auth = getAuth(app);
             
-            // Экспортируем в window для доступа из React
             window.FB_CORE = { 
                 db, auth, collection, addDoc, 
                 query, orderBy, limit, onSnapshot, serverTimestamp, 
                 signInAnonymously, onAuthStateChanged, appId
             };
-            console.log("Firebase Connected!");
+            console.log("✅ Firebase подключен успешно");
         } catch (e) { 
-            console.error("Firebase Init Error", e); 
+            console.error("❌ Ошибка инициализации Firebase:", e); 
         }
     </script>
 
@@ -131,13 +130,13 @@
             const [text, setText] = useState("");
             const [nick, setNick] = useState(localStorage.getItem('chat_nick') || "");
             const [cooldown, setCooldown] = useState(0);
+            const [error, setError] = useState(null);
             const scrollRef = useRef(null);
 
             useEffect(() => {
                 if (!window.FB_CORE || !user) return;
                 const { db, collection, query, orderBy, limit, onSnapshot, appId } = window.FB_CORE;
 
-                // Путь согласно правилам: /artifacts/{appId}/public/data/chat
                 const q = query(
                     collection(db, 'artifacts', appId, 'public', 'data', 'chat'), 
                     orderBy('createdAt', 'desc'), 
@@ -150,7 +149,10 @@
                     setTimeout(() => { 
                         if(scrollRef.current) scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
                     }, 100);
-                }, (err) => console.log("Firestore Error:", err));
+                }, (err) => {
+                    console.error("🔥 Ошибка чтения Firestore:", err);
+                    setError("Ошибка доступа к чату. Проверьте Rules в Firebase.");
+                });
 
                 return () => unsubscribe();
             }, [user]);
@@ -168,8 +170,10 @@
                 
                 const { db, collection, addDoc, serverTimestamp, appId } = window.FB_CORE;
                 localStorage.setItem('chat_nick', nick);
+                setError(null);
 
                 try {
+                    console.log("Attempting to send message...");
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), {
                         text: text.slice(0, 200),
                         user: nick.slice(0, 15),
@@ -177,8 +181,12 @@
                         createdAt: serverTimestamp()
                     });
                     setText("");
-                    setCooldown(3); 
-                } catch (e) { console.error("Send Error", e); }
+                    setCooldown(3);
+                    console.log("✅ Сообщение отправлено!");
+                } catch (e) { 
+                    console.error("❌ Ошибка отправки:", e);
+                    setError(`Ошибка: ${e.message}`);
+                }
             };
 
             return (
@@ -188,15 +196,10 @@
                             <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
                             <h3 className="font-black uppercase italic tracking-widest text-[10px] text-rose-500">Эфирный чат</h3>
                         </div>
+                        {error && <span className="text-[8px] text-red-400 font-bold uppercase animate-bounce">{error}</span>}
                     </div>
                     
                     <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
-                        {messages.length === 0 && (
-                            <div className="h-full flex flex-col items-center justify-center opacity-20 text-center px-10">
-                                <Icon name="message-square" size={32} className="mb-2" />
-                                <p className="text-[10px] uppercase font-black tracking-widest">Будь первым в эфире!</p>
-                            </div>
-                        )}
                         {messages.map((msg) => (
                             <div key={msg.id} className={`flex flex-col ${msg.uid === user?.uid ? 'items-end' : 'items-start'}`}>
                                 <span className="text-[9px] font-black uppercase mb-1 opacity-40 px-2">{msg.user}</span>
@@ -257,7 +260,16 @@
 
                 if (window.FB_CORE) {
                     const { auth, signInAnonymously, onAuthStateChanged } = window.FB_CORE;
-                    signInAnonymously(auth).catch(e => console.error("Auth failed", e));
+                    
+                    const initAuth = async () => {
+                        try {
+                            await signInAnonymously(auth);
+                        } catch (e) {
+                            console.error("❌ Ошибка входа:", e);
+                        }
+                    };
+                    
+                    initAuth();
                     const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u));
                     return () => { clearInterval(interval); unsubscribe(); };
                 }
