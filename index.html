@@ -35,7 +35,7 @@
                     signInAnonymously, onAuthStateChanged, signInWithCustomToken
                 };
             }
-        } catch (e) { console.error("Firebase initialization failed", e); }
+        } catch (e) { console.error("Firebase init failed", e); }
     </script>
 
     <style>
@@ -86,10 +86,6 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .msg-enter { animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Улучшенный фикс для меню */
         .nav-container {
             display: flex;
             gap: 4px;
@@ -99,14 +95,13 @@
         .nav-btn {
             flex: 1;
             text-align: center;
-            padding-left: 4px;
-            padding-right: 4px;
+            padding-left: 2px;
+            padding-right: 2px;
             min-width: 0;
-            overflow: hidden;
-            text-overflow: clip;
+            white-space: nowrap;
         }
         @media (max-width: 380px) {
-            .nav-btn { font-size: 8px !important; letter-spacing: 0.1em !important; }
+            .nav-btn { font-size: 8px !important; letter-spacing: 0.05em !important; }
         }
     </style>
 </head>
@@ -116,7 +111,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const ADMIN_UID = "ВАШ_UID"; // Замените на ваш UID
+        const ADMIN_UID = "ВАШ_UID"; 
         const LOGO_SRC = "https://i.postimg.cc/28VKXjCx/logo.png";
         const API_URL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
         const REQUESTS_EMBED_URL = "https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests";
@@ -130,6 +125,22 @@
         const Icon = ({ name, size = 18, className = "" }) => {
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name, className, size]);
             return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
+        };
+
+        // Специальный компонент для кнопки Play, чтобы избежать проблем с Lucide
+        const PlayButtonIcon = ({ isPlaying, size = 40 }) => {
+            if (isPlaying) {
+                return (
+                    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="6" width="12" height="12" rx="1" />
+                    </svg>
+                );
+            }
+            return (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 6v12l10-6z" />
+                </svg>
+            );
         };
 
         function ChatComponent({ myUid, isAdmin }) {
@@ -146,8 +157,10 @@
                 const { db, collection, query, orderBy, limit, onSnapshot, doc, getDoc } = window.FB_CORE;
 
                 const checkBan = async () => {
-                    const banDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banned_users', myUid));
-                    if (banDoc.exists()) setIsBanned(true);
+                    try {
+                        const banDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banned_users', myUid));
+                        if (banDoc.exists()) setIsBanned(true);
+                    } catch(e) {}
                 };
                 checkBan();
 
@@ -180,12 +193,6 @@
                 } catch(e) { console.error(e); }
             };
 
-            const deleteMessage = async (id) => {
-                if (!window.confirm("Удалить?")) return;
-                const { db, doc, deleteDoc } = window.FB_CORE;
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'chat', id));
-            };
-
             return (
                 <div className="w-full max-w-2xl flex flex-col h-[500px] glass-rose rounded-[32px] overflow-hidden border border-white/10 shadow-2xl">
                     <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
@@ -193,11 +200,8 @@
                     </div>
                     <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
                         {messages.map((msg) => (
-                            <div key={msg.id} className="msg-enter group flex flex-col">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className={`text-[9px] font-black uppercase ${msg.uid === ADMIN_UID ? 'text-yellow-400' : 'text-rose-500'}`}>{msg.user}</span>
-                                    {isAdmin && <button onClick={() => deleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 text-red-500 text-[8px]">DEL</button>}
-                                </div>
+                            <div key={msg.id} className="msg-enter flex flex-col">
+                                <span className={`text-[9px] font-black uppercase mb-1 ${msg.uid === ADMIN_UID ? 'text-yellow-400' : 'text-rose-500'}`}>{msg.user}</span>
                                 <div className="px-3 py-2 bg-white/5 border border-white/10 rounded-2xl rounded-tl-none text-xs inline-block max-w-[90%]">{msg.text}</div>
                             </div>
                         ))}
@@ -206,7 +210,9 @@
                         {!localStorage.getItem('chat_nick') && <input type="text" placeholder="Ник" value={userName} onChange={e=>setUserName(e.target.value)} className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-[10px]" required />}
                         <div className="flex gap-2">
                             <input type="text" placeholder={isBanned ? "БАН" : "Текст..."} value={text} onChange={e=>setText(e.target.value)} disabled={isBanned} className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none" />
-                            <button type="submit" disabled={timeLeft > 0 || isBanned} className="bg-rose-600 px-4 rounded-xl font-black text-xs">{timeLeft > 0 ? timeLeft : <Icon name="send" size={14} />}</button>
+                            <button type="submit" disabled={timeLeft > 0 || isBanned} className="bg-rose-600 px-4 rounded-xl font-black text-xs h-10 w-12 flex items-center justify-center">
+                                {timeLeft > 0 ? timeLeft : <Icon name="send" size={14} />}
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -229,11 +235,13 @@
                 if (window.FB_CORE) {
                     const { auth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = window.FB_CORE;
                     const initAuth = async () => {
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
+                        try {
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch(e) {}
                     };
                     initAuth();
                     const unsubscribe = onAuthStateChanged(auth, (user) => { if (user) setMyUid(user.uid); });
@@ -282,7 +290,7 @@
                             </div>
                             <h1 className="font-black italic text-xl uppercase tracking-tighter">Retro<span className="text-rose-600">Dance</span></h1>
                         </div>
-                        <div className="bg-white/5 px-4 py-1.5 rounded-full flex items-center gap-2 border border-white/10 shadow-xl">
+                        <div className="bg-white/5 px-4 py-1.5 rounded-full flex items-center gap-2 border border-white/10">
                             <Icon name="users" size={14} className="text-rose-500" />
                             <span className="text-xs font-black">{meta.listeners}</span>
                         </div>
@@ -321,7 +329,7 @@
                                     <p className="text-rose-500 font-bold uppercase tracking-[0.3em] text-xs md:text-sm mb-10 opacity-80">{meta.artist}</p>
                                     <div className="flex flex-wrap items-center gap-8 justify-center md:justify-start">
                                         <button onClick={togglePlay} className={`w-24 h-24 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-2xl ${isPlaying ? 'bg-yellow-400 text-black' : 'bg-white text-black'}`}>
-                                            <Icon name={isPlaying ? "square" : "play"} size={40} fill="currentColor" />
+                                            <PlayButtonIcon isPlaying={isPlaying} />
                                         </button>
                                         <div className="flex flex-col gap-2">
                                             <div className="flex bg-black/40 rounded-xl p-1 border border-white/10 text-xs">
