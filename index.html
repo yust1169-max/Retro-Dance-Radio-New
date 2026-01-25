@@ -140,12 +140,13 @@
             };
 
             return (
-                <div className="w-full max-w-xl h-[450px] glass-rose rounded-[32px] overflow-hidden flex flex-col shadow-2xl chat-msg">
-                    <div className="p-4 border-b border-white/5 bg-white/5 flex items-center gap-2">
+                <div className="w-full max-w-xl h-[480px] md:h-[500px] glass-rose rounded-[32px] overflow-hidden flex flex-col shadow-2xl chat-msg">
+                    <div className="p-3 border-b border-white/5 bg-white/5 flex items-center gap-2 shrink-0">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Чат Слушателей</span>
                     </div>
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
+                    
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
                         {messages.map(m => (
                             <div key={m.id} className={`flex flex-col ${m.uid === user?.uid ? 'items-end' : 'items-start'}`}>
                                 <div className="flex gap-2 items-center mb-1 px-1">
@@ -158,12 +159,30 @@
                             </div>
                         ))}
                     </div>
-                    <form onSubmit={handleSend} className="p-3 bg-black/40 border-t border-white/5 flex gap-2">
-                        <input value={nick} onChange={e=>setNick(e.target.value)} placeholder="Ник" className="w-20 bg-white/5 border border-white/10 rounded-xl px-2 py-2 text-[11px] text-white focus:outline-none" />
-                        <input value={text} onChange={e=>setText(e.target.value)} placeholder="Сообщение..." className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none" />
-                        <button disabled={isSending} className="bg-rose-600 w-10 h-10 flex items-center justify-center rounded-xl font-black text-xs disabled:opacity-50 active:scale-90 transition-transform">
-                            {isSending ? "..." : <SvgIcon name="send" className="text-sm" />}
-                        </button>
+
+                    <form onSubmit={handleSend} className="p-3 bg-black/60 border-t border-white/5 shrink-0">
+                        <div className="flex gap-2">
+                            <input 
+                                value={nick} 
+                                onChange={e=>setNick(e.target.value)} 
+                                placeholder="Ник" 
+                                className="w-20 bg-white/5 border border-white/10 rounded-xl px-2 py-2 text-[11px] text-white focus:outline-none focus:border-rose-500" 
+                            />
+                            <div className="flex-1 flex gap-2">
+                                <input 
+                                    value={text} 
+                                    onChange={e=>setText(e.target.value)} 
+                                    placeholder="Текст..." 
+                                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-500" 
+                                />
+                                <button 
+                                    disabled={isSending} 
+                                    className="bg-rose-600 w-10 h-10 flex items-center justify-center rounded-xl font-black text-xs disabled:opacity-50 active:scale-90 transition-transform shadow-lg"
+                                >
+                                    {isSending ? "..." : <SvgIcon name="send" className="text-sm" />}
+                                </button>
+                            </div>
+                        </div>
                     </form>
                 </div>
             );
@@ -234,7 +253,7 @@
                     
                     <div className="bg-sphere top-0 left-0"></div>
                     
-                    <header className="p-6 flex justify-between items-center max-w-5xl mx-auto w-full z-10">
+                    <header className="p-6 flex justify-between items-center max-w-5xl mx-auto w-full z-10 shrink-0">
                         <div className="flex items-center gap-3">
                             <img src={LOGO_SRC} className="h-9 w-9 object-contain bg-white rounded-xl p-1 shadow-lg" />
                             <h1 className="font-black italic text-lg uppercase tracking-tighter">Retro<span className="text-rose-600">Dance</span></h1>
@@ -245,7 +264,7 @@
                         </div>
                     </header>
 
-                    <nav className="flex justify-center px-4 z-10 mb-8 overflow-x-auto no-scrollbar">
+                    <nav className="flex justify-center px-4 z-10 mb-6 overflow-x-auto no-scrollbar shrink-0">
                         <div className="bg-white/5 rounded-2xl p-1 flex gap-1 border border-white/10 whitespace-nowrap">
                             {['player', 'history', 'chat', 'request'].map(id => (
                                 <button key={id} onClick={() => setActiveTab(id)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === id ? 'bg-rose-600 text-white shadow-md' : 'text-white/30'}`}>
@@ -255,11 +274,11 @@
                         </div>
                     </nav>
 
-                    <main className="flex-1 flex flex-col items-center justify-start p-4 z-10 w-full max-w-5xl mx-auto">
+                    <main className="flex-1 flex flex-col items-center justify-start p-4 z-10 w-full max-w-5xl mx-auto overflow-y-auto no-scrollbar">
                         {activeTab === 'player' && (
-                            <div className="w-full flex flex-col items-center gap-8 glass-rose p-8 rounded-[48px] shadow-2xl chat-msg">
+                            <div className="w-full flex flex-col items-center gap-6 glass-rose p-6 md:p-8 rounded-[48px] shadow-2xl chat-msg">
                                 <div className="relative group">
-                                    <img src={meta.image} className="w-56 h-56 md:w-72 md:h-72 object-cover rounded-[40px] shadow-2xl ring-1 ring-white/10 transition-transform duration-500 group-hover:scale-105" />
+                                    <img src={meta.image} className="w-52 h-52 md:w-72 md:h-72 object-cover rounded-[40px] shadow-2xl ring-1 ring-white/10 transition-transform duration-500 group-hover:scale-105" />
                                     {isPlaying && <div className="absolute -inset-2 border-2 border-rose-600 rounded-[44px] animate-pulse opacity-50"></div>}
                                 </div>
                                 
@@ -269,7 +288,7 @@
                                             <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter inline-block">{meta.song}</h2>
                                         </div>
                                     </div>
-                                    <p className="text-rose-500 font-bold uppercase tracking-[0.3em] text-[10px] md:text-xs mb-8 opacity-80">{meta.artist}</p>
+                                    <p className="text-rose-500 font-bold uppercase tracking-[0.3em] text-[10px] md:text-xs mb-6 opacity-80">{meta.artist}</p>
                                     
                                     <div className="flex flex-col items-center gap-6">
                                         <div className="flex items-center gap-6">
@@ -286,7 +305,6 @@
                                             </div>
                                         </div>
 
-                                        {/* ГРОМКОСТЬ - Скрываем на iOS */}
                                         {!isIOS && (
                                             <div className="flex items-center gap-3 w-48 bg-black/20 p-3 rounded-2xl border border-white/5">
                                                 <SvgIcon name="volume" className="text-white/40 text-sm" />
@@ -301,7 +319,7 @@
                         {activeTab === 'chat' && (user ? <ChatComponent user={user} /> : <div className="p-10 text-xs font-black opacity-30 animate-pulse">Соединение с чатом...</div>)}
 
                         {activeTab === 'history' && (
-                            <div className="w-full max-w-xl space-y-2 pb-20 chat-msg">
+                            <div className="w-full max-w-xl space-y-2 pb-10 chat-msg">
                                 {history.map((h, i) => (
                                     <div key={i} className="bg-white/5 p-3 rounded-2xl flex items-center gap-4 border border-white/5 hover:bg-white/10 transition-colors">
                                         <img src={h.song?.art || DEFAULT_COVER} className="w-12 h-12 rounded-xl object-cover" />
@@ -322,7 +340,7 @@
                         )}
                     </main>
 
-                    <footer className="p-8 text-center mt-auto z-10">
+                    <footer className="p-6 text-center mt-auto z-10 shrink-0">
                         <p className="text-[9px] font-black uppercase tracking-[1.5em] text-rose-600 opacity-40">Retro Dance Radio &copy; 2026</p>
                     </footer>
                 </div>
