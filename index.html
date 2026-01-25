@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" prefix="og: http://ogp.me/ns#">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Retro Dance Radio</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <title>Retro Dance Radio — Включай энергию прошлого!</title>
     
     <link rel="apple-touch-icon" href="https://i.postimg.cc/28VKXjCx/logo.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,117 +16,265 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, setDoc, deleteDoc, query, orderBy, limit, onSnapshot, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        try {
+            const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
+            if (firebaseConfig.apiKey) {
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                const auth = getAuth(app);
+                window.FB_CORE = { 
+                    db, auth, collection, addDoc, doc, setDoc, deleteDoc, getDoc,
+                    query, orderBy, limit, onSnapshot, serverTimestamp, 
+                    signInAnonymously, onAuthStateChanged, signInWithCustomToken
+                };
+            }
+        } catch (e) { console.error("Firebase init failed", e); }
+    </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
         body { 
-            background: #0d0d0d; 
+            background-color: #0d0d0d;
             font-family: 'Inter', sans-serif; 
-            color: white; 
             margin: 0; 
-            overflow: hidden; 
-            height: 100vh;
-            height: 100svh;
-            -webkit-tap-highlight-color: transparent;
+            color: white; 
+            overflow-x: hidden;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         .glass-rose { 
-            background: rgba(45, 0, 10, 0.85); 
-            backdrop-filter: blur(25px); 
-            -webkit-backdrop-filter: blur(25px); 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
+            background: rgba(45, 0, 10, 0.85);
+            backdrop-filter: blur(30px); 
+            -webkit-backdrop-filter: blur(30px); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
         }
 
         .bg-sphere { 
             position: fixed; 
-            width: 150vw; 
-            height: 150vw; 
+            width: 100vw; 
+            height: 100vw; 
             background: radial-gradient(circle, rgba(225, 29, 72, 0.15) 0%, transparent 70%); 
             z-index: -1; 
-            filter: blur(80px); 
-            top: -50vw;
-            left: -25vw;
+            filter: blur(120px); 
+            animation: move 30s infinite alternate linear; 
         }
 
-        .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); }
-        .marquee-text { display: inline-block; animation: marquee 12s linear infinite; padding-right: 50px; }
+        @keyframes move { from { transform: translate(-25%, -25%); } to { transform: translate(25%, 25%); } }
+
+        .marquee-container { 
+            overflow: hidden; 
+            white-space: nowrap; 
+            width: 100%; 
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+        .marquee-text { 
+            display: inline-block; 
+            animation: marquee 12s linear infinite; 
+            padding-right: 50px; 
+        }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        input[type=range] { -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; width: 100%; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #e11d48; cursor: pointer; border: 2px solid white; box-shadow: 0 0 10px rgba(225, 29, 72, 0.5); }
+
+        .nav-container {
+            display: flex;
+            gap: 4px;
+            width: 100%;
+            justify-content: space-between;
+        }
+        .nav-btn {
+            flex: 1;
+            text-align: center;
+            padding-left: 2px;
+            padding-right: 2px;
+            min-width: 0;
+            white-space: nowrap;
+        }
+        @media (max-width: 380px) {
+            .nav-btn { font-size: 8px !important; letter-spacing: 0.05em !important; }
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useCallback } = React;
+        const { useState, useEffect, useRef } = React;
 
+        const ADMIN_UID = "ВАШ_UID"; 
         const LOGO_SRC = "https://i.postimg.cc/28VKXjCx/logo.png";
         const API_URL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
+        const REQUESTS_EMBED_URL = "https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests";
         const DEFAULT_COVER = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000&auto=format&fit=crop";
-        const STREAMS = { high: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio.AAC", low: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio32.AAC" };
 
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const STREAMS = {
+            high: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio.AAC",
+            low: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio32.AAC"
+        };
 
-        const SvgIcon = ({ name, className = "" }) => {
-            const icons = {
-                play: <path d="M5 3l14 9-14 9V3z" />,
-                stop: <rect x="6" y="6" width="12" height="12" rx="2" />,
-                volume: <path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
-            };
+        const Icon = ({ name, size = 18, className = "" }) => {
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name, className, size]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
+        };
+
+        // Специальный компонент для кнопки Play с принудительным обновлением ключа (key)
+        const PlayButtonIcon = ({ isPlaying, size = 40 }) => {
+            // Ключ заставляет браузер ПЕРЕРИСОВАТЬ SVG полностью
+            const iconKey = isPlaying ? "stop-icon" : "play-icon";
+            
             return (
-                <svg viewBox="0 0 24 24" fill="currentColor" className={className} style={{ width: '1em', height: '1em' }}>
-                    {icons[name]}
-                </svg>
+                <div key={iconKey} className="flex items-center justify-center">
+                    {isPlaying ? (
+                        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="6" y="6" width="12" height="12" rx="1" />
+                        </svg>
+                    ) : (
+                        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 5v14l11-7z" />
+                        </svg>
+                    )}
+                </div>
             );
         };
+
+        function ChatComponent({ myUid, isAdmin }) {
+            const [messages, setMessages] = useState([]);
+            const [text, setText] = useState("");
+            const [userName, setUserName] = useState(localStorage.getItem('chat_nick') || "");
+            const [isBanned, setIsBanned] = useState(false);
+            const [timeLeft, setTimeLeft] = useState(0);
+            const scrollRef = useRef(null);
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'retro-radio';
+
+            useEffect(() => {
+                if (!window.FB_CORE || !myUid) return;
+                const { db, collection, query, orderBy, limit, onSnapshot, doc, getDoc } = window.FB_CORE;
+
+                const checkBan = async () => {
+                    try {
+                        const banDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banned_users', myUid));
+                        if (banDoc.exists()) setIsBanned(true);
+                    } catch(e) {}
+                };
+                checkBan();
+
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), orderBy('createdAt', 'desc'), limit(50));
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).reverse();
+                    setMessages(msgs);
+                    setTimeout(() => { if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, 100);
+                });
+                return () => unsubscribe();
+            }, [myUid]);
+
+            useEffect(() => {
+                if (timeLeft > 0) {
+                    const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+                    return () => clearTimeout(timer);
+                }
+            }, [timeLeft]);
+
+            const sendMessage = async (e) => {
+                e.preventDefault();
+                if (isBanned || !text.trim() || !userName.trim() || timeLeft > 0) return;
+                const { db, collection, addDoc, serverTimestamp } = window.FB_CORE;
+                localStorage.setItem('chat_nick', userName);
+                try {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), {
+                        text: text.slice(0, 300), user: userName.slice(0, 20), uid: myUid, createdAt: serverTimestamp()
+                    });
+                    setText(""); setTimeLeft(10);
+                } catch(e) { console.error(e); }
+            };
+
+            return (
+                <div className="w-full max-w-2xl flex flex-col h-[500px] glass-rose rounded-[32px] overflow-hidden border border-white/10 shadow-2xl">
+                    <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                        <h3 className="font-black uppercase italic tracking-widest text-[10px] text-rose-500">Live Chat</h3>
+                    </div>
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+                        {messages.map((msg) => (
+                            <div key={msg.id} className="msg-enter flex flex-col">
+                                <span className={`text-[9px] font-black uppercase mb-1 ${msg.uid === ADMIN_UID ? 'text-yellow-400' : 'text-rose-500'}`}>{msg.user}</span>
+                                <div className="px-3 py-2 bg-white/5 border border-white/10 rounded-2xl rounded-tl-none text-xs inline-block max-w-[90%]">{msg.text}</div>
+                            </div>
+                        ))}
+                    </div>
+                    <form onSubmit={sendMessage} className="p-3 bg-black/40 border-t border-white/5 flex flex-col gap-2">
+                        {!localStorage.getItem('chat_nick') && <input type="text" placeholder="Ник" value={userName} onChange={e=>setUserName(e.target.value)} className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-[10px]" required />}
+                        <div className="flex gap-2">
+                            <input type="text" placeholder={isBanned ? "БАН" : "Текст..."} value={text} onChange={e=>setText(e.target.value)} disabled={isBanned} className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none" />
+                            <button type="submit" disabled={timeLeft > 0 || isBanned} className="bg-rose-600 px-4 rounded-xl font-black text-xs h-10 w-12 flex items-center justify-center">
+                                {timeLeft > 0 ? timeLeft : <Icon name="send" size={14} />}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            );
+        }
 
         function App() {
             const [isPlaying, setIsPlaying] = useState(false);
             const [quality, setQuality] = useState('high');
-            const [volume, setVolume] = useState(0.8);
             const [activeTab, setActiveTab] = useState('player');
-            const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", image: DEFAULT_COVER });
+            const [myUid, setMyUid] = useState(null);
+            const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", listeners: 0, image: DEFAULT_COVER });
             const [history, setHistory] = useState([]);
             const audioRef = useRef(null);
 
-            const fetchMeta = useCallback(async () => {
-                try {
-                    const r = await fetch(`${API_URL}?t=${Date.now()}`);
-                    const d = await r.json();
-                    if (d.now_playing) {
-                        setMeta({
-                            song: d.now_playing.song?.title || "Эфир",
-                            artist: d.now_playing.song?.artist || "Retro Radio",
-                            image: d.now_playing.song?.art || DEFAULT_COVER
-                        });
-                        if (d.song_history) setHistory(d.song_history.slice(0, 10));
-                    }
-                } catch(e) {}
+            useEffect(() => {
+                fetchNowPlaying();
+                const interval = setInterval(fetchNowPlaying, 15000);
+                
+                if (window.FB_CORE) {
+                    const { auth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = window.FB_CORE;
+                    const initAuth = async () => {
+                        try {
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch(e) {}
+                    };
+                    initAuth();
+                    const unsubscribe = onAuthStateChanged(auth, (user) => { if (user) setMyUid(user.uid); });
+                    return () => { clearInterval(interval); unsubscribe(); };
+                }
+                return () => clearInterval(interval);
             }, []);
 
-            useEffect(() => {
-                fetchMeta();
-                const int = setInterval(fetchMeta, 15000);
-                return () => clearInterval(int);
-            }, [fetchMeta]);
-
-            useEffect(() => {
-                if (audioRef.current && !isIOS) {
-                    audioRef.current.volume = volume;
-                }
-            }, [volume]);
+            const fetchNowPlaying = async () => {
+                try {
+                    const res = await fetch(API_URL);
+                    const data = await res.json();
+                    if (data?.now_playing) {
+                        setMeta({
+                            song: data.now_playing.song?.title || "Эфир",
+                            artist: data.now_playing.song?.artist || "Retro Radio",
+                            listeners: data.listeners?.total || 0,
+                            image: data.now_playing.song?.art || DEFAULT_COVER
+                        });
+                        if (data.song_history) setHistory(data.song_history.slice(0, 10));
+                    }
+                } catch (e) { console.log("Meta load failed"); }
+            };
 
             const togglePlay = () => {
-                if (!audioRef.current) return;
                 if (!isPlaying) {
                     audioRef.current.src = `${STREAMS[quality]}?t=${Date.now()}`;
-                    audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+                    audioRef.current.play();
+                    setIsPlaying(true);
                 } else {
                     audioRef.current.pause();
                     audioRef.current.src = "";
@@ -133,98 +283,79 @@
             };
 
             return (
-                <div className="flex flex-col h-screen h-[100svh] relative bg-[#0d0d0d] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+                <div className="flex flex-col min-h-screen relative overflow-hidden">
                     <audio ref={audioRef} crossOrigin="anonymous" />
-                    <div className="bg-sphere"></div>
+                    <div className="bg-sphere top-0 left-0"></div>
                     
-                    {/* Header */}
-                    <header className="px-6 py-4 flex justify-between items-center z-20 shrink-0">
+                    <header className="p-6 flex justify-between items-center max-w-5xl mx-auto w-full z-10">
                         <div className="flex items-center gap-3">
-                            <img src={LOGO_SRC} className="h-8 w-8 bg-white rounded-xl p-1 shadow-lg" />
-                            <h1 className="font-black italic text-lg uppercase tracking-tighter">Retro<span className="text-rose-600">Dance</span></h1>
+                            <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center overflow-hidden">
+                                <img src={LOGO_SRC} className="h-full w-full object-contain p-1.5" />
+                            </div>
+                            <h1 className="font-black italic text-xl uppercase tracking-tighter">Retro<span className="text-rose-600">Dance</span></h1>
+                        </div>
+                        <div className="bg-white/5 px-4 py-1.5 rounded-full flex items-center gap-2 border border-white/10">
+                            <Icon name="users" size={14} className="text-rose-500" />
+                            <span className="text-xs font-black">{meta.listeners}</span>
                         </div>
                     </header>
 
-                    {/* Navigation */}
-                    <nav className="flex justify-center px-6 z-20 mb-4 shrink-0">
-                        <div className="bg-white/5 rounded-[24px] p-1 flex gap-1 border border-white/10 w-full max-w-sm">
-                            {['player', 'history', 'request'].map(id => (
-                                <button key={id} onClick={() => setActiveTab(id)} className={`flex-1 py-2.5 rounded-[20px] text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === id ? 'bg-rose-600 shadow-xl' : 'text-white/20'}`}>
-                                    {id === 'player' ? 'Плеер' : id === 'history' ? 'Треки' : 'Заказ'}
-                                </button>
-                            ))}
+                    <nav className="flex justify-center px-4 z-10 mb-6">
+                        <div className="bg-white/5 rounded-2xl p-1 border border-white/10 w-full max-w-md">
+                            <div className="nav-container">
+                                {[
+                                    {id: 'player', label: 'Плеер'},
+                                    {id: 'history', label: 'История'},
+                                    {id: 'chat', label: 'Чат'},
+                                    {id: 'request', label: 'Заказать'}
+                                ].map(tab => (
+                                    <button key={tab.id} onClick={() => setActiveTab(tab.id)} 
+                                        className={`nav-btn py-2.5 rounded-xl text-[10px] font-black uppercase transition-all tracking-widest ${activeTab === tab.id ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </nav>
 
-                    {/* Main Content */}
-                    <main className="flex-1 relative z-10 px-6 flex flex-col items-center justify-center overflow-hidden">
+                    <main className="flex-1 flex flex-col items-center justify-start p-4 z-10 w-full max-w-5xl mx-auto">
                         {activeTab === 'player' && (
-                            <div className="flex flex-col items-center w-full max-w-sm gap-6 md:gap-8">
-                                {/* Album Art */}
-                                <div className="relative shrink-0">
-                                    <img src={meta.image} className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-[48px] shadow-2xl ring-1 ring-white/10" />
-                                    {isPlaying && (
-                                        <div className="absolute -inset-4 border-2 border-rose-600 rounded-[56px] animate-pulse opacity-40"></div>
-                                    )}
-                                </div>
-                                
-                                {/* Info & Controls */}
-                                <div className="text-center w-full">
-                                    <div className="marquee-container mb-1">
+                            <div className="w-full flex flex-col md:flex-row items-center gap-10 glass-rose p-8 md:p-12 rounded-[48px] shadow-2xl border border-white/10">
+                                <img src={meta.image} className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-[40px] shadow-2xl transition-all duration-500" />
+                                <div className="text-center md:text-left flex-1 w-full overflow-hidden">
+                                    <div className="marquee-container mb-2">
                                         <div className={meta.song.length > 15 ? "marquee-text" : ""}>
-                                            <h2 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter">{meta.song}</h2>
+                                            <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter inline-block">
+                                                {meta.song}&nbsp;&nbsp;&nbsp;&nbsp;{meta.song.length > 15 ? meta.song : ""}
+                                            </h2>
                                         </div>
                                     </div>
-                                    <p className="text-rose-600 font-bold uppercase tracking-[0.3em] text-[10px] mb-6">{meta.artist}</p>
-                                    
-                                    {/* Main Control Panel */}
-                                    <div className="glass-rose p-6 rounded-[32px] shadow-2xl flex flex-col gap-6">
-                                        <div className="flex items-center justify-between gap-4">
-                                            {/* Play Button */}
-                                            <button onClick={togglePlay} className="w-20 h-20 min-w-[80px] bg-white rounded-[24px] flex items-center justify-center shadow-xl active:scale-95 transition-all">
-                                                <SvgIcon name={isPlaying ? "stop" : "play"} className={`text-black text-3xl ${!isPlaying && 'ml-1'}`} />
-                                            </button>
-                                            
-                                            {/* Quality Switch */}
-                                            <div className="flex flex-col gap-2 flex-1">
-                                                <div className="flex gap-1.5">
-                                                    {['high', 'low'].map(q => (
-                                                        <button key={q} onClick={() => setQuality(q)} className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest border transition-all ${quality === q ? 'bg-rose-600 border-rose-500 text-white' : 'bg-black/20 border-white/5 text-white/30'}`}>
-                                                            {q === 'high' ? 'HQ' : 'LQ'}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <div className="text-[8px] font-black uppercase tracking-widest text-white/20 text-center">Битрейт потока</div>
+                                    <p className="text-rose-500 font-bold uppercase tracking-[0.3em] text-xs md:text-sm mb-10 opacity-80">{meta.artist}</p>
+                                    <div className="flex flex-wrap items-center gap-8 justify-center md:justify-start">
+                                        <button onClick={togglePlay} className={`w-24 h-24 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-2xl ${isPlaying ? 'bg-yellow-400 text-black' : 'bg-white text-black'}`}>
+                                            <PlayButtonIcon isPlaying={isPlaying} />
+                                        </button>
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex bg-black/40 rounded-xl p-1 border border-white/10 text-xs">
+                                                <button onClick={() => setQuality('high')} className={`px-4 py-2 rounded-lg font-black tracking-widest ${quality === 'high' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>128K</button>
+                                                <button onClick={() => setQuality('low')} className={`px-4 py-2 rounded-lg font-black tracking-widest ${quality === 'low' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>32K</button>
                                             </div>
                                         </div>
-
-                                        {/* Volume Slider - Hidden on iOS as it's not supported by Apple */}
-                                        {!isIOS && (
-                                            <div className="flex items-center gap-4 px-2">
-                                                <SvgIcon name="volume" className="text-white/30 text-lg" />
-                                                <input 
-                                                    type="range" 
-                                                    min="0" 
-                                                    max="1" 
-                                                    step="0.01" 
-                                                    value={volume} 
-                                                    onChange={(e) => setVolume(parseFloat(e.target.value))}
-                                                />
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </div>
                         )}
 
+                        {activeTab === 'chat' && <ChatComponent myUid={myUid} isAdmin={myUid === ADMIN_UID} />}
+
                         {activeTab === 'history' && (
-                            <div className="w-full max-w-xl h-full overflow-y-auto no-scrollbar space-y-3 py-2">
-                                {history.map((h, i) => (
-                                    <div key={i} className="bg-white/5 p-4 rounded-[24px] flex items-center gap-4 border border-white/5">
-                                        <img src={h.song?.art || DEFAULT_COVER} className="w-14 h-14 rounded-2xl object-cover shrink-0 shadow-lg" />
-                                        <div className="flex-1 min-w-0 text-left">
-                                            <h4 className="font-black text-sm truncate uppercase tracking-tight">{h.song?.title}</h4>
-                                            <p className="text-[10px] text-white/30 font-bold uppercase truncate tracking-widest">{h.song?.artist}</p>
+                            <div className="w-full max-w-xl space-y-3 pb-20">
+                                {history.map((item, i) => (
+                                    <div key={i} className="bg-white/5 p-4 rounded-2xl flex items-center gap-4 border border-white/5 hover:border-rose-500/30">
+                                        <img src={item.song?.art || DEFAULT_COVER} className="w-14 h-14 rounded-xl object-cover shadow-lg" />
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-black text-sm truncate uppercase tracking-tight">{item.song?.title || "Неизвестно"}</h4>
+                                            <p className="text-[10px] text-white/40 font-bold uppercase truncate">{item.song?.artist || "Неизвестно"}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -232,15 +363,14 @@
                         )}
                         
                         {activeTab === 'request' && (
-                            <div className="w-full h-full max-w-xl bg-white/5 rounded-t-[40px] overflow-hidden border border-white/10">
-                                <iframe src="https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests" className="w-full h-full border-0" />
+                            <div className="w-full h-[600px] glass-rose rounded-[40px] overflow-hidden border border-white/10">
+                                <iframe src={REQUESTS_EMBED_URL} className="w-full h-full border-0" allowTransparency="true"></iframe>
                             </div>
                         )}
                     </main>
 
-                    {/* Footer */}
-                    <footer className="py-4 text-center shrink-0">
-                        <p className="text-[8px] font-black uppercase tracking-[1em] text-white/5 italic">Retro Dance Radio &copy; 2026</p>
+                    <footer className="p-10 text-center mt-auto">
+                        <p className="text-[10px] font-black uppercase tracking-[1.5em] text-rose-600 opacity-60">Retro Dance Radio &copy; 2026</p>
                     </footer>
                 </div>
             );
