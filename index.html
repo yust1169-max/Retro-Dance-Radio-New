@@ -103,6 +103,23 @@
         @media (max-width: 380px) {
             .nav-btn { font-size: 8px !important; letter-spacing: 0.05em !important; }
         }
+
+        /* Стили для ползунка громкости */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 6px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #e11d48;
+            cursor: pointer;
+            border: 2px solid white;
+        }
     </style>
 </head>
 <body>
@@ -127,11 +144,8 @@
             return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
         };
 
-        // Специальный компонент для кнопки Play с принудительным обновлением ключа (key)
         const PlayButtonIcon = ({ isPlaying, size = 40 }) => {
-            // Ключ заставляет браузер ПЕРЕРИСОВАТЬ SVG полностью
             const iconKey = isPlaying ? "stop-icon" : "play-icon";
-            
             return (
                 <div key={iconKey} className="flex items-center justify-center">
                     {isPlaying ? (
@@ -147,85 +161,11 @@
             );
         };
 
-        function ChatComponent({ myUid, isAdmin }) {
-            const [messages, setMessages] = useState([]);
-            const [text, setText] = useState("");
-            const [userName, setUserName] = useState(localStorage.getItem('chat_nick') || "");
-            const [isBanned, setIsBanned] = useState(false);
-            const [timeLeft, setTimeLeft] = useState(0);
-            const scrollRef = useRef(null);
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'retro-radio';
-
-            useEffect(() => {
-                if (!window.FB_CORE || !myUid) return;
-                const { db, collection, query, orderBy, limit, onSnapshot, doc, getDoc } = window.FB_CORE;
-
-                const checkBan = async () => {
-                    try {
-                        const banDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'banned_users', myUid));
-                        if (banDoc.exists()) setIsBanned(true);
-                    } catch(e) {}
-                };
-                checkBan();
-
-                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), orderBy('createdAt', 'desc'), limit(50));
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).reverse();
-                    setMessages(msgs);
-                    setTimeout(() => { if(scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, 100);
-                });
-                return () => unsubscribe();
-            }, [myUid]);
-
-            useEffect(() => {
-                if (timeLeft > 0) {
-                    const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-                    return () => clearTimeout(timer);
-                }
-            }, [timeLeft]);
-
-            const sendMessage = async (e) => {
-                e.preventDefault();
-                if (isBanned || !text.trim() || !userName.trim() || timeLeft > 0) return;
-                const { db, collection, addDoc, serverTimestamp } = window.FB_CORE;
-                localStorage.setItem('chat_nick', userName);
-                try {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chat'), {
-                        text: text.slice(0, 300), user: userName.slice(0, 20), uid: myUid, createdAt: serverTimestamp()
-                    });
-                    setText(""); setTimeLeft(10);
-                } catch(e) { console.error(e); }
-            };
-
-            return (
-                <div className="w-full max-w-2xl flex flex-col h-[500px] glass-rose rounded-[32px] overflow-hidden border border-white/10 shadow-2xl">
-                    <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
-                        <h3 className="font-black uppercase italic tracking-widest text-[10px] text-rose-500">Live Chat</h3>
-                    </div>
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
-                        {messages.map((msg) => (
-                            <div key={msg.id} className="msg-enter flex flex-col">
-                                <span className={`text-[9px] font-black uppercase mb-1 ${msg.uid === ADMIN_UID ? 'text-yellow-400' : 'text-rose-500'}`}>{msg.user}</span>
-                                <div className="px-3 py-2 bg-white/5 border border-white/10 rounded-2xl rounded-tl-none text-xs inline-block max-w-[90%]">{msg.text}</div>
-                            </div>
-                        ))}
-                    </div>
-                    <form onSubmit={sendMessage} className="p-3 bg-black/40 border-t border-white/5 flex flex-col gap-2">
-                        {!localStorage.getItem('chat_nick') && <input type="text" placeholder="Ник" value={userName} onChange={e=>setUserName(e.target.value)} className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-[10px]" required />}
-                        <div className="flex gap-2">
-                            <input type="text" placeholder={isBanned ? "БАН" : "Текст..."} value={text} onChange={e=>setText(e.target.value)} disabled={isBanned} className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none" />
-                            <button type="submit" disabled={timeLeft > 0 || isBanned} className="bg-rose-600 px-4 rounded-xl font-black text-xs h-10 w-12 flex items-center justify-center">
-                                {timeLeft > 0 ? timeLeft : <Icon name="send" size={14} />}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            );
-        }
-
         function App() {
             const [isPlaying, setIsPlaying] = useState(false);
             const [quality, setQuality] = useState('high');
+            const [volume, setVolume] = useState(0.8);
+            const [isIos, setIsIos] = useState(false);
             const [activeTab, setActiveTab] = useState('player');
             const [myUid, setMyUid] = useState(null);
             const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", listeners: 0, image: DEFAULT_COVER });
@@ -233,11 +173,15 @@
             const audioRef = useRef(null);
 
             useEffect(() => {
+                // Проверка на iOS
+                const userAgent = window.navigator.userAgent.toLowerCase();
+                setIsIos(/iphone|ipad|ipod/.test(userAgent));
+
                 fetchNowPlaying();
                 const interval = setInterval(fetchNowPlaying, 15000);
                 
                 if (window.FB_CORE) {
-                    const { auth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = window.FB_CORE;
+                    const { auth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } = window.FB_CORE;
                     const initAuth = async () => {
                         try {
                             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -253,6 +197,12 @@
                 }
                 return () => clearInterval(interval);
             }, []);
+
+            useEffect(() => {
+                if (audioRef.current) {
+                    audioRef.current.volume = volume;
+                }
+            }, [volume]);
 
             const fetchNowPlaying = async () => {
                 try {
@@ -306,7 +256,6 @@
                                 {[
                                     {id: 'player', label: 'Плеер'},
                                     {id: 'history', label: 'История'},
-                                    {id: 'chat', label: 'Чат'},
                                     {id: 'request', label: 'Заказать'}
                                 ].map(tab => (
                                     <button key={tab.id} onClick={() => setActiveTab(tab.id)} 
@@ -331,22 +280,39 @@
                                         </div>
                                     </div>
                                     <p className="text-rose-500 font-bold uppercase tracking-[0.3em] text-xs md:text-sm mb-10 opacity-80">{meta.artist}</p>
+                                    
                                     <div className="flex flex-wrap items-center gap-8 justify-center md:justify-start">
                                         <button onClick={togglePlay} className={`w-24 h-24 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-2xl ${isPlaying ? 'bg-yellow-400 text-black' : 'bg-white text-black'}`}>
                                             <PlayButtonIcon isPlaying={isPlaying} />
                                         </button>
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex bg-black/40 rounded-xl p-1 border border-white/10 text-xs">
+                                        
+                                        <div className="flex flex-col gap-4">
+                                            {/* Битрейт */}
+                                            <div className="flex bg-black/40 rounded-xl p-1 border border-white/10 text-xs self-center md:self-start">
                                                 <button onClick={() => setQuality('high')} className={`px-4 py-2 rounded-lg font-black tracking-widest ${quality === 'high' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>128K</button>
                                                 <button onClick={() => setQuality('low')} className={`px-4 py-2 rounded-lg font-black tracking-widest ${quality === 'low' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>32K</button>
                                             </div>
+
+                                            {/* Громкость (скрыта на iOS) */}
+                                            {!isIos && (
+                                                <div className="flex items-center gap-3 bg-black/20 px-4 py-2 rounded-xl border border-white/5">
+                                                    <Icon name="volume-2" size={14} className="text-white/40" />
+                                                    <input 
+                                                        type="range" 
+                                                        min="0" 
+                                                        max="1" 
+                                                        step="0.01" 
+                                                        value={volume} 
+                                                        onChange={(e) => setVolume(parseFloat(e.target.value))}
+                                                        className="w-24 accent-rose-600"
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         )}
-
-                        {activeTab === 'chat' && <ChatComponent myUid={myUid} isAdmin={myUid === ADMIN_UID} />}
 
                         {activeTab === 'history' && (
                             <div className="w-full max-w-xl space-y-3 pb-20">
