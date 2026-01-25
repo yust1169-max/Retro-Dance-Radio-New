@@ -7,20 +7,10 @@
     
     <title>Retro Dance Radio — Включай энергию прошлого!</title>
     
-    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/28VKXjCx/logo.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Retro Dance">
-    <meta name="theme-color" content="#1a1a1a">
-
-    <meta name="description" content="Легендарные хиты Eurodance и Disco в одном плеере. Слушай онлайн без рекламы.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://radio.retrodanceradio.com/">
-    <meta property="og:site_name" content="Retro Dance Radio">
-    <meta property="og:title" content="Retro Dance Radio — Ретро хиты 80-90-00х">
-    <meta property="og:description" content="Лучшая танцевальная музыка прошлых десятилетий. Прямой эфир 24/7.">
-    <meta property="og:image" content="https://i.postimg.cc/28VKXjCx/logo.png">
+    <meta name="theme-color" content="#0d0d0d">
 
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -32,8 +22,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
         body { 
-            background-color: #121212;
-            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; 
+            background-color: #0d0d0d;
+            font-family: 'Inter', sans-serif; 
             margin: 0; 
             color: white; 
             overflow-x: hidden;
@@ -41,68 +31,48 @@
             padding-bottom: env(safe-area-inset-bottom);
         }
 
-        .glass-bordeaux { 
-            background: rgba(60, 0, 15, 0.85);
-            backdrop-filter: blur(25px); 
-            -webkit-backdrop-filter: blur(25px); 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
-        }
-
-        .glass-nav {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        .glass-rose { 
+            background: rgba(45, 0, 10, 0.85);
+            backdrop-filter: blur(30px); 
+            -webkit-backdrop-filter: blur(30px); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
         }
 
         .bg-sphere { 
             position: fixed; 
-            width: 80vw; 
-            height: 80vw; 
-            background: radial-gradient(circle, rgba(128, 0, 32, 0.1) 0%, transparent 70%); 
+            width: 100vw; 
+            height: 100vw; 
+            background: radial-gradient(circle, rgba(225, 29, 72, 0.15) 0%, transparent 70%); 
             z-index: -1; 
-            filter: blur(100px); 
-            animation: move 25s infinite alternate; 
+            filter: blur(120px); 
+            animation: move 30s infinite alternate linear; 
         }
 
-        @keyframes move { from { transform: translate(-15%, -15%); } to { transform: translate(15%, 15%); } }
-        
-        input[type=range] { accent-color: #ffffff; cursor: pointer; }
-        
+        @keyframes move { from { transform: translate(-25%, -25%); } to { transform: translate(25%, 25%); } }
+
+        .tg-wrapper {
+            width: 100%;
+            height: 480px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
         .marquee-container { 
             overflow: hidden; 
             white-space: nowrap; 
             width: 100%; 
-            position: relative;
             mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
         }
         .marquee-text { 
             display: inline-block; 
             animation: marquee 12s linear infinite; 
-            padding-right: 60px; 
-            will-change: transform;
+            padding-right: 50px; 
         }
-        @keyframes marquee { 
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); } 
-        }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-        .bitrate-btn {
-            font-weight: 900;
-            font-style: italic;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
-            border: 1px solid transparent;
-        }
-        .bitrate-btn.active {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-        .bitrate-btn.inactive {
-            color: rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.2);
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body>
@@ -115,7 +85,8 @@
         const API_URL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
         const REQUESTS_EMBED_URL = "https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests";
         const DEFAULT_COVER = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000&auto=format&fit=crop";
-        
+        const TG_CHANNEL = "retrodanceradio"; 
+
         const STREAMS = {
             high: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio.AAC",
             low: "https://radio.retrodanceradio.com/listen/retro_dance_radio/radio32.AAC"
@@ -128,96 +99,45 @@
 
         function App() {
             const [isPlaying, setIsPlaying] = useState(false);
-            const [volume, setVolume] = useState(0.8);
             const [quality, setQuality] = useState('high');
             const [activeTab, setActiveTab] = useState('player');
             const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", listeners: 0, image: DEFAULT_COVER });
             const [history, setHistory] = useState([]);
-            const [isIOS, setIsIOS] = useState(false);
-            const [isOnline, setIsOnline] = useState(navigator.onLine);
             const audioRef = useRef(null);
 
-            // Функция восстановления связи
-            const reconnect = () => {
-                if (isPlaying && audioRef.current) {
-                    console.log("Восстановление потока...");
-                    const currentVol = audioRef.current.volume;
-                    audioRef.current.pause();
-                    audioRef.current.src = `${STREAMS[quality]}?t=${Date.now()}`;
-                    audioRef.current.load();
-                    audioRef.current.volume = currentVol;
-                    audioRef.current.play().catch(e => console.log("Reconnect error", e));
-                }
-            };
-
             useEffect(() => {
-                const checkIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-                setIsIOS(checkIOS);
                 fetchNowPlaying();
-
-                const handleOnline = () => { 
-                    setIsOnline(true); 
-                    if (isPlaying) setTimeout(reconnect, 1000);
-                };
-                const handleOffline = () => setIsOnline(false);
-
-                window.addEventListener('online', handleOnline);
-                window.addEventListener('offline', handleOffline);
-                
-                // Активный мониторинг "зависания" в фоне (каждые 5 сек)
-                const recoveryInterval = setInterval(() => {
-                    if (isPlaying && audioRef.current) {
-                        // Если плеер должен играть, но статус не "playing" или нет данных
-                        if (audioRef.current.paused || audioRef.current.readyState < 2) {
-                            reconnect();
-                        }
-                    }
-                }, 5000);
-
                 const interval = setInterval(fetchNowPlaying, 15000);
-                return () => {
-                    clearInterval(interval);
-                    clearInterval(recoveryInterval);
-                    window.removeEventListener('online', handleOnline);
-                    window.removeEventListener('offline', handleOffline);
-                };
-            }, [isPlaying, quality]);
+                return () => clearInterval(interval);
+            }, []);
 
             const fetchNowPlaying = async () => {
                 try {
                     const res = await fetch(API_URL);
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    
                     const data = await res.json();
                     if (data && data.now_playing) {
                         const np = data.now_playing;
                         setMeta({
-                            song: np.song.title || "Эфир",
-                            artist: np.song.artist || "Retro Dance Radio",
-                            listeners: data.listeners.total || 0,
-                            image: np.song.art || DEFAULT_COVER
+                            song: np.song?.title || "Эфир",
+                            artist: np.song?.artist || "Retro Dance Radio",
+                            listeners: data.listeners?.total || 0,
+                            image: np.song?.art || DEFAULT_COVER
                         });
                         if (data.song_history) setHistory(data.song_history.slice(0, 10));
                     }
-                } catch (e) { console.error("API Error:", e); }
-            };
-
-            useEffect(() => {
-                if ('mediaSession' in navigator) {
-                    navigator.mediaSession.metadata = new MediaMetadata({
-                        title: meta.song,
-                        artist: meta.artist,
-                        album: 'Retro Dance Radio',
-                        artwork: [{ src: meta.image, sizes: '512x512', type: 'image/png' }]
-                    });
+                } catch (e) { 
+                    // Не логируем ошибку в консоль, чтобы не раздражать пользователя, 
+                    // если сервер временно недоступен или есть проблемы с сетью.
+                    console.log("Status check failed, retrying in 15s..."); 
                 }
-            }, [meta]);
-
-            useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume]);
+            };
 
             const togglePlay = () => {
                 if (!isPlaying) {
                     audioRef.current.src = `${STREAMS[quality]}?t=${Date.now()}`;
-                    audioRef.current.play().catch(e => console.log("Play Error", e));
+                    audioRef.current.play().catch(err => console.error("Playback failed", err));
                     setIsPlaying(true);
                 } else {
                     audioRef.current.pause();
@@ -226,129 +146,132 @@
                 }
             };
 
-            const changeQuality = (newQuality) => {
-                if (quality === newQuality) return;
-                setQuality(newQuality);
-                if (isPlaying && audioRef.current) {
-                    audioRef.current.pause();
-                    audioRef.current.src = `${STREAMS[newQuality]}?t=${Date.now()}`;
-                    audioRef.current.load();
-                    audioRef.current.play();
-                }
+            const TelegramWidget = () => {
+                const containerRef = useRef(null);
+                useEffect(() => {
+                    if (containerRef.current && activeTab === 'chat') {
+                        containerRef.current.innerHTML = '';
+                        const script = document.createElement('script');
+                        script.async = true;
+                        script.src = "https://telegram.org/js/telegram-widget.js?22";
+                        script.setAttribute('data-telegram-discussion', TG_CHANNEL);
+                        script.setAttribute('data-comments-limit', '5');
+                        script.setAttribute('data-color', 'E11D48');
+                        script.setAttribute('data-dark', '1');
+                        containerRef.current.appendChild(script);
+                    }
+                }, [activeTab]);
+                return <div className="tg-wrapper" ref={containerRef}></div>;
             };
 
             return (
-                <div className="flex flex-col min-h-screen relative">
-                    <audio 
-                        ref={audioRef} 
-                        crossOrigin="anonymous" 
-                        onStalled={() => isPlaying && reconnect()}
-                        onSuspend={() => isPlaying && reconnect()}
-                        onWaiting={() => isPlaying && console.log("Буферизация...")}
-                        onError={() => isPlaying && setTimeout(reconnect, 2000)}
-                    />
-                    
+                <div className="flex flex-col min-h-screen relative overflow-hidden">
+                    <audio ref={audioRef} crossOrigin="anonymous" />
                     <div className="bg-sphere top-0 left-0"></div>
                     
-                    <div className="fixed inset-0 -z-10">
-                        <img src={meta.image} className="w-full h-full object-cover opacity-5 blur-[120px] scale-150" alt="" />
-                    </div>
-
-                    <header className="p-6 flex justify-between items-center max-w-6xl mx-auto w-full z-10">
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-3">
-                                <div className="h-12 w-12 bg-white rounded-xl shadow-2xl flex items-center justify-center overflow-hidden">
-                                    <img src={LOGO_SRC} className="h-full w-full object-contain p-1" alt="Logo" />
-                                </div>
-                                <h1 className="font-black italic text-xl uppercase tracking-tighter">Retro<span className="opacity-30">Dance</span></h1>
+                    <header className="p-6 flex justify-between items-center max-w-5xl mx-auto w-full z-10">
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center overflow-hidden shadow-lg">
+                                <img src={LOGO_SRC} className="h-full w-full object-contain p-1.5" />
                             </div>
-                            {!isOnline && <span className="text-[10px] text-red-500 font-black animate-pulse uppercase">Нет сети</span>}
+                            <h1 className="font-black italic text-xl uppercase tracking-tighter">Retro<span className="text-rose-600">Dance</span></h1>
                         </div>
-                        <div className="glass-nav px-3 py-1.5 rounded-full flex items-center gap-2">
-                            <Icon name="headphones" size={16} className="animate-pulse" />
-                            <span className="text-sm font-black">{meta.listeners}</span>
+                        <div className="bg-white/5 px-4 py-1.5 rounded-full flex items-center gap-2 border border-white/10">
+                            <Icon name="users" size={14} className="text-rose-500" />
+                            <span className="text-xs font-black">{meta.listeners}</span>
                         </div>
                     </header>
 
-                    <nav className="flex justify-center p-2 z-10">
-                        <div className="glass-nav rounded-full p-1 flex gap-1">
-                            {['player', 'history', 'request'].map(id => (
-                                <button key={id} onClick={() => setActiveTab(id)} 
-                                    className={`px-4 py-2 rounded-full text-[9px] font-black uppercase transition-all tracking-widest ${activeTab === id ? 'bg-white/10 text-white' : 'text-white/20'}`}>
-                                    {id === 'player' ? 'Плеер' : id === 'history' ? 'История' : 'Заказать'}
+                    <nav className="flex justify-center px-4 z-10 mb-6">
+                        <div className="bg-white/5 rounded-2xl p-1 flex gap-1 border border-white/10 no-scrollbar overflow-x-auto">
+                            {[
+                                {id: 'player', label: 'Плеер'},
+                                {id: 'history', label: 'История'},
+                                {id: 'chat', label: 'Чат'},
+                                {id: 'request', label: 'Заказать'}
+                            ].map(tab => (
+                                <button key={tab.id} onClick={() => setActiveTab(tab.id)} 
+                                    className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap tracking-widest ${activeTab === tab.id ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>
+                                    {tab.label}
                                 </button>
                             ))}
                         </div>
                     </nav>
 
-                    <main className="flex-1 flex flex-col items-center justify-center p-4 z-10 w-full max-w-5xl mx-auto">
+                    <main className="flex-1 flex flex-col items-center justify-start p-4 z-10 w-full max-w-4xl mx-auto">
                         {activeTab === 'player' && (
-                            <div className="w-full flex flex-col md:flex-row items-center gap-8 md:gap-12 glass-bordeaux p-6 md:p-12 rounded-[40px] shadow-2xl overflow-hidden">
-                                <div className="relative shrink-0">
-                                    <img src={meta.image} className="w-60 h-60 md:w-80 md:h-80 object-cover rounded-[30px] shadow-2xl" alt="Cover" />
-                                </div>
-                                <div className="text-center md:text-left flex-1 min-w-0 w-full overflow-hidden">
-                                    <div className="marquee-container mb-1">
-                                        <div className={meta.song.length > 12 ? "marquee-text" : ""}>
-                                            <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter inline-block">
-                                                {meta.song}&nbsp;&nbsp;&nbsp;&nbsp;{meta.song.length > 12 ? meta.song : ""}
+                            <div className="w-full flex flex-col md:flex-row items-center gap-10 glass-rose p-8 md:p-12 rounded-[48px] shadow-2xl border border-white/10">
+                                <img src={meta.image} className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-[40px] shadow-2xl transition-all duration-500" />
+                                
+                                <div className="text-center md:text-left flex-1 w-full overflow-hidden">
+                                    <div className="marquee-container mb-2">
+                                        <div className={meta.song.length > 15 ? "marquee-text" : ""}>
+                                            <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter inline-block">
+                                                {meta.song}&nbsp;&nbsp;&nbsp;&nbsp;{meta.song.length > 15 ? meta.song : ""}
                                             </h2>
                                         </div>
                                     </div>
-                                    <p className="text-white/30 text-xs md:text-lg font-bold uppercase tracking-[0.2em] mb-8 truncate">{meta.artist}</p>
+                                    <p className="text-rose-500 font-bold uppercase tracking-[0.3em] text-xs md:text-sm mb-10 opacity-80">{meta.artist}</p>
                                     
-                                    <div className="flex flex-col sm:flex-row items-center gap-6 justify-center md:justify-start">
+                                    <div className="flex flex-wrap items-center gap-8 justify-center md:justify-start">
                                         <button 
-                                            key={isPlaying ? 'btn-pause' : 'btn-play'}
                                             onClick={togglePlay} 
-                                            className={`w-20 h-20 shrink-0 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl active:scale-90
-                                            ${isPlaying ? 'bg-yellow-400 text-black' : 'bg-white text-black'}`}
+                                            className={`w-24 h-24 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-2xl ${isPlaying ? 'bg-yellow-400 text-black' : 'bg-white text-black'}`}
                                         >
-                                            {isPlaying ? <Icon name="pause" size={32} /> : <Icon name="play" size={32} className="ml-1" />}
+                                            <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+                                                {isPlaying ? (
+                                                    <rect x="6" y="6" width="12" height="12" rx="1" />
+                                                ) : (
+                                                    <path d="M7 6v12l10-6z" />
+                                                )}
+                                            </svg>
                                         </button>
                                         
-                                        <div className="flex flex-col gap-4 w-full max-w-[220px]">
-                                            {!isIOS && (
-                                                <div className="flex items-center gap-3 bg-black/30 px-4 py-2 rounded-2xl">
-                                                    <Icon name="volume-2" size={14} className="opacity-40" />
-                                                    <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-full h-1" />
-                                                </div>
-                                            )}
-                                            
-                                            <div className="flex gap-2">
-                                                <button onClick={() => changeQuality('high')} className={`bitrate-btn flex-1 py-2 rounded-lg ${quality === 'high' ? 'active' : 'inactive'}`}>128K</button>
-                                                <button onClick={() => changeQuality('low')} className={`bitrate-btn flex-1 py-2 rounded-lg ${quality === 'low' ? 'active' : 'inactive'}`}>32K</button>
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex bg-black/40 rounded-xl p-1 border border-white/10">
+                                                <button onClick={() => setQuality('high')} className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all ${quality === 'high' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/30'}`}>128K</button>
+                                                <button onClick={() => setQuality('low')} className={`px-4 py-2 rounded-lg text-[10px] font-black tracking-widest transition-all ${quality === 'low' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/30'}`}>32K</button>
                                             </div>
+                                            <span className="text-[9px] font-black uppercase text-center opacity-30 tracking-widest">Bitrate</span>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'chat' && (
+                            <div className="w-full max-w-2xl flex flex-col glass-rose rounded-[40px] p-8 shadow-2xl border border-white/10">
+                                <h3 className="font-black uppercase italic tracking-widest text-sm text-rose-500 mb-6 text-center">Live Chat</h3>
+                                <TelegramWidget />
                             </div>
                         )}
 
                         {activeTab === 'history' && (
-                            <div className="w-full max-w-md space-y-2 pb-10">
+                            <div className="w-full max-w-xl space-y-3 pb-20">
                                 {history.map((item, i) => (
-                                    <div key={i} className="glass-bordeaux p-3 rounded-xl flex items-center gap-3">
-                                        <img src={item.song.art || DEFAULT_COVER} className="w-10 h-10 rounded-lg object-cover" alt="" />
+                                    <div key={i} className="bg-white/5 p-4 rounded-2xl flex items-center gap-4 border border-white/5 hover:border-rose-500/30 transition-all">
+                                        <img src={item.song?.art || DEFAULT_COVER} className="w-14 h-14 rounded-xl object-cover shadow-lg" />
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="font-bold text-xs truncate uppercase tracking-tight">{item.song.title}</h4>
-                                            <p className="text-[9px] text-white/40 font-bold uppercase truncate">{item.song.artist}</p>
+                                            <h4 className="font-black text-sm truncate uppercase tracking-tight">{item.song?.title || "Неизвестно"}</h4>
+                                            <p className="text-[10px] text-white/40 font-bold uppercase truncate">{item.song?.artist || "Неизвестно"}</p>
                                         </div>
-                                        <span className="text-[9px] opacity-20 font-bold">{new Date(item.played_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                        <div className="text-[10px] font-black opacity-20">
+                                            {item.played_at ? new Date(item.played_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "--:--"}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         )}
-
+                        
                         {activeTab === 'request' && (
-                            <div className="w-full h-[550px] glass-bordeaux rounded-[30px] overflow-hidden">
+                            <div className="w-full h-[600px] glass-rose rounded-[40px] overflow-hidden border border-white/10">
                                 <iframe src={REQUESTS_EMBED_URL} className="w-full h-full border-0" allowTransparency="true"></iframe>
                             </div>
                         )}
                     </main>
 
-                    <footer className="p-8 text-center mt-auto opacity-10">
-                        <p className="text-[9px] font-black uppercase tracking-[1em]">Retro Dance Radio &copy; 2025</p>
+                    <footer className="p-10 text-center mt-auto">
+                        <p className="text-[10px] font-black uppercase tracking-[1.5em] text-rose-600 opacity-60">Retro Dance Radio &copy; 2026</p>
                     </footer>
                 </div>
             );
@@ -356,10 +279,6 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(() => console.log("PWA Active"));
-        }
     </script>
 </body>
 </html>
