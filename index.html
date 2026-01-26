@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    
     <title>Retro Dance Radio — Включай энергию прошлого!</title>
     
     <link rel="apple-touch-icon" href="https://i.postimg.cc/28VKXjCx/logo.png">
@@ -18,103 +17,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, setDoc, deleteDoc, query, orderBy, limit, onSnapshot, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-        try {
-            const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
-            if (firebaseConfig.apiKey) {
-                const app = initializeApp(firebaseConfig);
-                const db = getFirestore(app);
-                const auth = getAuth(app);
-                window.FB_CORE = { 
-                    db, auth, collection, addDoc, doc, setDoc, deleteDoc, getDoc,
-                    query, orderBy, limit, onSnapshot, serverTimestamp, 
-                    signInAnonymously, onAuthStateChanged, signInWithCustomToken
-                };
-            }
-        } catch (e) { console.error("Firebase init failed", e); }
-    </script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        
-        body { 
-            background-color: #0d0d0d;
-            font-family: 'Inter', sans-serif; 
-            margin: 0; 
-            color: white; 
-            overflow-x: hidden;
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-
-        .glass-rose { 
-            background: rgba(45, 0, 10, 0.85);
-            backdrop-filter: blur(30px); 
-            -webkit-backdrop-filter: blur(30px); 
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-        }
-
-        .bg-sphere { 
-            position: fixed; 
-            width: 100vw; 
-            height: 100vw; 
-            background: radial-gradient(circle, rgba(225, 29, 72, 0.15) 0%, transparent 70%); 
-            z-index: -1; 
-            filter: blur(120px); 
-            animation: move 30s infinite alternate linear; 
-        }
-
+        body { background-color: #0d0d0d; font-family: 'Inter', sans-serif; margin: 0; color: white; overflow-x: hidden; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+        .glass-rose { background: rgba(45, 0, 10, 0.85); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .bg-sphere { position: fixed; width: 100vw; height: 100vw; background: radial-gradient(circle, rgba(225, 29, 72, 0.15) 0%, transparent 70%); z-index: -1; filter: blur(120px); animation: move 30s infinite alternate linear; }
         @keyframes move { from { transform: translate(-25%, -25%); } to { transform: translate(25%, 25%); } }
-
-        .marquee-container { 
-            overflow: hidden; 
-            white-space: nowrap; 
-            width: 100%; 
-            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-        }
-        .marquee-text { 
-            display: inline-block; 
-            animation: marquee 12s linear infinite; 
-            padding-right: 50px; 
-        }
+        .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); }
+        .marquee-text { display: inline-block; animation: marquee 12s linear infinite; padding-right: 50px; }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-
-        .nav-container {
-            display: flex;
-            gap: 4px;
-            width: 100%;
-            justify-content: space-between;
-        }
-        .nav-btn {
-            flex: 1;
-            text-align: center;
-            padding: 10px 2px;
-            min-width: 0;
-            white-space: nowrap;
-        }
-        @media (max-width: 380px) {
-            .nav-btn { font-size: 8px !important; letter-spacing: 0.05em !important; }
-        }
-
-        input[type=range] {
-            -webkit-appearance: none;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            height: 6px;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 16px;
-            width: 16px;
-            border-radius: 50%;
-            background: #e11d48;
-            cursor: pointer;
-            border: 2px solid white;
-        }
+        .nav-container { display: flex; gap: 4px; width: 100%; justify-content: space-between; }
+        .nav-btn { flex: 1; text-align: center; padding: 10px 2px; min-width: 0; white-space: nowrap; }
+        input[type=range] { -webkit-appearance: none; background: rgba(255, 255, 255, 0.1); border-radius: 10px; height: 6px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #e11d48; cursor: pointer; border: 2px solid white; }
     </style>
 </head>
 <body>
@@ -203,10 +118,10 @@
 
                     <nav className="flex justify-center px-4 z-10 mb-6">
                         <div className="bg-white/5 rounded-2xl p-1 border border-white/10 w-full max-w-md flex nav-container">
-                            <button onClick={() => setActiveTab('player')} className={`nav-btn rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'player' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40'}`}>Плеер</button>
-                            <button onClick={() => setActiveTab('history')} className={`nav-btn rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'history' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40'}`}>История</button>
-                            <button onClick={() => setActiveTab('chat')} className={`nav-btn rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'chat' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40'}`}>Чат</button>
-                            <button onClick={() => setActiveTab('request')} className={`nav-btn rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'request' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40'}`}>Заказать</button>
+                            <button onClick={() => setActiveTab('player')} className={`nav-btn py-2.5 rounded-xl text-[10px] font-black uppercase transition-all tracking-widest ${activeTab === 'player' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40'}`}>Плеер</button>
+                            <button onClick={() => setActiveTab('history')} className={`nav-btn py-2.5 rounded-xl text-[10px] font-black uppercase transition-all tracking-widest ${activeTab === 'history' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40'}`}>История</button>
+                            <button onClick={() => setActiveTab('chat')} className={`nav-btn py-2.5 rounded-xl text-[10px] font-black uppercase transition-all tracking-widest ${activeTab === 'chat' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40'}`}>Чат</button>
+                            <button onClick={() => setActiveTab('request')} className={`nav-btn py-2.5 rounded-xl text-[10px] font-black uppercase transition-all tracking-widest ${activeTab === 'request' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40'}`}>Заказать</button>
                         </div>
                     </nav>
 
@@ -259,8 +174,10 @@
                         )}
 
                         {activeTab === 'chat' && (
-                            <div className="w-full glass-rose rounded-[40px] overflow-hidden border border-white/10 p-2 min-h-[500px] flex justify-center">
-                                <div className="w-full max-w-3xl" dangerouslySetInnerHTML={{ __html: '<script async src="https://comments.app/js/widget.js?3" data-comments-app-website="mrpJYHby" data-limit="5" data-color="E11D48" data-dark="1"></script>' }} />
+                            <div className="w-full glass-rose rounded-[40px] overflow-hidden border border-white/10 p-6 min-h-[500px] flex flex-col items-center">
+                                <div className="w-full max-w-2xl bg-black/20 rounded-3xl p-4 overflow-hidden">
+                                     <iframe src="https://comments.app/js/widget.js?3&comments_app_website=mrpJYHby&limit=10&color=E11D48&dark=1" className="w-full h-[600px] border-0"></iframe>
+                                </div>
                             </div>
                         )}
 
