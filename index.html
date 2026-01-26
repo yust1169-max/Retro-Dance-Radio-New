@@ -104,7 +104,6 @@
             .nav-btn { font-size: 8px !important; letter-spacing: 0.05em !important; }
         }
 
-        /* Стили для ползунка громкости */
         input[type=range] {
             -webkit-appearance: none;
             background: rgba(255, 255, 255, 0.1);
@@ -128,7 +127,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const ADMIN_UID = "ВАШ_UID"; 
         const LOGO_SRC = "https://i.postimg.cc/28VKXjCx/logo.png";
         const API_URL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
         const REQUESTS_EMBED_URL = "https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests";
@@ -167,42 +165,19 @@
             const [volume, setVolume] = useState(0.8);
             const [isIos, setIsIos] = useState(false);
             const [activeTab, setActiveTab] = useState('player');
-            const [myUid, setMyUid] = useState(null);
             const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", listeners: 0, image: DEFAULT_COVER });
             const [history, setHistory] = useState([]);
             const audioRef = useRef(null);
 
             useEffect(() => {
-                // Проверка на iOS
                 const userAgent = window.navigator.userAgent.toLowerCase();
                 setIsIos(/iphone|ipad|ipod/.test(userAgent));
-
                 fetchNowPlaying();
                 const interval = setInterval(fetchNowPlaying, 15000);
-                
-                if (window.FB_CORE) {
-                    const { auth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } = window.FB_CORE;
-                    const initAuth = async () => {
-                        try {
-                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                                await signInWithCustomToken(auth, __initial_auth_token);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                        } catch(e) {}
-                    };
-                    initAuth();
-                    const unsubscribe = onAuthStateChanged(auth, (user) => { if (user) setMyUid(user.uid); });
-                    return () => { clearInterval(interval); unsubscribe(); };
-                }
                 return () => clearInterval(interval);
             }, []);
 
-            useEffect(() => {
-                if (audioRef.current) {
-                    audioRef.current.volume = volume;
-                }
-            }, [volume]);
+            useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume]);
 
             const fetchNowPlaying = async () => {
                 try {
@@ -256,6 +231,7 @@
                                 {[
                                     {id: 'player', label: 'Плеер'},
                                     {id: 'history', label: 'История'},
+                                    {id: 'chat', label: 'Чат'},
                                     {id: 'request', label: 'Заказать'}
                                 ].map(tab => (
                                     <button key={tab.id} onClick={() => setActiveTab(tab.id)} 
@@ -280,32 +256,19 @@
                                         </div>
                                     </div>
                                     <p className="text-rose-500 font-bold uppercase tracking-[0.3em] text-xs md:text-sm mb-10 opacity-80">{meta.artist}</p>
-                                    
                                     <div className="flex flex-wrap items-center gap-8 justify-center md:justify-start">
                                         <button onClick={togglePlay} className={`w-24 h-24 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-2xl ${isPlaying ? 'bg-yellow-400 text-black' : 'bg-white text-black'}`}>
                                             <PlayButtonIcon isPlaying={isPlaying} />
                                         </button>
-                                        
                                         <div className="flex flex-col gap-4">
-                                            {/* Битрейт */}
                                             <div className="flex bg-black/40 rounded-xl p-1 border border-white/10 text-xs self-center md:self-start">
                                                 <button onClick={() => setQuality('high')} className={`px-4 py-2 rounded-lg font-black tracking-widest ${quality === 'high' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>128K</button>
                                                 <button onClick={() => setQuality('low')} className={`px-4 py-2 rounded-lg font-black tracking-widest ${quality === 'low' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>32K</button>
                                             </div>
-
-                                            {/* Громкость (скрыта на iOS) */}
                                             {!isIos && (
                                                 <div className="flex items-center gap-3 bg-black/20 px-4 py-2 rounded-xl border border-white/5">
                                                     <Icon name="volume-2" size={14} className="text-white/40" />
-                                                    <input 
-                                                        type="range" 
-                                                        min="0" 
-                                                        max="1" 
-                                                        step="0.01" 
-                                                        value={volume} 
-                                                        onChange={(e) => setVolume(parseFloat(e.target.value))}
-                                                        className="w-24 accent-rose-600"
-                                                    />
+                                                    <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-24 accent-rose-600" />
                                                 </div>
                                             )}
                                         </div>
@@ -327,7 +290,13 @@
                                 ))}
                             </div>
                         )}
-                        
+
+                        {activeTab === 'chat' && (
+                            <div className="w-full glass-rose rounded-[40px] overflow-hidden border border-white/10 p-4 min-h-[600px]">
+                                <script async src="https://comments.app/js/widget.js?3" data-comments-app-website="mrpJYHby" data-limit="5"></script>
+                            </div>
+                        )}
+
                         {activeTab === 'request' && (
                             <div className="w-full h-[600px] glass-rose rounded-[40px] overflow-hidden border border-white/10">
                                 <iframe src={REQUESTS_EMBED_URL} className="w-full h-full border-0" allowTransparency="true"></iframe>
