@@ -83,6 +83,9 @@
         }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
         .nav-container {
             display: flex;
             gap: 4px;
@@ -92,11 +95,16 @@
         .nav-btn {
             flex: 1;
             text-align: center;
-            padding: 10px 2px;
+            padding-left: 2px;
+            padding-right: 2px;
             min-width: 0;
             white-space: nowrap;
         }
+        @media (max-width: 380px) {
+            .nav-btn { font-size: 8px !important; letter-spacing: 0.05em !important; }
+        }
 
+        /* Стили для ползунка громкости */
         input[type=range] {
             -webkit-appearance: none;
             background: rgba(255, 255, 255, 0.1);
@@ -120,6 +128,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        const ADMIN_UID = "ВАШ_UID"; 
         const LOGO_SRC = "https://i.postimg.cc/28VKXjCx/logo.png";
         const API_URL = "https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio";
         const REQUESTS_EMBED_URL = "https://radio.retrodanceradio.com/public/retro_dance_radio/embed-requests";
@@ -135,22 +144,65 @@
             return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
         };
 
+        const PlayButtonIcon = ({ isPlaying, size = 40 }) => {
+            const iconKey = isPlaying ? "stop-icon" : "play-icon";
+            return (
+                <div key={iconKey} className="flex items-center justify-center">
+                    {isPlaying ? (
+                        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="6" y="6" width="12" height="12" rx="1" />
+                        </svg>
+                    ) : (
+                        <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 5v14l11-7z" />
+                        </svg>
+                    )}
+                </div>
+            );
+        };
+
         function App() {
             const [isPlaying, setIsPlaying] = useState(false);
             const [quality, setQuality] = useState('high');
             const [volume, setVolume] = useState(0.8);
+            const [isIos, setIsIos] = useState(false);
             const [activeTab, setActiveTab] = useState('player');
+            const [myUid, setMyUid] = useState(null);
             const [meta, setMeta] = useState({ song: "Загрузка...", artist: "Retro Radio", listeners: 0, image: DEFAULT_COVER });
             const [history, setHistory] = useState([]);
             const audioRef = useRef(null);
 
             useEffect(() => {
+                // Проверка на iOS
+                const userAgent = window.navigator.userAgent.toLowerCase();
+                setIsIos(/iphone|ipad|ipod/.test(userAgent));
+
                 fetchNowPlaying();
                 const interval = setInterval(fetchNowPlaying, 15000);
+                
+                if (window.FB_CORE) {
+                    const { auth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } = window.FB_CORE;
+                    const initAuth = async () => {
+                        try {
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch(e) {}
+                    };
+                    initAuth();
+                    const unsubscribe = onAuthStateChanged(auth, (user) => { if (user) setMyUid(user.uid); });
+                    return () => { clearInterval(interval); unsubscribe(); };
+                }
                 return () => clearInterval(interval);
             }, []);
 
-            useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume]);
+            useEffect(() => {
+                if (audioRef.current) {
+                    audioRef.current.volume = volume;
+                }
+            }, [volume]);
 
             const fetchNowPlaying = async () => {
                 try {
@@ -199,42 +251,63 @@
                     </header>
 
                     <nav className="flex justify-center px-4 z-10 mb-6">
-                        <div className="bg-white/5 rounded-2xl p-1 border border-white/10 w-full max-w-md flex nav-container">
-                            <button onClick={() => setActiveTab('player')} className={`nav-btn rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'player' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40'}`}>Плеер</button>
-                            <button onClick={() => setActiveTab('history')} className={`nav-btn rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'history' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40'}`}>История</button>
-                            <button onClick={() => setActiveTab('chat')} className={`nav-btn rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'chat' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40'}`}>Чат</button>
-                            <button onClick={() => setActiveTab('request')} className={`nav-btn rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'request' ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40'}`}>Заказать</button>
+                        <div className="bg-white/5 rounded-2xl p-1 border border-white/10 w-full max-w-md">
+                            <div className="nav-container">
+                                {[
+                                    {id: 'player', label: 'Плеер'},
+                                    {id: 'history', label: 'История'},
+                                    {id: 'request', label: 'Заказать'}
+                                ].map(tab => (
+                                    <button key={tab.id} onClick={() => setActiveTab(tab.id)} 
+                                        className={`nav-btn py-2.5 rounded-xl text-[10px] font-black uppercase transition-all tracking-widest ${activeTab === tab.id ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </nav>
 
                     <main className="flex-1 flex flex-col items-center justify-start p-4 z-10 w-full max-w-5xl mx-auto">
                         {activeTab === 'player' && (
                             <div className="w-full flex flex-col md:flex-row items-center gap-10 glass-rose p-8 md:p-12 rounded-[48px] shadow-2xl border border-white/10">
-                                <img src={meta.image} className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-[40px] shadow-2xl" />
+                                <img src={meta.image} className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-[40px] shadow-2xl transition-all duration-500" />
                                 <div className="text-center md:text-left flex-1 w-full overflow-hidden">
                                     <div className="marquee-container mb-2">
                                         <div className={meta.song.length > 15 ? "marquee-text" : ""}>
-                                            <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter inline-block">{meta.song}&nbsp;&nbsp;&nbsp;</h2>
+                                            <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter inline-block">
+                                                {meta.song}&nbsp;&nbsp;&nbsp;&nbsp;{meta.song.length > 15 ? meta.song : ""}
+                                            </h2>
                                         </div>
                                     </div>
-                                    <p className="text-rose-500 font-bold uppercase tracking-[0.3em] text-xs mb-10 opacity-80">{meta.artist}</p>
+                                    <p className="text-rose-500 font-bold uppercase tracking-[0.3em] text-xs md:text-sm mb-10 opacity-80">{meta.artist}</p>
+                                    
                                     <div className="flex flex-wrap items-center gap-8 justify-center md:justify-start">
                                         <button onClick={togglePlay} className={`w-24 h-24 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-2xl ${isPlaying ? 'bg-yellow-400 text-black' : 'bg-white text-black'}`}>
-                                            {isPlaying ? (
-                                                <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1" /></svg>
-                                            ) : (
-                                                <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-                                            )}
+                                            <PlayButtonIcon isPlaying={isPlaying} />
                                         </button>
+                                        
                                         <div className="flex flex-col gap-4">
-                                            <div className="flex bg-black/40 rounded-xl p-1 border border-white/10 text-xs">
-                                                <button onClick={() => setQuality('high')} className={`px-4 py-2 rounded-lg font-black ${quality === 'high' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>128K</button>
-                                                <button onClick={() => setQuality('low')} className={`px-4 py-2 rounded-lg font-black ${quality === 'low' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>32K</button>
+                                            {/* Битрейт */}
+                                            <div className="flex bg-black/40 rounded-xl p-1 border border-white/10 text-xs self-center md:self-start">
+                                                <button onClick={() => setQuality('high')} className={`px-4 py-2 rounded-lg font-black tracking-widest ${quality === 'high' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>128K</button>
+                                                <button onClick={() => setQuality('low')} className={`px-4 py-2 rounded-lg font-black tracking-widest ${quality === 'low' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>32K</button>
                                             </div>
-                                            <div className="flex items-center gap-3 bg-black/20 px-4 py-2 rounded-xl border border-white/5">
-                                                <Icon name="volume-2" size={14} className="text-white/40" />
-                                                <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-24 accent-rose-600" />
-                                            </div>
+
+                                            {/* Громкость (скрыта на iOS) */}
+                                            {!isIos && (
+                                                <div className="flex items-center gap-3 bg-black/20 px-4 py-2 rounded-xl border border-white/5">
+                                                    <Icon name="volume-2" size={14} className="text-white/40" />
+                                                    <input 
+                                                        type="range" 
+                                                        min="0" 
+                                                        max="1" 
+                                                        step="0.01" 
+                                                        value={volume} 
+                                                        onChange={(e) => setVolume(parseFloat(e.target.value))}
+                                                        className="w-24 accent-rose-600"
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -244,9 +317,9 @@
                         {activeTab === 'history' && (
                             <div className="w-full max-w-xl space-y-3 pb-20">
                                 {history.map((item, i) => (
-                                    <div key={i} className="bg-white/5 p-4 rounded-2xl flex items-center gap-4 border border-white/5">
+                                    <div key={i} className="bg-white/5 p-4 rounded-2xl flex items-center gap-4 border border-white/5 hover:border-rose-500/30">
                                         <img src={item.song?.art || DEFAULT_COVER} className="w-14 h-14 rounded-xl object-cover shadow-lg" />
-                                        <div className="flex-1 min-w-0 text-left">
+                                        <div className="flex-1 min-w-0">
                                             <h4 className="font-black text-sm truncate uppercase tracking-tight">{item.song?.title || "Неизвестно"}</h4>
                                             <p className="text-[10px] text-white/40 font-bold uppercase truncate">{item.song?.artist || "Неизвестно"}</p>
                                         </div>
@@ -254,15 +327,7 @@
                                 ))}
                             </div>
                         )}
-
-                        {activeTab === 'chat' && (
-                            <div className="w-full glass-rose rounded-[40px] overflow-hidden border border-white/10 p-6 min-h-[600px] flex justify-center">
-                                <div className="w-full max-w-3xl">
-                                    <script async src="https://comments.app/js/widget.js?3" data-comments-app-website="mrpJYHby" data-limit="5" data-color="E11D48" data-dark="1"></script>
-                                </div>
-                            </div>
-                        )}
-
+                        
                         {activeTab === 'request' && (
                             <div className="w-full h-[600px] glass-rose rounded-[40px] overflow-hidden border border-white/10">
                                 <iframe src={REQUESTS_EMBED_URL} className="w-full h-full border-0" allowTransparency="true"></iframe>
