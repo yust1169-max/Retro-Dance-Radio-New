@@ -104,7 +104,6 @@
             .nav-btn { font-size: 8px !important; letter-spacing: 0.05em !important; }
         }
 
-        /* Стили для ползунка громкости */
         input[type=range] {
             -webkit-appearance: none;
             background: rgba(255, 255, 255, 0.1);
@@ -127,6 +126,30 @@
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
+
+        // ФУНКЦИЯ ДЛЯ ОБЛОЖКИ НА ЭКРАНЕ БЛОКИРОВКИ (ДЛЯ IOS/ANDROID)
+        function updateMediaSession(trackTitle, trackArtist, trackCoverUrl) {
+            if ('mediaSession' in navigator) {
+                // Делаем путь абсолютным (критично для iOS)
+                const fullCoverUrl = trackCoverUrl.startsWith('http') 
+                    ? trackCoverUrl 
+                    : window.location.origin + (trackCoverUrl.startsWith('/') ? '' : '/') + trackCoverUrl;
+
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: trackTitle,
+                    artist: trackArtist,
+                    album: 'Retro Dance Radio',
+                    artwork: [
+                        { src: fullCoverUrl, sizes: '96x96',   type: 'image/png' },
+                        { src: fullCoverUrl, sizes: '128x128', type: 'image/png' },
+                        { src: fullCoverUrl, sizes: '192x192', type: 'image/png' },
+                        { src: fullCoverUrl, sizes: '256x256', type: 'image/png' },
+                        { src: fullCoverUrl, sizes: '384x384', type: 'image/png' },
+                        { src: fullCoverUrl, sizes: '512x512', type: 'image/png' },
+                    ]
+                });
+            }
+        }
 
         const ADMIN_UID = "ВАШ_UID"; 
         const LOGO_SRC = "https://i.postimg.cc/28VKXjCx/logo.png";
@@ -173,7 +196,6 @@
             const audioRef = useRef(null);
 
             useEffect(() => {
-                // Проверка на iOS
                 const userAgent = window.navigator.userAgent.toLowerCase();
                 setIsIos(/iphone|ipad|ipod/.test(userAgent));
 
@@ -209,12 +231,20 @@
                     const res = await fetch(API_URL);
                     const data = await res.json();
                     if (data?.now_playing) {
+                        const newSong = data.now_playing.song?.title || "Эфир";
+                        const newArtist = data.now_playing.song?.artist || "Retro Radio";
+                        const newImage = data.now_playing.song?.art || DEFAULT_COVER;
+
                         setMeta({
-                            song: data.now_playing.song?.title || "Эфир",
-                            artist: data.now_playing.song?.artist || "Retro Radio",
+                            song: newSong,
+                            artist: newArtist,
                             listeners: data.listeners?.total || 0,
-                            image: data.now_playing.song?.art || DEFAULT_COVER
+                            image: newImage
                         });
+
+                        // ОБНОВЛЯЕМ ЭКРАН БЛОКИРОВКИ ПРИ КАЖДОМ ОБНОВЛЕНИИ ПЕСНИ
+                        updateMediaSession(newSong, newArtist, newImage);
+
                         if (data.song_history) setHistory(data.song_history.slice(0, 10));
                     }
                 } catch (e) { console.log("Meta load failed"); }
@@ -225,6 +255,8 @@
                     audioRef.current.src = `${STREAMS[quality]}?t=${Date.now()}`;
                     audioRef.current.play();
                     setIsPlaying(true);
+                    // Вызываем обновление сразу при старте, чтобы не ждать 15 сек.
+                    updateMediaSession(meta.song, meta.artist, meta.image);
                 } else {
                     audioRef.current.pause();
                     audioRef.current.src = "";
@@ -282,68 +314,4 @@
                                     <p className="text-rose-500 font-bold uppercase tracking-[0.3em] text-xs md:text-sm mb-10 opacity-80">{meta.artist}</p>
                                     
                                     <div className="flex flex-wrap items-center gap-8 justify-center md:justify-start">
-                                        <button onClick={togglePlay} className={`w-24 h-24 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-2xl ${isPlaying ? 'bg-yellow-400 text-black' : 'bg-white text-black'}`}>
-                                            <PlayButtonIcon isPlaying={isPlaying} />
-                                        </button>
-                                        
-                                        <div className="flex flex-col gap-4">
-                                            {/* Битрейт */}
-                                            <div className="flex bg-black/40 rounded-xl p-1 border border-white/10 text-xs self-center md:self-start">
-                                                <button onClick={() => setQuality('high')} className={`px-4 py-2 rounded-lg font-black tracking-widest ${quality === 'high' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>128K</button>
-                                                <button onClick={() => setQuality('low')} className={`px-4 py-2 rounded-lg font-black tracking-widest ${quality === 'low' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>32K</button>
-                                            </div>
-
-                                            {/* Громкость (скрыта на iOS) */}
-                                            {!isIos && (
-                                                <div className="flex items-center gap-3 bg-black/20 px-4 py-2 rounded-xl border border-white/5">
-                                                    <Icon name="volume-2" size={14} className="text-white/40" />
-                                                    <input 
-                                                        type="range" 
-                                                        min="0" 
-                                                        max="1" 
-                                                        step="0.01" 
-                                                        value={volume} 
-                                                        onChange={(e) => setVolume(parseFloat(e.target.value))}
-                                                        className="w-24 accent-rose-600"
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'history' && (
-                            <div className="w-full max-w-xl space-y-3 pb-20">
-                                {history.map((item, i) => (
-                                    <div key={i} className="bg-white/5 p-4 rounded-2xl flex items-center gap-4 border border-white/5 hover:border-rose-500/30">
-                                        <img src={item.song?.art || DEFAULT_COVER} className="w-14 h-14 rounded-xl object-cover shadow-lg" />
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-black text-sm truncate uppercase tracking-tight">{item.song?.title || "Неизвестно"}</h4>
-                                            <p className="text-[10px] text-white/40 font-bold uppercase truncate">{item.song?.artist || "Неизвестно"}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        
-                        {activeTab === 'request' && (
-                            <div className="w-full h-[600px] glass-rose rounded-[40px] overflow-hidden border border-white/10">
-                                <iframe src={REQUESTS_EMBED_URL} className="w-full h-full border-0" allowTransparency="true"></iframe>
-                            </div>
-                        )}
-                    </main>
-
-                    <footer className="p-10 text-center mt-auto">
-                        <p className="text-[10px] font-black uppercase tracking-[1.5em] text-rose-600 opacity-60">Retro Dance Radio &copy; 2026</p>
-                    </footer>
-                </div>
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+                                        <button onClick={togglePlay} className={`w-24 h-24 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-2xl ${isPlaying ?
