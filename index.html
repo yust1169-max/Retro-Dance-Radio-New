@@ -9,30 +9,30 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { background-color: #0d0d0d; font-family: 'Inter', sans-serif; color: white; margin: 0; overflow: hidden; }
         .glass-rose { background: rgba(45, 0, 10, 0.85); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .bg-sphere { position: fixed; width: 80vw; height: 80vw; background: radial-gradient(circle, rgba(225, 29, 72, 0.2) 0%, transparent 70%); z-index: -1; filter: blur(100px); animation: move 20s infinite alternate; }
-        @keyframes move { from { transform: translate(-10%, -10%); } to { transform: translate(10%, 10%); } }
+        .bg-sphere { position: fixed; width: 80vw; height: 80vw; background: radial-gradient(circle, rgba(225, 29, 72, 0.2) 0%, transparent 70%); z-index: -1; filter: blur(100px); animation: move 30s infinite alternate linear; }
+        @keyframes move { from { transform: translate(-15%, -15%); } to { transform: translate(15%, 15%); } }
         
         .cover-container {
             width: 320px; height: 320px; margin: 0 auto 30px;
             background: #1a1a1a;
             border-radius: 40px; overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             display: flex; align-items: center; justify-content: center;
         }
-        #cover { width: 100%; height: 100%; object-fit: cover; }
+        #cover { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s ease; }
         audio { filter: invert(100%) hue-rotate(150deg) brightness(1.2); width: 100%; margin-top: 20px; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
     <div class="bg-sphere"></div>
-    <div class="glass-rose p-10 rounded-[48px] text-center max-w-lg w-full mx-4 shadow-2xl">
+    <div class="glass-rose p-10 rounded-[48px] text-center max-w-lg w-full mx-4 shadow-2xl border border-white/5">
         <div class="cover-container">
             <img id="cover" src="https://laut.fm/retrodance/logo" alt="Cover">
         </div>
         <div class="track-info">
             <h1 class="text-xl font-black uppercase italic tracking-tighter mb-2">Retro<span class="text-rose-600">Dance</span> Radio</h1>
-            <div id="artist" class="text-rose-500 font-bold uppercase tracking-widest text-xs mb-1">...</div>
-            <div id="title" class="text-2xl font-black uppercase italic tracking-tighter mb-8 leading-tight">LIVE STREAM</div>
+            <div id="artist" class="text-rose-500 font-bold uppercase tracking-widest text-xs mb-1">Загрузка...</div>
+            <div id="title" class="text-2xl font-black uppercase italic tracking-tighter mb-8 leading-tight">...</div>
         </div>
         <audio id="player" controls autoplay><source src="https://stream.laut.fm/retrodance" type="audio/mpeg"></audio>
         <p class="text-[10px] mt-8 opacity-40 uppercase tracking-[1em]">Retro Dance 2026</p>
@@ -53,12 +53,12 @@
                     titleEl.innerText = data.title || "Эфир";
                     artistEl.innerText = data.artist?.name || "RETRO RADIO";
                     
-                    // Проверяем наличие обложки и исправляем http на https
+                    // Заменяем http на https принудительно
                     let rawImg = data.image_medium || data.image_large || data.artist?.image_medium;
-                    let newImg = rawImg ? rawImg.replace('http://', 'https://') : STATION_LOGO;
+                    let secureImg = rawImg ? rawImg.replace('http://', 'https://') : STATION_LOGO;
                     
-                    if (coverImg.src !== newImg) {
-                        coverImg.src = newImg;
+                    if (coverImg.src !== secureImg) {
+                        coverImg.src = secureImg;
                     }
                 }
             } catch (e) { 
@@ -67,9 +67,10 @@
             }
         }
 
-        // Если картинка от API не загрузилась — ставим лого
+        // Если картинка не смогла загрузиться (ошибка 403/404 или HTTP)
         coverImg.onerror = function() {
             if (this.src !== STATION_LOGO) {
+                console.log("Обложка не загрузилась, ставим логотип");
                 this.src = STATION_LOGO;
             }
         };
