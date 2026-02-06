@@ -18,7 +18,7 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             display: flex; align-items: center; justify-content: center;
         }
-        #cover { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s; }
+        #cover { width: 100%; height: 100%; object-fit: cover; }
         audio { filter: invert(100%) hue-rotate(150deg) brightness(1.2); width: 100%; margin-top: 20px; }
     </style>
 </head>
@@ -26,12 +26,12 @@
     <div class="bg-sphere"></div>
     <div class="glass-rose p-10 rounded-[48px] text-center max-w-lg w-full mx-4 shadow-2xl">
         <div class="cover-container">
-            <img id="cover" src="https://laut.fm/retrodance/logo" alt="Cover">
+            <img id="cover" src="https://i.postimg.cc/28VKXjCx/logo.png" alt="Retro Dance Radio">
         </div>
         <div class="track-info">
             <h1 class="text-xl font-black uppercase italic tracking-tighter mb-2">Retro<span class="text-rose-600">Dance</span> Radio</h1>
-            <div id="artist" class="text-rose-500 font-bold uppercase tracking-widest text-xs mb-1">Загрузка...</div>
-            <div id="title" class="text-2xl font-black uppercase italic tracking-tighter mb-8 leading-tight">...</div>
+            <div id="artist" class="text-rose-500 font-bold uppercase tracking-widest text-xs mb-1">...</div>
+            <div id="title" class="text-2xl font-black uppercase italic tracking-tighter mb-8 leading-tight">Загрузка...</div>
         </div>
         <audio id="player" controls autoplay><source src="https://stream.laut.fm/retrodance" type="audio/mpeg"></audio>
         <p class="text-[10px] mt-8 opacity-40 uppercase tracking-[1em]">Retro Dance 2026</p>
@@ -41,11 +41,10 @@
         const coverImg = document.getElementById('cover');
         const artistEl = document.getElementById('artist');
         const titleEl = document.getElementById('title');
-        const STATION_LOGO = "https://laut.fm/retrodance/logo";
+        const STATION_LOGO = "https://i.postimg.cc/28VKXjCx/logo.png";
 
         async function updateNowPlaying() {
             try {
-                // Прямой запрос к API Laut.fm (без посредников!)
                 const res = await fetch('https://api.laut.fm/station/retrodance/current_song?t=' + Date.now());
                 const data = await res.json();
                 
@@ -56,21 +55,22 @@
                     titleEl.innerText = sTitle;
                     artistEl.innerText = sArtist;
                     
-                    // Исправляем протоколы для обложки
+                    // Проверяем обложку от Laut.fm
                     let rawImg = data.image_medium || data.image_large || data.artist?.image_medium;
-                    let secureImg = rawImg ? rawImg.replace('http://', 'https://') : STATION_LOGO;
                     
-                    if (coverImg.src !== secureImg) {
-                        coverImg.src = secureImg;
+                    // Если Laut.fm дал картинку — используем её, если нет — «железно» ставим твой логотип
+                    let finalImg = rawImg ? rawImg.replace('http://', 'https://') : STATION_LOGO;
+                    
+                    if (coverImg.src !== finalImg) {
+                        coverImg.src = finalImg;
                     }
 
-                    // Обновляем данные для экрана блокировки (то, что у тебя заработало на Андроид)
+                    // Обновляем MediaSession (для экрана блокировки)
                     if ('mediaSession' in navigator) {
                         navigator.mediaSession.metadata = new MediaMetadata({
                             title: sTitle,
                             artist: sArtist,
-                            album: 'Retro Dance Radio',
-                            artwork: [{ src: secureImg, sizes: '512x512', type: 'image/png' }]
+                            artwork: [{ src: finalImg, sizes: '512x512', type: 'image/png' }]
                         });
                     }
                 }
@@ -79,7 +79,10 @@
             }
         }
 
-        coverImg.onerror = function() { this.src = STATION_LOGO; };
+        // Если картинка от Laut.fm «битая» или не загрузилась — ставим логотип
+        coverImg.onerror = function() { 
+            this.src = STATION_LOGO; 
+        };
 
         updateNowPlaying();
         setInterval(updateNowPlaying, 10000);
