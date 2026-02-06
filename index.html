@@ -13,7 +13,7 @@
         @keyframes move { from { transform: translate(-15%, -15%); } to { transform: translate(15%, 15%); } }
         
         .cover-container {
-            width: 320px; height: 320px; margin: 0 auto 30px;
+            width: 300px; height: 300px; margin: 0 auto 30px;
             background: #1a1a1a; border-radius: 40px; overflow: hidden;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             display: flex; align-items: center; justify-content: center;
@@ -31,7 +31,7 @@
         <div class="track-info">
             <h1 class="text-xl font-black uppercase italic tracking-tighter mb-2">Retro<span class="text-rose-600">Dance</span> Radio</h1>
             <div id="artist" class="text-rose-500 font-bold uppercase tracking-widest text-xs mb-1">...</div>
-            <div id="title" class="text-2xl font-black uppercase italic tracking-tighter mb-8 leading-tight">Загрузка эфира...</div>
+            <div id="title" class="text-2xl font-black uppercase italic tracking-tighter mb-8 leading-tight">Загрузка...</div>
         </div>
         <audio id="player" controls autoplay><source src="https://stream.laut.fm/retrodance" type="audio/mpeg"></audio>
         <p class="text-[10px] mt-8 opacity-40 uppercase tracking-[1em]">Retro Dance 2026</p>
@@ -45,7 +45,7 @@
 
         async function updateNowPlaying() {
             try {
-                // Прямой запрос к API Laut.fm
+                // Запрашиваем данные напрямую у Laut.fm, а не у твоего API-домена
                 const res = await fetch('https://api.laut.fm/station/retrodance/current_song?t=' + Date.now());
                 const data = await res.json();
                 
@@ -53,22 +53,21 @@
                     titleEl.innerText = data.title || "Эфир";
                     artistEl.innerText = data.artist?.name || "RETRO RADIO";
                     
-                    // 1. Исправляем протокол http -> https для работы на GitHub
+                    // Исправляем протокол HTTP на HTTPS, иначе GitHub блокирует обложку
                     let rawImg = data.image_medium || data.image_large || data.artist?.image_medium;
                     let secureImg = rawImg ? rawImg.replace('http://', 'https://') : STATION_LOGO;
                     
-                    // 2. Меняем картинку, только если она новая
                     if (coverImg.src !== secureImg) {
                         coverImg.src = secureImg;
                     }
                 }
             } catch (e) { 
-                console.error("API Error"); 
+                console.error("Ошибка API"); 
                 coverImg.src = STATION_LOGO;
             }
         }
 
-        // 3. Запасной вариант: если обложка не грузится (ошибка 403/404), ставим лого
+        // Если обложка артиста не загрузилась — возвращаем твой логотип
         coverImg.onerror = function() {
             if (this.src !== STATION_LOGO) {
                 this.src = STATION_LOGO;
@@ -76,7 +75,7 @@
         };
 
         updateNowPlaying();
-        setInterval(updateNowPlaying, 10000); // Обновление каждые 10 секунд
+        setInterval(updateNowPlaying, 10000);
     </script>
 </body>
 </html>
