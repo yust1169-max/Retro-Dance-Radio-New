@@ -2,18 +2,18 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Retro Dance Radio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { background-color: #0d0d0d; font-family: 'Inter', sans-serif; color: white; margin: 0; overflow: hidden; }
-        .glass-rose { background: rgba(45, 0, 10, 0.85); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .bg-sphere { position: fixed; width: 80vw; height: 80vw; background: radial-gradient(circle, rgba(225, 29, 72, 0.2) 0%, transparent 70%); z-index: -1; filter: blur(100px); animation: move 30s infinite alternate linear; }
-        @keyframes move { from { transform: translate(-15%, -15%); } to { transform: translate(15%, 15%); } }
+        body { background-color: #0d0d0d; font-family: 'Inter', sans-serif; color: white; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; min-h-screen; }
+        .glass-rose { background: rgba(45, 0, 10, 0.85); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; max-width: 400px; margin: 20px; }
+        .bg-sphere { position: fixed; width: 100vw; height: 100vw; background: radial-gradient(circle, rgba(225, 29, 72, 0.2) 0%, transparent 70%); z-index: -1; filter: blur(100px); animation: move 30s infinite alternate linear; }
+        @keyframes move { from { transform: translate(-20%, -20%); } to { transform: translate(20%, 20%); } }
         
         .cover-container {
-            width: 320px; height: 320px; margin: 0 auto 30px;
+            width: 280px; height: 280px; margin: 0 auto 30px;
             background: #1a1a1a; border-radius: 40px; overflow: hidden;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             display: flex; align-items: center; justify-content: center;
@@ -22,19 +22,31 @@
         audio { filter: invert(100%) hue-rotate(150deg) brightness(1.2); width: 100%; margin-top: 20px; }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen">
+<body class="min-h-screen">
     <div class="bg-sphere"></div>
-    <div class="glass-rose p-10 rounded-[48px] text-center max-w-lg w-full mx-4 shadow-2xl">
+
+    <div class="glass-rose p-8 rounded-[48px] text-center shadow-2xl">
         <div class="cover-container">
-            <img id="cover" src="https://i.postimg.cc/28VKXjCx/logo.png" alt="Retro Dance Radio">
+            <img id="cover" src="https://i.postimg.cc/28VKXjCx/logo.png" alt="Cover">
         </div>
+
         <div class="track-info">
-            <h1 class="text-xl font-black uppercase italic tracking-tighter mb-2">Retro<span class="text-rose-600">Dance</span> Radio</h1>
-            <div id="artist" class="text-rose-500 font-bold uppercase tracking-widest text-xs mb-1">...</div>
-            <div id="title" class="text-2xl font-black uppercase italic tracking-tighter mb-8 leading-tight">Загрузка...</div>
+            <h1 class="text-xl font-black italic uppercase tracking-tighter mb-4">
+                Retro<span class="text-rose-600">Dance</span> Radio
+            </h1>
+            <div id="artist" class="text-rose-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-2 opacity-80">Retro Radio</div>
+            <div id="title" class="text-xl font-black uppercase italic tracking-tighter mb-8 leading-tight min-h-[3em] flex items-center justify-center">
+                Загрузка...
+            </div>
         </div>
-        <audio id="player" controls autoplay><source src="https://stream.laut.fm/retrodance" type="audio/mpeg"></audio>
-        <p class="text-[10px] mt-8 opacity-40 uppercase tracking-[1em]">Retro Dance 2026</p>
+
+        <div class="w-full flex justify-center">
+            <audio id="player" controls autoplay>
+                <source src="https://stream.laut.fm/retrodance" type="audio/mpeg">
+            </audio>
+        </div>
+
+        <p class="text-[9px] mt-8 opacity-40 uppercase tracking-[1em]">Retro Dance 2026</p>
     </div>
 
     <script>
@@ -55,22 +67,19 @@
                     titleEl.innerText = sTitle;
                     artistEl.innerText = sArtist;
                     
-                    // Проверяем обложку от Laut.fm
                     let rawImg = data.image_medium || data.image_large || data.artist?.image_medium;
+                    let secureImg = rawImg ? rawImg.replace('http://', 'https://') : STATION_LOGO;
                     
-                    // Если Laut.fm дал картинку — используем её, если нет — «железно» ставим твой логотип
-                    let finalImg = rawImg ? rawImg.replace('http://', 'https://') : STATION_LOGO;
-                    
-                    if (coverImg.src !== finalImg) {
-                        coverImg.src = finalImg;
+                    if (coverImg.src !== secureImg) {
+                        coverImg.src = secureImg;
                     }
 
-                    // Обновляем MediaSession (для экрана блокировки)
                     if ('mediaSession' in navigator) {
                         navigator.mediaSession.metadata = new MediaMetadata({
                             title: sTitle,
                             artist: sArtist,
-                            artwork: [{ src: finalImg, sizes: '512x512', type: 'image/png' }]
+                            album: 'Retro Dance Radio',
+                            artwork: [{ src: secureImg, sizes: '512x512', type: 'image/png' }]
                         });
                     }
                 }
@@ -79,11 +88,7 @@
             }
         }
 
-        // Если картинка от Laut.fm «битая» или не загрузилась — ставим логотип
-        coverImg.onerror = function() { 
-            this.src = STATION_LOGO; 
-        };
-
+        coverImg.onerror = function() { this.src = STATION_LOGO; };
         updateNowPlaying();
         setInterval(updateNowPlaying, 10000);
     </script>
