@@ -196,7 +196,7 @@
                                         <div className="flex flex-col gap-4">
                                             <div className="flex bg-black/40 rounded-xl p-1 border border-white/10 text-xs">
                                                 <button onClick={() => setQuality('high')} className={`px-4 py-2 rounded-lg font-black ${quality === 'high' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>128K</button>
-                                                <button onClick={() => setQuality('low')} className={`px-4 py-2 rounded-lg font-black ${quality === 'low' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>32K</button>
+                                                <button onClick={() => setQuality('low')} className={`px-4 py-2 rounded-lg font-black ${quality === 'low' ? 'bg-rose-600 text-white' : 'text-white/30'}`}>48K</button>
                                             </div>
                                             {!isIos && (
                                                 <input type="range" min="0" max="1" step="0.01" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-24 accent-rose-600" />
