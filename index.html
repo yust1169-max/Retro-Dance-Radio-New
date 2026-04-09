@@ -26,7 +26,6 @@
         
         .legal-info { font-size: 8px; opacity: 0.3; text-transform: uppercase; margin-top: 20px; line-height: 1.4; letter-spacing: 1px; }
         
-        /* Стиль для новой кнопки */
         .btn-laut {
             display: inline-block; margin-top: 15px; padding: 8px 16px;
             border: 1px solid rgba(225, 29, 72, 0.5); border-radius: 20px;
@@ -75,7 +74,8 @@
         </div>
 
         <div class="legal-info">
-            Radio-Hosting powered by laut.fm | Verantwortlich für die Inhalte: laut.ag
+            Radio-Hosting powered by laut.fm | Verantwortlich für die Inhalte: laut.ag <br>
+            Some content on this site is created with AI assistance. / Einige Inhalte dieser Website wurden mit Hilfe von KI erstellt.
         </div>
     </div>
 
@@ -166,7 +166,7 @@
         }
 
         init();
-        setInterval(updateNowPlaying, 20000);
+        setInterval(updateNowPlaying, 15000);
         setInterval(updateHistory, 60000);
         setInterval(updateListeners, 30000);
     </script>
