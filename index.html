@@ -53,7 +53,7 @@
             flex-shrink: 0; 
         }
 
-        #cover { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s ease-in-out; }
+        #cover { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.4s ease-in-out; }
         
         audio { 
             filter: invert(100%) hue-rotate(150deg) brightness(1.2); 
@@ -122,30 +122,42 @@
         const listenersEl = document.getElementById('listeners-count');
         const STATION_LOGO = "https://i.postimg.cc/28VKXjCx/logo.png";
 
+        // Функция поиска обложки (JSONP для максимальной совместимости)
         async function fetchSmartCover(artist, title) {
-            try {
+            return new Promise((resolve) => {
                 const query = `${artist} ${title}`.trim();
                 const term = encodeURIComponent(query);
+                const callbackName = 'itunesCallback_' + Math.floor(Math.random() * 1000000);
                 
-                const res = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`, {
-                    mode: 'cors',
-                    credentials: 'omit'
-                });
-                
-                const data = await res.json();
-                
-                if (data.results && data.results.length > 0) {
-                    let imgUrl = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
-                    return imgUrl.replace('http://', 'https://');
-                }
-            } catch (e) { 
-                console.error("iTunes API error", e); 
-            }
-            return null;
+                window[callbackName] = (data) => {
+                    delete window[callbackName];
+                    const script = document.getElementById(callbackName);
+                    if (script && script.parentNode) script.parentNode.removeChild(script);
+                    if (data.results && data.results.length > 0) {
+                        let imgUrl = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
+                        resolve(imgUrl.replace('http://', 'https://'));
+                    } else { resolve(null); }
+                };
+
+                const script = document.createElement('script');
+                script.id = callbackName;
+                script.src = `https://itunes.apple.com/search?term=${term}&media=music&limit=1&callback=${callbackName}`;
+                document.body.appendChild(script);
+
+                setTimeout(() => {
+                    if (window[callbackName]) {
+                        delete window[callbackName];
+                        const oldScript = document.getElementById(callbackName);
+                        if (oldScript && oldScript.parentNode) oldScript.parentNode.removeChild(oldScript);
+                        resolve(null);
+                    }
+                }, 4000);
+            });
         }
 
         async function updateNowPlaying() {
             try {
+                // Добавляем timestamp к запросу API, чтобы laut.fm не отдавал старые данные
                 const res = await fetch('https://api.laut.fm/station/retrodance/current_song?t=' + Date.now());
                 const data = await res.json();
                 
@@ -166,7 +178,7 @@
                         setTimeout(() => { 
                             coverImg.src = finalImg; 
                             coverImg.style.opacity = 1; 
-                        }, 500);
+                        }, 250);
                     }
 
                     if ('mediaSession' in navigator) {
@@ -183,7 +195,7 @@
 
         async function updateHistory() {
             try {
-                const res = await fetch('https://api.laut.fm/station/retrodance/last_songs');
+                const res = await fetch('https://api.laut.fm/station/retrodance/last_songs?t=' + Date.now());
                 const data = await res.json();
                 historyList.innerHTML = '';
                 data.slice(0, 5).forEach(song => {
@@ -197,7 +209,7 @@
 
         async function updateListeners() {
             try {
-                const res = await fetch('https://api.laut.fm/station/retrodance/listeners');
+                const res = await fetch('https://api.laut.fm/station/retrodance/listeners?t=' + Date.now());
                 const count = await res.text();
                 listenersEl.innerText = `Listeners: ${count}`;
             } catch (e) { console.error("Listeners error", e); }
@@ -210,9 +222,10 @@
         }
 
         init();
-        setInterval(updateNowPlaying, 15000);
-        setInterval(updateHistory, 60000);
-        setInterval(updateListeners, 30000);
+        // Ускоренное обновление: проверяем каждые 5 секунд
+        setInterval(updateNowPlaying, 5000);
+        setInterval(updateHistory, 30000);
+        setInterval(updateListeners, 15000);
     </script>
 </body>
 </html>
