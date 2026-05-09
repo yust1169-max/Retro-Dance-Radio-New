@@ -13,34 +13,33 @@
         .bg-sphere { position: fixed; width: 100vw; height: 100vw; background: radial-gradient(circle, rgba(225, 29, 72, 0.2) 0%, transparent 70%); z-index: -1; filter: blur(100px); animation: move 30s infinite alternate linear; }
         @keyframes move { from { transform: translate(-20%, -20%); } to { transform: translate(20%, 20%); } }
         
+        /* КОНТЕЙНЕР: Теперь это жесткий квадрат без флекс-свойств для картинки */
         .cover-container {
-            width: 280px; height: 280px; margin: 0 auto 30px;
-            background: #1a1a1a; border-radius: 40px; overflow: hidden;
+            width: 280px; height: 280px; 
+            margin: 0 auto 30px;
+            background: #1a1a1a; border-radius: 40px; 
+            overflow: hidden;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-            display: flex; align-items: center; justify-content: center;
-            position: relative; /* Для фиксации обложки внутри */
+            position: relative; /* Критично для Safari */
         }
         
+        /* КАРТИНКА: Используем абсолютное позиционирование с центрированием через transform */
         #cover { 
+            display: block;
             width: 100%; height: 100%; 
             object-fit: cover; 
-            position: absolute; /* Убирает смещение вправо на iOS */
-            top: 0; left: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Это заставляет Safari ставить центр картинки в центр контейнера */
             transition: opacity 0.5s ease-in-out; 
+            border-radius: 40px;
         }
 
         audio { filter: invert(100%) hue-rotate(150deg) brightness(1.2); width: 100%; margin-top: 20px; height: 40px; }
-        .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; }
         .legal-info { font-size: 8px; opacity: 0.3; text-transform: uppercase; margin-top: 20px; line-height: 1.4; letter-spacing: 1px; }
-        
-        .btn-laut {
-            display: inline-block; margin-top: 15px; padding: 8px 16px;
-            border: 1px solid rgba(225, 29, 72, 0.5); border-radius: 20px;
-            font-size: 10px; font-weight: bold; color: #fb7185;
-            transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px;
-        }
-        .btn-laut:hover { background: rgba(225, 29, 72, 0.1); border-color: #e11d48; color: white; }
+        .btn-laut { display: inline-block; margin-top: 15px; padding: 8px 16px; border: 1px solid rgba(225, 29, 72, 0.5); border-radius: 20px; font-size: 10px; font-weight: bold; color: #fb7185; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -114,7 +113,7 @@
                         titleEl.innerText = sTitle;
                         artistEl.innerText = sArtist;
 
-                        // Ищем обложку только в iTunes
+                        // Игнорируем картинки от Laut.fm, ищем только в iTunes
                         const finalImg = await fetchiTunesCover(sArtist, sTitle);
 
                         if (finalImg) {
@@ -125,17 +124,13 @@
                                 setTimeout(() => {
                                     coverImg.src = this.src;
                                     coverImg.style.opacity = 1;
-                                }, 400);
+                                }, 500);
                             };
-                            // Принудительное обновление кэша для iOS
-                            imgLoader.src = finalImg + (finalImg.includes('?') ? '&' : '?') + 't=' + Date.now();
-                        }
-                        
-                        if ('mediaSession' in navigator && finalImg) {
-                            navigator.mediaSession.metadata = new MediaMetadata({
-                                title: sTitle, artist: sArtist, album: 'RetroDance',
-                                artwork: [{ src: finalImg, sizes: '512x512', type: 'image/jpeg' }]
-                            });
+                            // Принудительно заставляем Safari загрузить новый файл
+                            imgLoader.src = finalImg + (finalImg.includes('?') ? '&' : '?') + 'cache=' + Date.now();
+                        } else {
+                            // Если в iTunes нет, ставим логотип станции
+                            coverImg.src = "https://i.postimg.cc/28VKXjCx/logo.png";
                         }
                     }
                 }
