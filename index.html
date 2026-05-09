@@ -126,13 +126,21 @@
             try {
                 const query = `${artist} ${title}`.trim();
                 const term = encodeURIComponent(query);
-                const res = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`);
+                
+                const res = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`, {
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+                
                 const data = await res.json();
+                
                 if (data.results && data.results.length > 0) {
                     let imgUrl = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
                     return imgUrl.replace('http://', 'https://');
                 }
-            } catch (e) { console.error("iTunes API error", e); }
+            } catch (e) { 
+                console.error("iTunes API error", e); 
+            }
             return null;
         }
 
