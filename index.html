@@ -122,7 +122,7 @@
         const listenersEl = document.getElementById('listeners-count');
         const STATION_LOGO = "https://i.postimg.cc/28VKXjCx/logo.png";
 
-        // Функция поиска обложки (JSONP для максимальной совместимости)
+        // Метод JSONP для iPhone и Android
         async function fetchSmartCover(artist, title) {
             return new Promise((resolve) => {
                 const query = `${artist} ${title}`.trim();
@@ -157,7 +157,6 @@
 
         async function updateNowPlaying() {
             try {
-                // Добавляем timestamp к запросу API, чтобы laut.fm не отдавал старые данные
                 const res = await fetch('https://api.laut.fm/station/retrodance/current_song?t=' + Date.now());
                 const data = await res.json();
                 
@@ -222,7 +221,7 @@
         }
 
         init();
-        // Ускоренное обновление: проверяем каждые 5 секунд
+        // ПРОВЕРКА КАЖДЫЕ 5 СЕКУНД
         setInterval(updateNowPlaying, 5000);
         setInterval(updateHistory, 30000);
         setInterval(updateListeners, 15000);
