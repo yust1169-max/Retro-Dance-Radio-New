@@ -7,39 +7,81 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { background-color: #0d0d0d; font-family: 'Inter', sans-serif; color: white; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow-x: hidden; }
-        .glass-rose { background: rgba(45, 0, 10, 0.85); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; max-width: 420px; margin: 20px; position: relative; z-index: 10; }
+        
+        body { 
+            background-color: #0d0d0d; 
+            font-family: 'Inter', sans-serif; 
+            color: white; 
+            margin: 0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            overflow-x: hidden; 
+        }
+
+        .glass-rose { 
+            background: rgba(45, 0, 10, 0.85); 
+            backdrop-filter: blur(30px); 
+            -webkit-backdrop-filter: blur(30px); /* Для iPhone */
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            width: 100%; 
+            max-width: 400px; 
+            margin: 20px; 
+            position: relative; 
+            z-index: 10; 
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Центрируем всё содержимое по горизонтали */
+            box-sizing: border-box;
+        }
+
         .bg-sphere { position: fixed; width: 100vw; height: 100vw; background: radial-gradient(circle, rgba(225, 29, 72, 0.2) 0%, transparent 70%); z-index: -1; filter: blur(100px); animation: move 30s infinite alternate linear; }
         @keyframes move { from { transform: translate(-20%, -20%); } to { transform: translate(20%, 20%); } }
         
+        /* ИСПРАВЛЕНИЕ СМЕЩЕНИЯ: */
         .cover-container {
-            width: 280px; height: 280px; margin: 0 auto 30px;
-            background: #1a1a1a; border-radius: 40px; overflow: hidden;
+            width: 280px; 
+            height: 280px; 
+            margin: 0 0 30px 0; /* Убрали auto, так как родитель уже центрирует через items-center */
+            background: #1a1a1a; 
+            border-radius: 40px; 
+            overflow: hidden;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-            display: flex; align-items: center; justify-content: center;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            flex-shrink: 0; 
         }
+
         #cover { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s ease-in-out; }
-        audio { filter: invert(100%) hue-rotate(150deg) brightness(1.2); width: 100%; margin-top: 20px; height: 40px; }
         
-        .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .legal-info { font-size: 8px; opacity: 0.3; text-transform: uppercase; margin-top: 20px; line-height: 1.4; letter-spacing: 1px; }
-        
-        .btn-laut {
-            display: inline-block; margin-top: 15px; padding: 8px 16px;
-            border: 1px solid rgba(225, 29, 72, 0.5); border-radius: 20px;
-            font-size: 10px; font-weight: bold; color: #fb7185;
-            transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px;
+        audio { 
+            filter: invert(100%) hue-rotate(150deg) brightness(1.2); 
+            width: 100%; 
+            max-width: 320px; 
+            margin: 20px 0; 
+            height: 40px; 
         }
-        .btn-laut:hover { background: rgba(225, 29, 72, 0.1); border-color: #e11d48; color: white; }
+        
+        .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; width: 100%; }
+        
+        .track-info { 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; /* Центрируем тексты */
+            text-align: center; 
+        }
+
+        #title, #artist { width: 100%; }
     </style>
 </head>
 <body>
     <div class="bg-sphere"></div>
 
-    <div class="glass-rose p-8 rounded-[48px] text-center shadow-2xl">
-        <div class="flex justify-between items-center mb-6 px-2">
+    <div class="glass-rose p-8 rounded-[48px] shadow-2xl text-center">
+        <div class="flex justify-between items-center mb-6 w-full px-2">
             <span class="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Live</span>
             <span id="listeners-count" class="text-[10px] opacity-60 uppercase tracking-widest">Listeners: 0</span>
         </div>
@@ -53,7 +95,7 @@
                 Retro<span class="text-rose-600">Dance</span>
             </h1>
             <div id="artist" class="text-rose-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-2 opacity-80">Retro Radio</div>
-            <div id="title" class="text-xl font-black uppercase italic tracking-tighter mb-8 leading-tight min-h-[3em] flex items-center justify-center">
+            <div id="title" class="text-xl font-black uppercase italic tracking-tighter mb-8 leading-tight min-h-[3em] flex items-center justify-center px-4">
                 Loading...
             </div>
         </div>
@@ -64,18 +106,17 @@
             </audio>
         </div>
 
-        <a href="https://laut.fm/retrodance" target="_blank" class="btn-laut">
+        <a href="https://laut.fm/retrodance" target="_blank" class="btn-laut px-6 py-2 border border-rose-500/50 rounded-full text-[10px] font-bold text-rose-400 uppercase tracking-widest hover:bg-rose-500/10 transition-all">
             Listen on laut.fm
         </a>
 
-        <div class="text-left mt-8 mb-6">
+        <div class="mt-8 mb-6 w-full text-left">
             <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] mb-4 opacity-40">Recently Played</h3>
             <div id="history-list" class="text-[11px] font-medium opacity-80"></div>
         </div>
 
-        <div class="legal-info">
-            Radio-Hosting powered by laut.fm | Verantwortlich für die Inhalte: laut.ag <br>
-            Some content on this site is created with AI assistance. / Einige Inhalte dieser Website wurden mit Hilfe von KI erstellt.
+        <div class="text-[8px] opacity-30 uppercase tracking-widest mt-4 w-full">
+            Radio-Hosting powered by laut.fm | Verantwortlich für die Inhalte: laut.ag
         </div>
     </div>
 
@@ -107,22 +148,21 @@
                 if (data) {
                     const sTitle = data.title;
                     const sArtist = data.artist?.name;
+
+                    if (titleEl.innerText === sTitle && artistEl.innerText === sArtist) return;
+                    
                     titleEl.innerText = sTitle;
                     artistEl.innerText = sArtist;
 
-                    let finalImg = STATION_LOGO;
-                    let lautImg = data.artist?.image || data.image_medium;
-                    
-                    if (lautImg) {
-                        finalImg = lautImg.replace('http://', 'https://');
-                    } else {
-                        const itunesImg = await fetchSmartCover(sArtist, sTitle);
-                        if (itunesImg) finalImg = itunesImg;
-                    }
+                    const itunesImg = await fetchSmartCover(sArtist, sTitle);
+                    const finalImg = itunesImg || STATION_LOGO;
 
                     if (coverImg.src !== finalImg) {
                         coverImg.style.opacity = 0;
-                        setTimeout(() => { coverImg.src = finalImg; coverImg.style.opacity = 1; }, 500);
+                        setTimeout(() => { 
+                            coverImg.src = finalImg; 
+                            coverImg.style.opacity = 1; 
+                        }, 500);
                     }
 
                     if ('mediaSession' in navigator) {
