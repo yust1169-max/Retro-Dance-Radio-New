@@ -1,220 +1,230 @@
-<script>
-
-    const coverImg = document.getElementById('cover');
-    const artistEl = document.getElementById('artist');
-    const titleEl = document.getElementById('title');
-    const historyList = document.getElementById('history-list');
-    const listenersEl = document.getElementById('listeners-count');
-
-    const STATION_LOGO = "https://i.postimg.cc/28VKXjCx/logo.png";
-
-    let currentTrackId = '';
-    let currentCover = '';
-
-    async function fetchWithTimeout(url, timeout = 5000) {
-
-        const controller = new AbortController();
-
-        const timer = setTimeout(() => {
-            controller.abort();
-        }, timeout);
-
-        try {
-
-            const response = await fetch(url, {
-                signal: controller.signal,
-                cache: "no-store"
-            });
-
-            clearTimeout(timer);
-
-            return response;
-
-        } catch (e) {
-
-            clearTimeout(timer);
-            throw e;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>RetroDance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        
+        body { 
+            background-color: #0d0d0d; 
+            font-family: 'Inter', sans-serif; 
+            color: white; 
+            margin: 0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            overflow-x: hidden; 
         }
-    }
 
-    // НОВЫЙ СТАБИЛЬНЫЙ МЕТОД ДЛЯ IPHONE
-    async function fetchSmartCover(artist, title) {
-
-        try {
-
-            const query = encodeURIComponent(`${artist} ${title}`);
-
-            const proxyUrl =
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(
-                    `https://api.deezer.com/search?q=${query}`
-                )}`;
-
-            const response = await fetch(proxyUrl, {
-                cache: "no-store"
-            });
-
-            const data = await response.json();
-
-            if (data.data && data.data.length > 0) {
-
-                return data.data[0].album.cover_xl + '?t=' + Date.now();
-            }
-
-            return null;
-
-        } catch (e) {
-
-            console.error("Cover fetch error:", e);
-
-            return null;
+        .glass-rose { 
+            background: rgba(45, 0, 10, 0.85); 
+            backdrop-filter: blur(30px); 
+            -webkit-backdrop-filter: blur(30px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            width: 100%; 
+            max-width: 400px; 
+            margin: 20px; 
+            position: relative; 
+            z-index: 10; 
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+            box-sizing: border-box;
         }
-    }
 
-    async function updateNowPlaying() {
+        .bg-sphere { position: fixed; width: 100vw; height: 100vw; background: radial-gradient(circle, rgba(225, 29, 72, 0.2) 0%, transparent 70%); z-index: -1; filter: blur(100px); animation: move 30s infinite alternate linear; }
+        @keyframes move { from { transform: translate(-20%, -20%); } to { transform: translate(20%, 20%); } }
+        
+        .cover-container {
+            width: 280px; 
+            height: 280px; 
+            margin-bottom: 30px;
+            background: #1a1a1a; 
+            border-radius: 40px; 
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            flex-shrink: 0; 
+        }
 
-        try {
+        #cover { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.4s ease-in-out; }
+        
+        audio { 
+            filter: invert(100%) hue-rotate(150deg) brightness(1.2); 
+            width: 100%; 
+            max-width: 320px; 
+            margin: 20px 0; 
+            height: 40px; 
+        }
+        
+        .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; width: 100%; text-align: left; }
+        
+        .track-info { width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; }
 
-            const res = await fetchWithTimeout(
-                'https://api.laut.fm/station/retrodance/current_song?t=' + Date.now()
-            );
+        .legal-info { font-size: 8px; opacity: 0.3; text-transform: uppercase; margin-top: 20px; line-height: 1.4; letter-spacing: 1px; width: 100%; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="bg-sphere"></div>
 
-            const data = await res.json();
+    <div class="glass-rose p-8 rounded-[48px] shadow-2xl text-center">
+        <div class="flex justify-between items-center mb-6 w-full px-2">
+            <span class="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Live</span>
+            <span id="listeners-count" class="text-[10px] opacity-60 uppercase tracking-widest">Listeners: 0</span>
+        </div>
 
-            if (!data) return;
+        <div class="cover-container">
+            <img id="cover" src="https://i.postimg.cc/28VKXjCx/logo.png" alt="Cover">
+        </div>
 
-            const sTitle = data.title || 'Unknown';
-            const sArtist = data.artist?.name || 'Unknown';
+        <div class="track-info">
+            <h1 class="text-2xl font-black italic uppercase tracking-tighter mb-4">
+                Retro<span class="text-rose-600">Dance</span>
+            </h1>
+            <div id="artist" class="text-rose-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-2 opacity-80">Retro Radio</div>
+            <div id="title" class="text-xl font-black uppercase italic tracking-tighter mb-8 leading-tight min-h-[3em] flex items-center justify-center px-4 w-full">
+                Loading...
+            </div>
+        </div>
 
-            const newTrackId = `${sArtist} - ${sTitle}`;
+        <div class="w-full flex justify-center mb-4">
+            <audio id="player" controls>
+                <source src="https://stream.laut.fm/retrodance" type="audio/mpeg">
+            </audio>
+        </div>
 
-            if (currentTrackId === newTrackId) {
-                return;
-            }
+        <a href="https://laut.fm/retrodance" target="_blank" class="inline-block mt-4 px-6 py-2 border border-rose-500/50 rounded-full text-[10px] font-bold text-rose-400 uppercase tracking-widest hover:bg-rose-500/10 transition-all text-decoration-none">
+            Listen on laut.fm
+        </a>
 
-            currentTrackId = newTrackId;
+        <div class="mt-8 mb-6 w-full text-left">
+            <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] mb-4 opacity-40">Recently Played</h3>
+            <div id="history-list" class="text-[11px] font-medium opacity-80"></div>
+        </div>
 
-            titleEl.innerText = sTitle;
-            artistEl.innerText = sArtist;
+        <div class="legal-info">
+            Radio-Hosting powered by laut.fm | Verantwortlich für die Inhalte: laut.ag <br>
+            Some content on this site is created with AI assistance. / Einige Inhalte dieser Website wurden mit Hilfe von KI erstellt.
+        </div>
+    </div>
 
-            const deezerImg = await fetchSmartCover(sArtist, sTitle);
+    <script>
+        const coverImg = document.getElementById('cover');
+        const artistEl = document.getElementById('artist');
+        const titleEl = document.getElementById('title');
+        const historyList = document.getElementById('history-list');
+        const listenersEl = document.getElementById('listeners-count');
+        const STATION_LOGO = "https://i.postimg.cc/28VKXjCx/logo.png";
 
-            let finalImg;
+        // Метод JSONP для iPhone и Android
+        async function fetchSmartCover(artist, title) {
+            return new Promise((resolve) => {
+                const query = `${artist} ${title}`.trim();
+                const term = encodeURIComponent(query);
+                const callbackName = 'itunesCallback_' + Math.floor(Math.random() * 1000000);
+                
+                window[callbackName] = (data) => {
+                    delete window[callbackName];
+                    const script = document.getElementById(callbackName);
+                    if (script && script.parentNode) script.parentNode.removeChild(script);
+                    if (data.results && data.results.length > 0) {
+                        let imgUrl = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
+                        resolve(imgUrl.replace('http://', 'https://'));
+                    } else { resolve(null); }
+                };
 
-            if (deezerImg) {
-                finalImg = deezerImg;
-            } else {
-                finalImg = `${STATION_LOGO}?t=${Date.now()}`;
-            }
-
-            if (currentCover !== finalImg) {
-
-                currentCover = finalImg;
-
-                coverImg.style.opacity = 0;
+                const script = document.createElement('script');
+                script.id = callbackName;
+                script.src = `https://itunes.apple.com/search?term=${term}&media=music&limit=1&callback=${callbackName}`;
+                document.body.appendChild(script);
 
                 setTimeout(() => {
-
-                    coverImg.src = finalImg;
-
-                    coverImg.onload = () => {
-                        coverImg.style.opacity = 1;
-                    };
-
-                    coverImg.onerror = () => {
-
-                        coverImg.src = STATION_LOGO;
-                        coverImg.style.opacity = 1;
-                    };
-
-                }, 250);
-            }
-
-            if ('mediaSession' in navigator) {
-
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: sTitle,
-                    artist: sArtist,
-                    album: 'RetroDance',
-                    artwork: [
-                        {
-                            src: finalImg,
-                            sizes: '512x512',
-                            type: 'image/jpeg'
-                        }
-                    ]
-                });
-            }
-
-        } catch (e) {
-
-            console.error("Now playing error:", e);
-        }
-    }
-
-    async function updateHistory() {
-
-        try {
-
-            const res = await fetchWithTimeout(
-                'https://api.laut.fm/station/retrodance/last_songs?t=' + Date.now()
-            );
-
-            const data = await res.json();
-
-            historyList.innerHTML = '';
-
-            data.slice(0, 5).forEach(song => {
-
-                const item = document.createElement('div');
-                item.className = 'history-item';
-
-                const artistSpan = document.createElement('span');
-
-                artistSpan.className = 'text-rose-500 font-bold';
-                artistSpan.textContent = song.artist.name;
-
-                item.appendChild(artistSpan);
-
-                item.append(` — ${song.title}`);
-
-                historyList.appendChild(item);
+                    if (window[callbackName]) {
+                        delete window[callbackName];
+                        const oldScript = document.getElementById(callbackName);
+                        if (oldScript && oldScript.parentNode) oldScript.parentNode.removeChild(oldScript);
+                        resolve(null);
+                    }
+                }, 4000);
             });
-
-        } catch (e) {
-
-            console.error("History error:", e);
         }
-    }
 
-    async function updateListeners() {
+        async function updateNowPlaying() {
+            try {
+                const res = await fetch('https://api.laut.fm/station/retrodance/current_song?t=' + Date.now());
+                const data = await res.json();
+                
+                if (data) {
+                    const sTitle = data.title;
+                    const sArtist = data.artist?.name;
 
-        try {
+                    if (titleEl.innerText === sTitle && artistEl.innerText === sArtist) return;
+                    
+                    titleEl.innerText = sTitle;
+                    artistEl.innerText = sArtist;
 
-            const res = await fetchWithTimeout(
-                'https://api.laut.fm/station/retrodance/listeners?t=' + Date.now()
-            );
+                    const itunesImg = await fetchSmartCover(sArtist, sTitle);
+                    const finalImg = itunesImg || STATION_LOGO;
 
-            const count = await res.text();
+                    if (coverImg.src !== finalImg) {
+                        coverImg.style.opacity = 0;
+                        setTimeout(() => { 
+                            coverImg.src = finalImg; 
+                            coverImg.style.opacity = 1; 
+                        }, 250);
+                    }
 
-            listenersEl.innerText = `Listeners: ${count}`;
-
-        } catch (e) {
-
-            console.error("Listeners error:", e);
+                    if ('mediaSession' in navigator) {
+                        navigator.mediaSession.metadata = new MediaMetadata({
+                            title: sTitle,
+                            artist: sArtist,
+                            album: 'RetroDance',
+                            artwork: [{ src: finalImg, sizes: '512x512', type: 'image/png' }]
+                        });
+                    }
+                }
+            } catch (e) { console.error(e); }
         }
-    }
 
-    function init() {
+        async function updateHistory() {
+            try {
+                const res = await fetch('https://api.laut.fm/station/retrodance/last_songs?t=' + Date.now());
+                const data = await res.json();
+                historyList.innerHTML = '';
+                data.slice(0, 5).forEach(song => {
+                    const item = document.createElement('div');
+                    item.className = 'history-item';
+                    item.innerHTML = `<span class="text-rose-500 font-bold">${song.artist.name}</span> — ${song.title}`;
+                    historyList.appendChild(item);
+                });
+            } catch (e) { console.error("History error", e); }
+        }
 
-        updateNowPlaying();
-        updateHistory();
-        updateListeners();
-    }
+        async function updateListeners() {
+            try {
+                const res = await fetch('https://api.laut.fm/station/retrodance/listeners?t=' + Date.now());
+                const count = await res.text();
+                listenersEl.innerText = `Listeners: ${count}`;
+            } catch (e) { console.error("Listeners error", e); }
+        }
 
-    init();
+        function init() {
+            updateNowPlaying();
+            updateHistory();
+            updateListeners();
+        }
 
-    setInterval(updateNowPlaying, 5000);
-    setInterval(updateHistory, 30000);
-    setInterval(updateListeners, 15000);
-
-</script>
+        init();
+        // ПРОВЕРКА КАЖДЫЕ 5 СЕКУНД
+        setInterval(updateNowPlaying, 5000);
+        setInterval(updateHistory, 30000);
+        setInterval(updateListeners, 15000);
+    </script>
+</body>
+</html>
