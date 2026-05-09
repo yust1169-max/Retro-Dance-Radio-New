@@ -122,7 +122,7 @@
         const listenersEl = document.getElementById('listeners-count');
         const STATION_LOGO = "https://i.postimg.cc/28VKXjCx/logo.png";
 
-        // Метод JSONP для iPhone и Android
+        // Специальный метод для iPhone (JSONP)
         async function fetchSmartCover(artist, title) {
             return new Promise((resolve) => {
                 const query = `${artist} ${title}`.trim();
@@ -170,15 +170,13 @@
                     artistEl.innerText = sArtist;
 
                     const itunesImg = await fetchSmartCover(sArtist, sTitle);
-                    const finalImg = itunesImg || STATION_LOGO;
+                    const finalImg = itunesImg || (STATION_LOGO + '?t=' + Date.now());
 
-                    if (coverImg.src !== finalImg) {
-                        coverImg.style.opacity = 0;
-                        setTimeout(() => { 
-                            coverImg.src = finalImg; 
-                            coverImg.style.opacity = 1; 
-                        }, 250);
-                    }
+                    coverImg.style.opacity = 0;
+                    setTimeout(() => { 
+                        coverImg.src = finalImg; 
+                        coverImg.style.opacity = 1; 
+                    }, 300);
 
                     if ('mediaSession' in navigator) {
                         navigator.mediaSession.metadata = new MediaMetadata({
@@ -221,7 +219,7 @@
         }
 
         init();
-        // ПРОВЕРКА КАЖДЫЕ 5 СЕКУНД
+        // ПРОВЕРКА КАЖДЫЕ 5 СЕКУНД ДЛЯ СКОРОСТИ
         setInterval(updateNowPlaying, 5000);
         setInterval(updateHistory, 30000);
         setInterval(updateListeners, 15000);
