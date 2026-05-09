@@ -23,7 +23,7 @@
         .glass-rose { 
             background: rgba(45, 0, 10, 0.85); 
             backdrop-filter: blur(30px); 
-            -webkit-backdrop-filter: blur(30px); /* Для iPhone */
+            -webkit-backdrop-filter: blur(30px); 
             border: 1px solid rgba(255, 255, 255, 0.1); 
             width: 100%; 
             max-width: 400px; 
@@ -32,18 +32,17 @@
             z-index: 10; 
             display: flex;
             flex-direction: column;
-            align-items: center; /* Центрируем всё содержимое по горизонтали */
+            align-items: center; 
             box-sizing: border-box;
         }
 
         .bg-sphere { position: fixed; width: 100vw; height: 100vw; background: radial-gradient(circle, rgba(225, 29, 72, 0.2) 0%, transparent 70%); z-index: -1; filter: blur(100px); animation: move 30s infinite alternate linear; }
         @keyframes move { from { transform: translate(-20%, -20%); } to { transform: translate(20%, 20%); } }
         
-        /* ИСПРАВЛЕНИЕ СМЕЩЕНИЯ: */
         .cover-container {
             width: 280px; 
             height: 280px; 
-            margin: 0 0 30px 0; /* Убрали auto, так как родитель уже центрирует через items-center */
+            margin-bottom: 30px;
             background: #1a1a1a; 
             border-radius: 40px; 
             overflow: hidden;
@@ -64,17 +63,9 @@
             height: 40px; 
         }
         
-        .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; width: 100%; }
+        .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; width: 100%; text-align: left; }
         
-        .track-info { 
-            width: 100%; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; /* Центрируем тексты */
-            text-align: center; 
-        }
-
-        #title, #artist { width: 100%; }
+        .track-info { width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; }
     </style>
 </head>
 <body>
@@ -95,7 +86,7 @@
                 Retro<span class="text-rose-600">Dance</span>
             </h1>
             <div id="artist" class="text-rose-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-2 opacity-80">Retro Radio</div>
-            <div id="title" class="text-xl font-black uppercase italic tracking-tighter mb-8 leading-tight min-h-[3em] flex items-center justify-center px-4">
+            <div id="title" class="text-xl font-black uppercase italic tracking-tighter mb-8 leading-tight min-h-[3em] flex items-center justify-center px-4 w-full">
                 Loading...
             </div>
         </div>
@@ -106,12 +97,12 @@
             </audio>
         </div>
 
-        <a href="https://laut.fm/retrodance" target="_blank" class="btn-laut px-6 py-2 border border-rose-500/50 rounded-full text-[10px] font-bold text-rose-400 uppercase tracking-widest hover:bg-rose-500/10 transition-all">
+        <a href="https://laut.fm/retrodance" target="_blank" class="inline-block mt-4 px-6 py-2 border border-rose-500/50 rounded-full text-[10px] font-bold text-rose-400 uppercase tracking-widest hover:bg-rose-500/10 transition-all text-decoration-none">
             Listen on laut.fm
         </a>
 
-        <div class="mt-8 mb-6 w-full text-left">
-            <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] mb-4 opacity-40">Recently Played</h3>
+        <div class="mt-8 mb-6 w-full">
+            <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] mb-4 opacity-40 text-left">Recently Played</h3>
             <div id="history-list" class="text-[11px] font-medium opacity-80"></div>
         </div>
 
@@ -130,11 +121,13 @@
 
         async function fetchSmartCover(artist, title) {
             try {
-                const term = encodeURIComponent(`${artist} ${title}`);
+                const query = `${artist} ${title}`.trim();
+                const term = encodeURIComponent(query);
                 const res = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`);
                 const data = await res.json();
                 if (data.results && data.results.length > 0) {
-                    return data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
+                    let imgUrl = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
+                    return imgUrl.replace('http://', 'https://');
                 }
             } catch (e) { console.error("iTunes API error", e); }
             return null;
