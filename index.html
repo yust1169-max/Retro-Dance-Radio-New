@@ -7,74 +7,39 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        
-        body { 
-            background-color: #0d0d0d; 
-            font-family: 'Inter', sans-serif; 
-            color: white; 
-            margin: 0; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
-            overflow-x: hidden; 
-        }
-
-        .glass-rose { 
-            background: rgba(45, 0, 10, 0.85); 
-            backdrop-filter: blur(30px); 
-            -webkit-backdrop-filter: blur(30px); 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            width: 100%; 
-            max-width: 400px; 
-            margin: 20px; 
-            position: relative; 
-            z-index: 10; 
-            display: flex;
-            flex-direction: column;
-            align-items: center; 
-            box-sizing: border-box;
-        }
-
+        body { background-color: #0d0d0d; font-family: 'Inter', sans-serif; color: white; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow-x: hidden; }
+        .glass-rose { background: rgba(45, 0, 10, 0.85); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; max-width: 420px; margin: 20px; position: relative; z-index: 10; }
         .bg-sphere { position: fixed; width: 100vw; height: 100vw; background: radial-gradient(circle, rgba(225, 29, 72, 0.2) 0%, transparent 70%); z-index: -1; filter: blur(100px); animation: move 30s infinite alternate linear; }
         @keyframes move { from { transform: translate(-20%, -20%); } to { transform: translate(20%, 20%); } }
         
         .cover-container {
-            width: 280px; 
-            height: 280px; 
-            margin-bottom: 30px;
-            background: #1a1a1a; 
-            border-radius: 40px; 
-            overflow: hidden;
+            width: 280px; height: 280px; margin: 0 auto 30px;
+            background: #1a1a1a; border-radius: 40px; overflow: hidden;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            flex-shrink: 0; 
+            display: flex; align-items: center; justify-content: center;
         }
-
-        #cover { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.4s ease-in-out; }
+        #cover { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s ease-in-out; }
+        audio { filter: invert(100%) hue-rotate(150deg) brightness(1.2); width: 100%; margin-top: 20px; height: 40px; }
         
-        audio { 
-            filter: invert(100%) hue-rotate(150deg) brightness(1.2); 
-            width: 100%; 
-            max-width: 320px; 
-            margin: 20px 0; 
-            height: 40px; 
+        .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .legal-info { font-size: 8px; opacity: 0.3; text-transform: uppercase; margin-top: 20px; line-height: 1.4; letter-spacing: 1px; }
+        
+        .btn-laut {
+            display: inline-block; margin-top: 15px; padding: 8px 16px;
+            border: 1px solid rgba(225, 29, 72, 0.5); border-radius: 20px;
+            font-size: 10px; font-weight: bold; color: #fb7185;
+            transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px;
         }
-        
-        .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; width: 100%; text-align: left; }
-        
-        .track-info { width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; }
-
-        .legal-info { font-size: 8px; opacity: 0.3; text-transform: uppercase; margin-top: 20px; line-height: 1.4; letter-spacing: 1px; width: 100%; text-align: center; }
+        .btn-laut:hover { background: rgba(225, 29, 72, 0.1); border-color: #e11d48; color: white; }
     </style>
 </head>
 <body>
     <div class="bg-sphere"></div>
 
-    <div class="glass-rose p-8 rounded-[48px] shadow-2xl text-center">
-        <div class="flex justify-between items-center mb-6 w-full px-2">
+    <div class="glass-rose p-8 rounded-[48px] text-center shadow-2xl">
+        <div class="flex justify-between items-center mb-6 px-2">
             <span class="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Live</span>
             <span id="listeners-count" class="text-[10px] opacity-60 uppercase tracking-widest">Listeners: 0</span>
         </div>
@@ -88,7 +53,7 @@
                 Retro<span class="text-rose-600">Dance</span>
             </h1>
             <div id="artist" class="text-rose-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-2 opacity-80">Retro Radio</div>
-            <div id="title" class="text-xl font-black uppercase italic tracking-tighter mb-8 leading-tight min-h-[3em] flex items-center justify-center px-4 w-full">
+            <div id="title" class="text-xl font-black uppercase italic tracking-tighter mb-8 leading-tight min-h-[3em] flex items-center justify-center">
                 Loading...
             </div>
         </div>
@@ -99,11 +64,11 @@
             </audio>
         </div>
 
-        <a href="https://laut.fm/retrodance" target="_blank" class="inline-block mt-4 px-6 py-2 border border-rose-500/50 rounded-full text-[10px] font-bold text-rose-400 uppercase tracking-widest hover:bg-rose-500/10 transition-all text-decoration-none">
+        <a href="https://laut.fm/retrodance" target="_blank" class="btn-laut">
             Listen on laut.fm
         </a>
 
-        <div class="mt-8 mb-6 w-full text-left">
+        <div class="text-left mt-8 mb-6">
             <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] mb-4 opacity-40">Recently Played</h3>
             <div id="history-list" class="text-[11px] font-medium opacity-80"></div>
         </div>
@@ -122,37 +87,16 @@
         const listenersEl = document.getElementById('listeners-count');
         const STATION_LOGO = "https://i.postimg.cc/28VKXjCx/logo.png";
 
-        // Метод JSONP для iPhone и Android
         async function fetchSmartCover(artist, title) {
-            return new Promise((resolve) => {
-                const query = `${artist} ${title}`.trim();
-                const term = encodeURIComponent(query);
-                const callbackName = 'itunesCallback_' + Math.floor(Math.random() * 1000000);
-                
-                window[callbackName] = (data) => {
-                    delete window[callbackName];
-                    const script = document.getElementById(callbackName);
-                    if (script && script.parentNode) script.parentNode.removeChild(script);
-                    if (data.results && data.results.length > 0) {
-                        let imgUrl = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
-                        resolve(imgUrl.replace('http://', 'https://'));
-                    } else { resolve(null); }
-                };
-
-                const script = document.createElement('script');
-                script.id = callbackName;
-                script.src = `https://itunes.apple.com/search?term=${term}&media=music&limit=1&callback=${callbackName}`;
-                document.body.appendChild(script);
-
-                setTimeout(() => {
-                    if (window[callbackName]) {
-                        delete window[callbackName];
-                        const oldScript = document.getElementById(callbackName);
-                        if (oldScript && oldScript.parentNode) oldScript.parentNode.removeChild(oldScript);
-                        resolve(null);
-                    }
-                }, 4000);
-            });
+            try {
+                const term = encodeURIComponent(`${artist} ${title}`);
+                const res = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`);
+                const data = await res.json();
+                if (data.results && data.results.length > 0) {
+                    return data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
+                }
+            } catch (e) { console.error("iTunes API error", e); }
+            return null;
         }
 
         async function updateNowPlaying() {
@@ -163,21 +107,22 @@
                 if (data) {
                     const sTitle = data.title;
                     const sArtist = data.artist?.name;
-
-                    if (titleEl.innerText === sTitle && artistEl.innerText === sArtist) return;
-                    
                     titleEl.innerText = sTitle;
                     artistEl.innerText = sArtist;
 
-                    const itunesImg = await fetchSmartCover(sArtist, sTitle);
-                    const finalImg = itunesImg || STATION_LOGO;
+                    let finalImg = STATION_LOGO;
+                    let lautImg = data.artist?.image || data.image_medium;
+                    
+                    if (lautImg) {
+                        finalImg = lautImg.replace('http://', 'https://');
+                    } else {
+                        const itunesImg = await fetchSmartCover(sArtist, sTitle);
+                        if (itunesImg) finalImg = itunesImg;
+                    }
 
                     if (coverImg.src !== finalImg) {
                         coverImg.style.opacity = 0;
-                        setTimeout(() => { 
-                            coverImg.src = finalImg; 
-                            coverImg.style.opacity = 1; 
-                        }, 250);
+                        setTimeout(() => { coverImg.src = finalImg; coverImg.style.opacity = 1; }, 500);
                     }
 
                     if ('mediaSession' in navigator) {
@@ -194,7 +139,7 @@
 
         async function updateHistory() {
             try {
-                const res = await fetch('https://api.laut.fm/station/retrodance/last_songs?t=' + Date.now());
+                const res = await fetch('https://api.laut.fm/station/retrodance/last_songs');
                 const data = await res.json();
                 historyList.innerHTML = '';
                 data.slice(0, 5).forEach(song => {
@@ -208,7 +153,7 @@
 
         async function updateListeners() {
             try {
-                const res = await fetch('https://api.laut.fm/station/retrodance/listeners?t=' + Date.now());
+                const res = await fetch('https://api.laut.fm/station/retrodance/listeners');
                 const count = await res.text();
                 listenersEl.innerText = `Listeners: ${count}`;
             } catch (e) { console.error("Listeners error", e); }
@@ -221,10 +166,9 @@
         }
 
         init();
-        // ПРОВЕРКА КАЖДЫЕ 5 СЕКУНД
-        setInterval(updateNowPlaying, 5000);
-        setInterval(updateHistory, 30000);
-        setInterval(updateListeners, 15000);
+        setInterval(updateNowPlaying, 15000);
+        setInterval(updateHistory, 60000);
+        setInterval(updateListeners, 30000);
     </script>
 </body>
 </html>
