@@ -1,196 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>RetroDance</title>
-
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <link rel="preload" as="image" href="https://i.postimg.cc/28VKXjCx/logo.png">
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-
-        body {
-            background-color: #0d0d0d;
-            font-family: 'Inter', sans-serif;
-            color: white;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        .glass-rose {
-            background: rgba(45, 0, 10, 0.85);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            width: 100%;
-            max-width: 400px;
-            margin: 20px;
-            position: relative;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            box-sizing: border-box;
-        }
-
-        .bg-sphere {
-            position: fixed;
-            width: 100vw;
-            height: 100vw;
-            background: radial-gradient(circle, rgba(225, 29, 72, 0.2) 0%, transparent 70%);
-            z-index: -1;
-            filter: blur(100px);
-            animation: move 30s infinite alternate linear;
-        }
-
-        @keyframes move {
-            from { transform: translate(-20%, -20%); }
-            to { transform: translate(20%, 20%); }
-        }
-
-        .cover-container {
-            width: 280px;
-            height: 280px;
-            margin-bottom: 30px;
-            background: #1a1a1a;
-            border-radius: 40px;
-            overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        #cover {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: opacity 0.4s ease-in-out;
-        }
-
-        audio {
-            filter: invert(100%) hue-rotate(150deg) brightness(1.2);
-            width: 100%;
-            max-width: 320px;
-            margin: 20px 0;
-            height: 40px;
-        }
-
-        .history-item {
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            padding: 8px 0;
-            width: 100%;
-            text-align: left;
-        }
-
-        .track-info {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-
-        #history-list {
-            min-height: 120px;
-        }
-
-        .legal-info {
-            font-size: 8px;
-            opacity: 0.3;
-            text-transform: uppercase;
-            margin-top: 20px;
-            line-height: 1.4;
-            letter-spacing: 1px;
-            width: 100%;
-            text-align: center;
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="bg-sphere"></div>
-
-<div class="glass-rose p-8 rounded-[48px] shadow-2xl text-center">
-
-    <div class="flex justify-between items-center mb-6 w-full px-2">
-        <span class="text-[10px] font-bold text-rose-500 uppercase tracking-widest">
-            Live
-        </span>
-
-        <span id="listeners-count" class="text-[10px] opacity-60 uppercase tracking-widest">
-            Listeners: 0
-        </span>
-    </div>
-
-    <div class="cover-container">
-        <img
-            id="cover"
-            src="https://i.postimg.cc/28VKXjCx/logo.png"
-            alt="Cover"
-            crossorigin="anonymous"
-        >
-    </div>
-
-    <div class="track-info">
-
-        <h1 class="text-2xl font-black italic uppercase tracking-tighter mb-4">
-            Retro<span class="text-rose-600">Dance</span>
-        </h1>
-
-        <div id="artist"
-             class="text-rose-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-2 opacity-80">
-            Retro Radio
-        </div>
-
-        <div id="title"
-             class="text-xl font-black uppercase italic tracking-tighter mb-8 leading-tight min-h-[3em] flex items-center justify-center px-4 w-full">
-            Loading...
-        </div>
-
-    </div>
-
-    <div class="w-full flex justify-center mb-4">
-        <audio id="player" controls>
-            <source src="https://stream.laut.fm/retrodance" type="audio/mpeg">
-        </audio>
-    </div>
-
-    <a href="https://laut.fm/retrodance"
-       target="_blank"
-       class="inline-block mt-4 px-6 py-2 border border-rose-500/50 rounded-full text-[10px] font-bold text-rose-400 uppercase tracking-widest hover:bg-rose-500/10 transition-all text-decoration-none">
-        Listen on laut.fm
-    </a>
-
-    <div class="mt-8 mb-6 w-full text-left">
-
-        <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] mb-4 opacity-40">
-            Recently Played
-        </h3>
-
-        <div id="history-list"
-             class="text-[11px] font-medium opacity-80">
-        </div>
-
-    </div>
-
-    <div class="legal-info">
-        Radio-Hosting powered by laut.fm | Verantwortlich für die Inhalte: laut.ag
-        <br>
-        Some content on this site is created with AI assistance.
-    </div>
-
-</div>
-
 <script>
 
     const coverImg = document.getElementById('cover');
@@ -230,21 +37,27 @@
         }
     }
 
+    // НОВЫЙ СТАБИЛЬНЫЙ МЕТОД ДЛЯ IPHONE
     async function fetchSmartCover(artist, title) {
 
         try {
 
             const query = encodeURIComponent(`${artist} ${title}`);
 
-            const response = await fetchWithTimeout(
-                `https://corsproxy.io/?https://api.deezer.com/search?q=${query}`
-            );
+            const proxyUrl =
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(
+                    `https://api.deezer.com/search?q=${query}`
+                )}`;
+
+            const response = await fetch(proxyUrl, {
+                cache: "no-store"
+            });
 
             const data = await response.json();
 
             if (data.data && data.data.length > 0) {
 
-                return data.data[0].album.cover_xl;
+                return data.data[0].album.cover_xl + '?t=' + Date.now();
             }
 
             return null;
@@ -252,6 +65,7 @@
         } catch (e) {
 
             console.error("Cover fetch error:", e);
+
             return null;
         }
     }
@@ -287,7 +101,7 @@
             let finalImg;
 
             if (deezerImg) {
-                finalImg = `${deezerImg}?t=${Date.now()}`;
+                finalImg = deezerImg;
             } else {
                 finalImg = `${STATION_LOGO}?t=${Date.now()}`;
             }
@@ -307,6 +121,7 @@
                     };
 
                     coverImg.onerror = () => {
+
                         coverImg.src = STATION_LOGO;
                         coverImg.style.opacity = 1;
                     };
@@ -403,6 +218,3 @@
     setInterval(updateListeners, 15000);
 
 </script>
-
-</body>
-</html>
