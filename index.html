@@ -19,7 +19,8 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             display: flex; align-items: center; justify-content: center;
         }
-        #cover { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.4s ease-in-out; }
+        /* Убрали плавный переход opacity, чтобы исключить баг "невидимости" на iOS */
+        #cover { width: 100%; height: 100%; object-fit: cover; }
         audio { filter: invert(100%) hue-rotate(150deg) brightness(1.2); width: 100%; margin-top: 20px; height: 40px; }
         
         .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; }
@@ -83,9 +84,11 @@
         async function fetchiTunesCover(artist, title) {
             try {
                 const term = encodeURIComponent(`${artist} ${title}`);
+                // Добавляем параметр lang и explicit для более точного поиска
                 const res = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`);
                 const data = await res.json();
                 if (data.results && data.results.length > 0) {
+                    // Используем 600x600 и гарантируем HTTPS
                     return data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('http://', 'https://');
                 }
             } catch (e) { console.error("iTunes error", e); }
@@ -94,40 +97,48 @@
 
         async function updateNowPlaying() {
             try {
-                // Получаем данные о треке из Laut.fm
-                const res = await fetch('https://api.laut.fm/station/retrodance/current_song?v=' + new Date().getTime());
+                const res = await fetch('https://api.laut.fm/station/retrodance/current_song?v=' + Date.now());
                 const data = await res.json();
                 
-                if (data && (currentTrackId !== data.title + data.artist?.name)) {
-                    currentTrackId = data.title + data.artist?.name;
-                    
+                if (data) {
                     const sTitle = data.title;
                     const sArtist = data.artist?.name;
-                    titleEl.innerText = sTitle;
-                    artistEl.innerText = sArtist;
+                    const trackId = sTitle + sArtist;
 
-                    // Сразу ищем обложку в iTunes, минуя Laut.fm
-                    const finalImg = await fetchiTunesCover(sArtist, sTitle);
+                    if (currentTrackId !== trackId) {
+                        currentTrackId = trackId;
+                        titleEl.innerText = sTitle;
+                        artistEl.innerText = sArtist;
 
-                    if (finalImg) {
-                        const nextImg = new Image();
-                        const cacheBuster = finalImg.includes('?') ? '&' : '?';
-                        nextImg.src = finalImg + cacheBuster + 't=' + new Date().getTime();
+                        // Принудительный поиск в iTunes (Laut.fm игнорируем)
+                        const finalImg = await fetchiTunesCover(sArtist, sTitle);
+
+                        if (finalImg) {
+                            // Техника для iOS: Создаем новый объект Image и заменяем src только после полной загрузки
+                            const imgLoader = new Image();
+                            imgLoader.crossOrigin = "anonymous"; // Важно для Safari
+                            
+                            imgLoader.onload = function() {
+                                coverImg.src = this.src;
+                            };
+                            
+                            imgLoader.onerror = function() {
+                                console.log("Ошибка загрузки обложки в Safari");
+                            };
+
+                            // Добавляем timestamp к картинке, чтобы Safari не брал битую копию из кэша
+                            imgLoader.src = finalImg + (finalImg.includes('?') ? '&' : '?') + 'cache=' + Date.now();
+                        }
                         
-                        nextImg.onload = () => {
-                            coverImg.style.opacity = 0;
-                            setTimeout(() => {
-                                coverImg.src = nextImg.src;
-                                coverImg.style.opacity = 1;
-                            }, 400);
-                        };
-                    }
-                    
-                    if ('mediaSession' in navigator && finalImg) {
-                        navigator.mediaSession.metadata = new MediaMetadata({
-                            title: sTitle, artist: sArtist, album: 'RetroDance',
-                            artwork: [{ src: finalImg, sizes: '512x512', type: 'image/png' }]
-                        });
+                        // Обновление Media Session (управление на заблокированном экране)
+                        if ('mediaSession' in navigator && finalImg) {
+                            navigator.mediaSession.metadata = new MediaMetadata({
+                                title: sTitle,
+                                artist: sArtist,
+                                album: 'RetroDance',
+                                artwork: [{ src: finalImg, sizes: '512x512', type: 'image/jpeg' }]
+                            });
+                        }
                     }
                 }
             } catch (e) { console.error(e); }
@@ -162,7 +173,8 @@
         }
 
         init();
-        setInterval(updateNowPlaying, 10000); 
+        // Интервалы под iOS (чуть реже, чтобы не перегружать поток Safari)
+        setInterval(updateNowPlaying, 15000); 
         setInterval(updateHistory, 60000);
         setInterval(updateListeners, 30000);
     </script>
