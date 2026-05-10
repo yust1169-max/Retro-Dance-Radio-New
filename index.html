@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <title>RetroDance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -13,37 +12,38 @@
         .bg-sphere { position: fixed; width: 100vw; height: 100vw; background: radial-gradient(circle, rgba(225, 29, 72, 0.2) 0%, transparent 70%); z-index: -1; filter: blur(100px); animation: move 30s infinite alternate linear; }
         @keyframes move { from { transform: translate(-20%, -20%); } to { transform: translate(20%, 20%); } }
         
-        /* КОНТЕЙНЕР: Теперь это жесткий квадрат без флекс-свойств для картинки */
         .cover-container {
-            width: 280px; height: 280px; 
-            margin: 0 auto 30px;
-            background: #1a1a1a; border-radius: 40px; 
-            overflow: hidden;
+            width: 280px; height: 280px; margin: 0 auto 30px;
+            background: #1a1a1a; border-radius: 40px; overflow: hidden;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-            position: relative; /* Критично для Safari */
+            display: flex; align-items: center; justify-content: center;
+        }
+        #cover { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s ease-in-out; }
+        audio { filter: invert(100%) hue-rotate(150deg) brightness(1.2); width: 100%; margin-top: 20px; height: 40px; }
+        
+        /* Скрытие ползунка громкости и кнопки mute для iOS (WebKit) */
+        audio::-webkit-media-controls-volume-slider,
+        audio::-webkit-media-controls-mute-button {
+            display: none !important;
         }
         
-        /* КАРТИНКА: Используем абсолютное позиционирование с центрированием через transform */
-        #cover { 
-            display: block;
-            width: 100%; height: 100%; 
-            object-fit: cover; 
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%); /* Это заставляет Safari ставить центр картинки в центр контейнера */
-            transition: opacity 0.5s ease-in-out; 
-            border-radius: 40px;
-        }
-
-        audio { filter: invert(100%) hue-rotate(150deg) brightness(1.2); width: 100%; margin-top: 20px; height: 40px; }
-        .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; }
+        .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
         .legal-info { font-size: 8px; opacity: 0.3; text-transform: uppercase; margin-top: 20px; line-height: 1.4; letter-spacing: 1px; }
-        .btn-laut { display: inline-block; margin-top: 15px; padding: 8px 16px; border: 1px solid rgba(225, 29, 72, 0.5); border-radius: 20px; font-size: 10px; font-weight: bold; color: #fb7185; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .btn-laut {
+            display: inline-block; margin-top: 15px; padding: 8px 16px;
+            border: 1px solid rgba(225, 29, 72, 0.5); border-radius: 20px;
+            font-size: 10px; font-weight: bold; color: #fb7185;
+            transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-laut:hover { background: rgba(225, 29, 72, 0.1); border-color: #e11d48; color: white; }
     </style>
 </head>
 <body>
     <div class="bg-sphere"></div>
+
     <div class="glass-rose p-8 rounded-[48px] text-center shadow-2xl">
         <div class="flex justify-between items-center mb-6 px-2">
             <span class="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Live</span>
@@ -55,16 +55,24 @@
         </div>
 
         <div class="track-info">
-            <h1 class="text-2xl font-black italic uppercase tracking-tighter mb-4">Retro<span class="text-rose-600">Dance</span></h1>
+            <h1 class="text-2xl font-black italic uppercase tracking-tighter mb-4">
+                Retro<span class="text-rose-600">Dance</span>
+            </h1>
             <div id="artist" class="text-rose-500 font-bold uppercase tracking-[0.3em] text-[10px] mb-2 opacity-80">Retro Radio</div>
-            <div id="title" class="text-xl font-black uppercase italic tracking-tighter mb-8 leading-tight min-h-[3em] flex items-center justify-center">Загрузка...</div>
+            <div id="title" class="text-xl font-black uppercase italic tracking-tighter mb-8 leading-tight min-h-[3em] flex items-center justify-center">
+                Loading...
+            </div>
         </div>
 
         <div class="w-full flex justify-center mb-4">
-            <audio id="player" controls><source src="https://stream.laut.fm/retrodance" type="audio/mpeg"></audio>
+            <audio id="player" controls>
+                <source src="https://stream.laut.fm/retrodance" type="audio/mpeg">
+            </audio>
         </div>
 
-        <a href="https://laut.fm/retrodance" target="_blank" class="btn-laut">Listen on laut.fm</a>
+        <a href="https://laut.fm/retrodance" target="_blank" class="btn-laut">
+            Listen on laut.fm
+        </a>
 
         <div class="text-left mt-8 mb-6">
             <h3 class="text-[10px] font-bold uppercase tracking-[0.3em] mb-4 opacity-40">Recently Played</h3>
@@ -83,55 +91,52 @@
         const titleEl = document.getElementById('title');
         const historyList = document.getElementById('history-list');
         const listenersEl = document.getElementById('listeners-count');
+        const STATION_LOGO = "https://i.postimg.cc/28VKXjCx/logo.png";
 
-        let currentTrackId = "";
-
-        async function fetchiTunesCover(artist, title) {
+        async function fetchSmartCover(artist, title) {
             try {
                 const term = encodeURIComponent(`${artist} ${title}`);
                 const res = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`);
                 const data = await res.json();
                 if (data.results && data.results.length > 0) {
-                    return data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('http://', 'https://');
+                    return data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
                 }
-            } catch (e) { console.error("iTunes error", e); }
+            } catch (e) { console.error("iTunes API error", e); }
             return null;
         }
 
         async function updateNowPlaying() {
             try {
-                const res = await fetch('https://api.laut.fm/station/retrodance/current_song?v=' + Date.now());
+                const res = await fetch('https://api.laut.fm/station/retrodance/current_song?t=' + Date.now());
                 const data = await res.json();
                 
                 if (data) {
                     const sTitle = data.title;
                     const sArtist = data.artist?.name;
-                    const trackId = sTitle + sArtist;
+                    titleEl.innerText = sTitle;
+                    artistEl.innerText = sArtist;
 
-                    if (currentTrackId !== trackId) {
-                        currentTrackId = trackId;
-                        titleEl.innerText = sTitle;
-                        artistEl.innerText = sArtist;
+                    let finalImg = STATION_LOGO;
+                    
+                    // Игнорируем картинки от Laut.fm, так как они ломают iOS 
+                    // и редко соответствуют треку. Идем напрямую в iTunes.
+                    const itunesImg = await fetchSmartCover(sArtist, sTitle);
+                    if (itunesImg) {
+                        finalImg = itunesImg;
+                    }
 
-                        // Игнорируем картинки от Laut.fm, ищем только в iTunes
-                        const finalImg = await fetchiTunesCover(sArtist, sTitle);
+                    if (coverImg.src !== finalImg) {
+                        coverImg.style.opacity = 0;
+                        setTimeout(() => { coverImg.src = finalImg; coverImg.style.opacity = 1; }, 500);
+                    }
 
-                        if (finalImg) {
-                            const imgLoader = new Image();
-                            imgLoader.crossOrigin = "anonymous";
-                            imgLoader.onload = function() {
-                                coverImg.style.opacity = 0;
-                                setTimeout(() => {
-                                    coverImg.src = this.src;
-                                    coverImg.style.opacity = 1;
-                                }, 500);
-                            };
-                            // Принудительно заставляем Safari загрузить новый файл
-                            imgLoader.src = finalImg + (finalImg.includes('?') ? '&' : '?') + 'cache=' + Date.now();
-                        } else {
-                            // Если в iTunes нет, ставим логотип станции
-                            coverImg.src = "https://i.postimg.cc/28VKXjCx/logo.png";
-                        }
+                    if ('mediaSession' in navigator) {
+                        navigator.mediaSession.metadata = new MediaMetadata({
+                            title: sTitle,
+                            artist: sArtist,
+                            album: 'RetroDance',
+                            artwork: [{ src: finalImg, sizes: '512x512', type: 'image/png' }]
+                        });
                     }
                 }
             } catch (e) { console.error(e); }
@@ -166,7 +171,7 @@
         }
 
         init();
-        setInterval(updateNowPlaying, 15000); 
+        setInterval(updateNowPlaying, 15000);
         setInterval(updateHistory, 60000);
         setInterval(updateListeners, 30000);
     </script>
