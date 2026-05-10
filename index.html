@@ -21,12 +21,6 @@
         #cover { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s ease-in-out; }
         audio { filter: invert(100%) hue-rotate(150deg) brightness(1.2); width: 100%; margin-top: 20px; height: 40px; }
         
-        /* Скрытие ползунка громкости и кнопки mute для iOS (WebKit) */
-        audio::-webkit-media-controls-volume-slider,
-        audio::-webkit-media-controls-mute-button {
-            display: none !important;
-        }
-        
         .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
@@ -89,9 +83,13 @@
         const coverImg = document.getElementById('cover');
         const artistEl = document.getElementById('artist');
         const titleEl = document.getElementById('title');
+        const player = document.getElementById('player');
         const historyList = document.getElementById('history-list');
         const listenersEl = document.getElementById('listeners-count');
         const STATION_LOGO = "https://i.postimg.cc/28VKXjCx/logo.png";
+
+        // Храним текущую обложку, чтобы не дергать SRC зря
+        let currentCoverUrl = STATION_LOGO;
 
         async function fetchSmartCover(artist, title) {
             try {
@@ -117,30 +115,47 @@
                     artistEl.innerText = sArtist;
 
                     let finalImg = STATION_LOGO;
-                    
-                    // Игнорируем картинки от Laut.fm, так как они ломают iOS 
-                    // и редко соответствуют треку. Идем напрямую в iTunes.
                     const itunesImg = await fetchSmartCover(sArtist, sTitle);
                     if (itunesImg) {
                         finalImg = itunesImg;
                     }
 
-                    if (coverImg.src !== finalImg) {
+                    if (currentCoverUrl !== finalImg) {
+                        currentCoverUrl = finalImg;
                         coverImg.style.opacity = 0;
-                        setTimeout(() => { coverImg.src = finalImg; coverImg.style.opacity = 1; }, 500);
+                        setTimeout(() => { 
+                            coverImg.src = finalImg; 
+                            coverImg.style.opacity = 1; 
+                        }, 500);
                     }
 
-                    if ('mediaSession' in navigator) {
-                        navigator.mediaSession.metadata = new MediaMetadata({
-                            title: sTitle,
-                            artist: sArtist,
-                            album: 'RetroDance',
-                            artwork: [{ src: finalImg, sizes: '512x512', type: 'image/png' }]
-                        });
-                    }
+                    updateMediaSession(sTitle, sArtist, finalImg);
                 }
             } catch (e) { console.error(e); }
         }
+
+        function updateMediaSession(title, artist, img) {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: title,
+                    artist: artist,
+                    album: 'RetroDance',
+                    artwork: [
+                        { src: img, sizes: '96x96', type: 'image/png' },
+                        { src: img, sizes: '128x128', type: 'image/png' },
+                        { src: img, sizes: '192x192', type: 'image/png' },
+                        { src: img, sizes: '256x256', type: 'image/png' },
+                        { src: img, sizes: '384x384', type: 'image/png' },
+                        { src: img, sizes: '512x512', type: 'image/png' },
+                    ]
+                });
+            }
+        }
+
+        // Важно для iOS: принудительное обновление при старте воспроизведения
+        player.addEventListener('play', () => {
+            updateNowPlaying();
+        });
 
         async function updateHistory() {
             try {
