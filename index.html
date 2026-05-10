@@ -433,7 +433,6 @@
     let currentCover = STATION_LOGO;
 
     const coverCache = {};
-    const blobCache  = {};
 
     const VOL_HIGH = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
     const VOL_LOW  = 'M18.5 12A4.5 4.5 0 0016 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z';
@@ -533,29 +532,8 @@
       return null;
     }
 
-    // iOS Safari fix: конвертируем URL в blob:// чтобы обложка отображалась на локскрине.
-    // Прямой fetch может заблокироваться из-за CORS — запасной вариант через corsproxy.io.
-    async function toBlobUrl(url) {
-      if (blobCache[url]) return blobCache[url];
-      async function tryFetch(src) {
-        const res  = await fetch(src);
-        const blob = await res.blob();
-        return URL.createObjectURL(blob);
-      }
-      try {
-        const blobUrl = await tryFetch(url);
-        blobCache[url] = blobUrl;
-        return blobUrl;
-      } catch(e) {
-        try {
-          const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
-          const blobUrl  = await tryFetch(proxyUrl);
-          blobCache[url] = blobUrl;
-          return blobUrl;
-        } catch(e2) { return url; }
-      }
-    }
-
+    // iOS локскрин загружает обложку через свой HTTP-стек —
+    // blob: URL ему недоступны. Передаём прямой HTTPS-адрес.
     function updateMediaSession(title, artist, artUrl) {
       if (!('mediaSession' in navigator)) return;
       navigator.mediaSession.metadata = new MediaMetadata({
@@ -572,10 +550,9 @@
         if (!data) return;
         titleEl.textContent  = data.title;
         artistEl.textContent = data.artist ? data.artist.name : '';
-        const imgUrl  = (await fetchCover(data.artist ? data.artist.name : '', data.title)) || STATION_LOGO;
+        const imgUrl = (await fetchCover(data.artist ? data.artist.name : '', data.title)) || STATION_LOGO;
         setCover(imgUrl);
-        const blobUrl = await toBlobUrl(imgUrl);
-        updateMediaSession(data.title, data.artist ? data.artist.name : '', blobUrl);
+        updateMediaSession(data.title, data.artist ? data.artist.name : '', imgUrl);
       } catch(e) {}
     }
 
