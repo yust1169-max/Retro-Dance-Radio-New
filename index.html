@@ -11,7 +11,7 @@
         .glass-rose { background: rgba(45, 0, 10, 0.85); backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; max-width: 420px; margin: 20px; position: relative; z-index: 10; }
         .bg-sphere { position: fixed; width: 100vw; height: 100vw; background: radial-gradient(circle, rgba(225, 29, 72, 0.2) 0%, transparent 70%); z-index: -1; filter: blur(100px); animation: move 30s infinite alternate linear; }
         @keyframes move { from { transform: translate(-20%, -20%); } to { transform: translate(20%, 20%); } }
-        
+
         .cover-container {
             width: 280px; height: 280px; margin: 0 auto 30px;
             background: #1a1a1a; border-radius: 40px; overflow: hidden;
@@ -20,12 +20,12 @@
         }
         #cover { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s ease-in-out; }
         audio { filter: invert(100%) hue-rotate(150deg) brightness(1.2); width: 100%; margin-top: 20px; height: 40px; }
-        
+
         .history-item { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 8px 0; animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
+
         .legal-info { font-size: 8px; opacity: 0.3; text-transform: uppercase; margin-top: 20px; line-height: 1.4; letter-spacing: 1px; }
-        
+
         .btn-laut {
             display: inline-block; margin-top: 15px; padding: 8px 16px;
             border: 1px solid rgba(225, 29, 72, 0.5); border-radius: 20px;
@@ -88,18 +88,56 @@
         const listenersEl = document.getElementById('listeners-count');
         const STATION_LOGO = "https://i.postimg.cc/28VKXjCx/logo.png";
 
-        // Храним текущую обложку, чтобы не дергать SRC зря
         let currentCoverUrl = STATION_LOGO;
 
+        // Кэш результатов iTunes: ключ = "artist|title", значение = url обложки или null
+        const coverCache = {};
+
+        // Плавная смена обложки: предзагружает картинку и показывает только после полной загрузки.
+        // Ждёт одновременно завершения fade-out (500мс) и загрузки изображения.
+        function setCover(url) {
+            if (currentCoverUrl === url) return;
+            currentCoverUrl = url;
+
+            coverImg.style.opacity = 0;
+
+            const imageReady = new Promise((resolve) => {
+                const tmp = new Image();
+                tmp.onload = () => resolve(url);
+                tmp.onerror = () => {
+                    currentCoverUrl = STATION_LOGO;
+                    resolve(STATION_LOGO);
+                };
+                tmp.src = url;
+            });
+
+            const fadeOutDone = new Promise((resolve) => setTimeout(resolve, 500));
+
+            Promise.all([imageReady, fadeOutDone]).then(([finalUrl]) => {
+                coverImg.src = finalUrl;
+                coverImg.style.opacity = 1;
+            });
+        }
+
+        // Ищет обложку в iTunes, используя кэш чтобы не делать повторные запросы.
         async function fetchSmartCover(artist, title) {
+            const cacheKey = `${artist}|${title}`;
+            if (cacheKey in coverCache) {
+                return coverCache[cacheKey];
+            }
             try {
                 const term = encodeURIComponent(`${artist} ${title}`);
                 const res = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`);
                 const data = await res.json();
                 if (data.results && data.results.length > 0) {
-                    return data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
+                    const url = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
+                    coverCache[cacheKey] = url;
+                    return url;
                 }
-            } catch (e) { console.error("iTunes API error", e); }
+            } catch (e) {
+                console.error("iTunes API error", e);
+            }
+            coverCache[cacheKey] = null;
             return null;
         }
 
@@ -107,28 +145,17 @@
             try {
                 const res = await fetch('https://api.laut.fm/station/retrodance/current_song?t=' + Date.now());
                 const data = await res.json();
-                
+
                 if (data) {
                     const sTitle = data.title;
                     const sArtist = data.artist?.name;
                     titleEl.innerText = sTitle;
                     artistEl.innerText = sArtist;
 
-                    let finalImg = STATION_LOGO;
                     const itunesImg = await fetchSmartCover(sArtist, sTitle);
-                    if (itunesImg) {
-                        finalImg = itunesImg;
-                    }
+                    const finalImg = itunesImg || STATION_LOGO;
 
-                    if (currentCoverUrl !== finalImg) {
-                        currentCoverUrl = finalImg;
-                        coverImg.style.opacity = 0;
-                        setTimeout(() => { 
-                            coverImg.src = finalImg; 
-                            coverImg.style.opacity = 1; 
-                        }, 500);
-                    }
-
+                    setCover(finalImg);
                     updateMediaSession(sTitle, sArtist, finalImg);
                 }
             } catch (e) { console.error(e); }
@@ -152,7 +179,6 @@
             }
         }
 
-        // Важно для iOS: принудительное обновление при старте воспроизведения
         player.addEventListener('play', () => {
             updateNowPlaying();
         });
