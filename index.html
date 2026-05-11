@@ -442,11 +442,12 @@
     let volume     = 1;
     let currentCover = STATION_LOGO;
 
-    let currentTrackTitle = 'Loading...';
+    let currentTrackTitle  = 'Loading...';
     let currentTrackArtist = 'Retro Radio';
     let mediaSessionGuardian = null;
 
-    const coverCache = {};
+    const coverCache   = {};
+    const dataUrlCache = {};
 
     const VOL_HIGH = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
     const VOL_LOW  = 'M18.5 12A4.5 4.5 0 0016 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z';
@@ -494,7 +495,6 @@
     player.addEventListener('play', () => {
       isPlaying = true; isLoading = false;
       setPlayIcon();
-      applyMediaSession();
       updateNowPlaying();
     });
 
@@ -524,20 +524,12 @@
       const finalUrl = url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
       currentCover = url;
       coverImg.style.opacity = 0;
-
       const tmp = new Image();
       tmp.onload = () => {
-        setTimeout(() => {
-          coverImg.src = finalUrl;
-          coverImg.style.opacity = 1;
-        }, 400);
+        setTimeout(() => { coverImg.src = finalUrl; coverImg.style.opacity = 1; }, 400);
       };
       tmp.onerror = () => {
-        setTimeout(() => {
-          coverImg.src = STATION_LOGO;
-          coverImg.style.opacity = 1;
-          currentCover = STATION_LOGO;
-        }, 400);
+        setTimeout(() => { coverImg.src = STATION_LOGO; coverImg.style.opacity = 1; currentCover = STATION_LOGO; }, 400);
       };
       tmp.src = finalUrl;
     }
@@ -560,24 +552,43 @@
       return null;
     }
 
-    function applyMediaSession() {
+    // Конвертируем картинку в data: URL (base64).
+    // iOS читает его как строку — никаких сетевых запросов, никаких CORS.
+    async function toDataUrl(url) {
+      if (dataUrlCache[url]) return dataUrlCache[url];
+      try {
+        const res    = await fetch(url);
+        const blob   = await res.blob();
+        const reader = new FileReader();
+        const dataUrl = await new Promise((resolve, reject) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror   = reject;
+          reader.readAsDataURL(blob);
+        });
+        dataUrlCache[url] = dataUrl;
+        return dataUrl;
+      } catch(e) {
+        return url;
+      }
+    }
+
+    function applyMediaSession(artSrc) {
       if (!('mediaSession' in navigator)) return;
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentTrackTitle,
+        title:  currentTrackTitle,
         artist: currentTrackArtist,
-        album: 'RetroDance Radio',
-        artwork: [
-          { src: currentCover, sizes: '600x600', type: 'image/jpeg' }
-        ]
+        album:  'RetroDance Radio',
+        artwork: [{ src: artSrc, sizes: '600x600', type: 'image/jpeg' }]
       });
       navigator.mediaSession.playbackState = 'playing';
     }
 
-    function startMediaSessionGuardian() {
-      applyMediaSession();
+    async function startMediaSessionGuardian() {
+      const artSrc = await toDataUrl(currentCover);
+      applyMediaSession(artSrc);
       if (mediaSessionGuardian) clearInterval(mediaSessionGuardian);
       mediaSessionGuardian = setInterval(() => {
-        if (isPlaying) applyMediaSession();
+        if (isPlaying) applyMediaSession(artSrc);
       }, 3000);
     }
 
@@ -586,15 +597,13 @@
         const res  = await fetch(LAUT_API + '/current_song?t=' + Date.now());
         const data = await res.json();
         if (!data) return;
-
         const newTitle  = data.title ? data.title.trim() : '';
         const newArtist = data.artist ? data.artist.name.trim() : '';
-
         if (newTitle !== currentTrackTitle || newArtist !== currentTrackArtist) {
           titleEl.textContent  = newTitle;
           artistEl.textContent = newArtist;
-          currentTrackTitle  = newTitle;
-          currentTrackArtist = newArtist;
+          currentTrackTitle    = newTitle;
+          currentTrackArtist   = newArtist;
           const imgUrl = (await fetchCover(currentTrackArtist, currentTrackTitle)) || STATION_LOGO;
           setCover(imgUrl);
           startMediaSessionGuardian();
