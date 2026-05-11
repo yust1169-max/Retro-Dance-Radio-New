@@ -367,6 +367,7 @@
 
       <div class="cover-wrapper">
         <img id="cover-img"
+             crossorigin="anonymous"
              src="https://i.postimg.cc/28VKXjCx/logo.png"
              onerror="this.src='https://i.postimg.cc/28VKXjCx/logo.png'"
              alt="Album cover">
@@ -521,25 +522,22 @@
 
     function setCover(url) {
       if (currentCover === url) return;
-      const finalUrl = url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
       currentCover = url;
-      coverImg.style.opacity = 0;
+
+      // Оптимизация для iPhone: убираем ?t= и задержки setTimeout
+      coverImg.style.opacity = 0.5;
 
       const tmp = new Image();
       tmp.onload = () => {
-        setTimeout(() => {
-          coverImg.src = finalUrl;
-          coverImg.style.opacity = 1;
-        }, 400);
+        coverImg.src = url;
+        coverImg.style.opacity = 1;
       };
       tmp.onerror = () => {
-        setTimeout(() => {
-          coverImg.src = STATION_LOGO;
-          coverImg.style.opacity = 1;
-          currentCover = STATION_LOGO;
-        }, 400);
+        coverImg.src = STATION_LOGO;
+        coverImg.style.opacity = 1;
+        currentCover = STATION_LOGO;
       };
-      tmp.src = finalUrl;
+      tmp.src = url;
     }
 
     async function fetchCover(artist, title) {
@@ -548,10 +546,14 @@
       if (key in coverCache) return coverCache[key];
       try {
         const term = encodeURIComponent(artist + ' ' + title);
-        const res  = await fetch('https://itunes.apple.com/search?term=' + term + '&media=music&limit=1');
+        // Добавляем referrerPolicy для Safari
+        const res  = await fetch('https://itunes.apple.com/search?term=' + term + '&media=music&limit=1', {
+          referrerPolicy: "no-referrer"
+        });
         const data = await res.json();
         if (data.results && data.results.length > 0) {
-          const url = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
+          // Универсальная замена размера изображения
+          const url = data.results[0].artworkUrl100.replace('100x100', '600x600');
           coverCache[key] = url;
           return url;
         }
@@ -638,8 +640,7 @@
     updateNowPlaying();
     updateHistory();
     updateListeners();
-    // Настроено обновление метаданных каждые 5 секунд
-    setInterval(updateNowPlaying, 5000);
+    setInterval(updateNowPlaying, 15000);
     setInterval(updateHistory,   60000);
     setInterval(updateListeners, 30000);
   </script>
