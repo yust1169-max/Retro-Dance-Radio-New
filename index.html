@@ -20,8 +20,8 @@
     .live-badge { font-size: 10px; font-weight: 700; color: #e11d48; text-transform: uppercase; letter-spacing: 0.15em; animation: pulse 2s ease-in-out infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     .listeners-count { font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.12em; }
-    .cover-wrapper { width: 260px; height: 260px; margin: 0 auto 28px; background: #1a1a1a; border-radius: 36px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; }
-    #cover-img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s ease-in-out; }
+    .cover-wrapper { width: 260px; height: 260px; margin: 0 auto 28px; background: #1a1a1a; border-radius: 36px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; position: relative; }
+    #cover-img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s ease-in-out; opacity: 1; }
     .track-info { margin-bottom: 24px; }
     .station-name { font-size: 26px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -0.03em; margin-bottom: 12px; line-height: 1; }
     .accent { color: #e11d48; }
@@ -31,32 +31,23 @@
     .sound-bars { display: flex; align-items: flex-end; gap: 3px; height: 28px; }
     .sound-bars span { display: block; width: 4px; border-radius: 2px; background: rgba(225,29,72,0.35); height: 6px; }
     .sound-bars.playing span { background: #e11d48; animation: bar-bounce 1.2s ease-in-out infinite; }
-    .sound-bars.playing span:nth-child(1) { animation-delay: 0s; animation-duration: 1.0s; }
-    .sound-bars.playing span:nth-child(2) { animation-delay: 0.15s; animation-duration: 1.3s; }
-    .sound-bars.playing span:nth-child(3) { animation-delay: 0.3s; animation-duration: 0.9s; }
-    .sound-bars.playing span:nth-child(4) { animation-delay: 0.1s; animation-duration: 1.15s; }
-    .sound-bars.playing span:nth-child(5) { animation-delay: 0.25s; animation-duration: 1.05s; }
     @keyframes bar-bounce { 0%, 100% { height: 6px; } 50% { height: 26px; } }
-    .play-btn { width: 64px; height: 64px; border-radius: 50%; border: none; background: linear-gradient(135deg, #e11d48, #9f1239); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 24px rgba(225,29,72,0.45); transition: transform 0.15s ease; }
-    .play-btn:active { transform: scale(0.96); }
-    .play-btn svg { width: 28px; height: 28px; }
+    .play-btn { width: 64px; height: 64px; border-radius: 50%; border: none; background: linear-gradient(135deg, #e11d48, #9f1239); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 24px rgba(225,29,72,0.45); }
     .volume-wrap { display: flex; align-items: center; gap: 6px; }
-    .mute-btn { background: none; border: none; padding: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .mute-btn { background: none; border: none; padding: 4px; cursor: pointer; }
     .vol-icon { width: 18px; height: 18px; color: rgba(255,255,255,0.55); }
-    .vol-icon.muted { color: #e11d48; }
     .vol-slider { -webkit-appearance: none; width: 70px; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.15); outline: none; }
     .vol-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #e11d48; }
-    .laut-btn { display: inline-block; margin-bottom: 28px; padding: 8px 18px; border: 1px solid rgba(225,29,72,0.45); border-radius: 20px; font-size: 10px; font-weight: 700; color: #fb7185; text-decoration: none; text-transform: uppercase; letter-spacing: 0.1em; }
     .history-section { text-align: left; margin-bottom: 20px; }
     .history-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.25em; opacity: 0.35; margin-bottom: 12px; }
     .history-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .history-thumb { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; background: #1a1a1a; }
+    .history-thumb { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; }
     .history-text { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
     .history-artist { color: #fb7185; font-weight: 700; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .history-song-title { color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .legal { font-size: 9px; opacity: 0.4; text-transform: uppercase; line-height: 1.6; letter-spacing: 0.04em; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; margin-top: 10px; text-align: center; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .spin { animation: spin 1s linear infinite; }
+    .legal { font-size: 9px; opacity: 0.4; text-transform: uppercase; padding-top: 20px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); }
   </style>
 </head>
 <body>
@@ -75,23 +66,20 @@
         <p id="artist-el">Retro Radio</p>
         <p id="title-el">Loading...</p>
       </div>
-      <audio id="player" preload="none">
-        <source src="https://stream.laut.fm/retrodance" type="audio/mpeg">
-      </audio>
+      <audio id="player" preload="none"><source src="https://stream.laut.fm/retrodance" type="audio/mpeg"></audio>
       <div class="custom-player">
         <div class="sound-bars" id="sound-bars"><span></span><span></span><span></span><span></span><span></span></div>
         <button class="play-btn" id="play-btn"><svg id="play-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v14l11-7-11-7z"/></svg></button>
         <div class="volume-wrap">
-          <button class="mute-btn" id="mute-btn"><svg viewBox="0 0 24 24" fill="currentColor" class="vol-icon" id="vol-icon"><path id="vol-path" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+          <button class="mute-btn" id="mute-btn"><svg viewBox="0 0 24 24" fill="currentColor" class="vol-icon" id="vol-icon"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
           <input type="range" class="vol-slider" id="vol-slider" min="0" max="1" step="0.01" value="1">
         </div>
       </div>
-      <a href="https://laut.fm/retrodance" target="_blank" rel="noreferrer" class="laut-btn">Listen on laut.fm</a>
       <div class="history-section" id="history-section" style="display:none">
         <h3 class="history-label">Recently Played</h3>
         <div id="history-list"></div>
       </div>
-      <p class="legal">Radio-Hosting powered by laut.fm | Responsible: laut.ag<br>Some content created with AI assistance.</p>
+      <p class="legal">Radio-Hosting powered by laut.fm | Some content created with AI assistance.</p>
     </div>
   </div>
 
@@ -99,9 +87,9 @@
     const STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
     const LAUT_API     = 'https://api.laut.fm/station/retrodance';
 
-    const player = document.getElementById('player'), playBtn = document.getElementById('play-btn'), playIcon = document.getElementById('play-icon'), soundBars = document.getElementById('sound-bars'), muteBtn = document.getElementById('mute-btn'), volIcon = document.getElementById('vol-icon'), volPath = document.getElementById('vol-path'), volSlider = document.getElementById('vol-slider'), coverImg = document.getElementById('cover-img'), artistEl = document.getElementById('artist-el'), titleEl = document.getElementById('title-el'), listenersEl = document.getElementById('listeners-el'), historySection = document.getElementById('history-section'), historyList = document.getElementById('history-list');
+    const player = document.getElementById('player'), playBtn = document.getElementById('play-btn'), playIcon = document.getElementById('play-icon'), soundBars = document.getElementById('sound-bars'), volSlider = document.getElementById('vol-slider'), coverImg = document.getElementById('cover-img'), artistEl = document.getElementById('artist-el'), titleEl = document.getElementById('title-el'), listenersEl = document.getElementById('listeners-el'), historySection = document.getElementById('history-section'), historyList = document.getElementById('history-list');
 
-    let isPlaying = false, isLoading = false, isMuted = false, volume = 1, currentCover = STATION_LOGO, currentTrackTitle = '', currentTrackArtist = '';
+    let isPlaying = false, isLoading = false, currentTrackTitle = '', currentTrackArtist = '';
     const coverCache = {};
 
     function setPlayIcon() {
@@ -120,32 +108,45 @@
 
     playBtn.addEventListener('click', () => {
       if (isPlaying) { player.pause(); } 
-      else { isLoading = true; setPlayIcon(); player.src = "https://stream.laut.fm/retrodance?t=" + Date.now(); player.play().catch(() => { isLoading = false; setPlayIcon(); }); }
+      else { 
+        isLoading = true; setPlayIcon(); 
+        player.src = "https://stream.laut.fm/retrodance?t=" + Date.now(); 
+        player.play().catch(() => { isLoading = false; setPlayIcon(); }); 
+      }
     });
 
-    player.addEventListener('play', () => { isPlaying = true; isLoading = false; setPlayIcon(); applyMediaSession(); });
+    player.addEventListener('play', () => { isPlaying = true; isLoading = false; setPlayIcon(); updateMediaSession(); });
     player.addEventListener('pause', () => { isPlaying = false; setPlayIcon(); });
-    volSlider.addEventListener('input', () => { volume = player.volume = volSlider.value; isMuted = player.muted = false; });
+    volSlider.addEventListener('input', () => { player.volume = volSlider.value; });
 
+    // Улучшенная функция смены обложки для Safari
     function setCover(url) {
-      if (!url || currentCover === url) return;
-      const tmp = new Image();
-      tmp.onload = () => { coverImg.src = url; coverImg.style.opacity = 1; currentCover = url; };
-      tmp.onerror = () => { coverImg.src = STATION_LOGO; coverImg.style.opacity = 1; currentCover = STATION_LOGO; };
-      coverImg.style.opacity = 0.3;
-      tmp.src = url;
+      if (!url) url = STATION_LOGO;
+      const loader = new Image();
+      loader.onload = () => {
+        coverImg.style.opacity = 0;
+        setTimeout(() => {
+          coverImg.src = url;
+          coverImg.style.opacity = 1;
+        }, 500);
+      };
+      loader.onerror = () => { coverImg.src = STATION_LOGO; coverImg.style.opacity = 1; };
+      loader.src = url;
     }
 
     async function fetchCover(artist, title) {
       if (!artist || !title || title.includes('Loading')) return null;
-      const cleanArtist = artist.split('(')[0].split('feat')[0].trim();
+      // Чистим название от ремиксов и фитов для лучшего поиска
+      const cleanArtist = artist.split('(')[0].split('feat')[0].split('&')[0].trim();
       const cleanTitle = title.split('(')[0].trim();
       const key = cleanArtist + '|' + cleanTitle;
+      
       if (coverCache[key]) return coverCache[key];
 
       try {
         const term = encodeURIComponent(cleanArtist + ' ' + cleanTitle);
-        const res = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=1`);
+        // Добавляем случайный параметр к запросу API, чтобы Safari не брал старый ответ из кэша
+        const res = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=1&nocache=${Date.now()}`);
         const data = await res.json();
         if (data.results && data.results.length > 0) {
           const url = data.results[0].artworkUrl100.replace('100x100', '600x600').replace('http://', 'https://');
@@ -156,11 +157,12 @@
       return null;
     }
 
-    function applyMediaSession() {
+    function updateMediaSession() {
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
-          title: currentTrackTitle, artist: currentTrackArtist, album: 'RetroDance Radio',
-          artwork: [{ src: currentCover, sizes: '600x600', type: 'image/jpeg' }]
+          title: currentTrackTitle,
+          artist: currentTrackArtist,
+          artwork: [{ src: coverImg.src, sizes: '600x600', type: 'image/jpeg' }]
         });
       }
     }
@@ -174,16 +176,17 @@
           currentTrackArtist = data.artist.name;
           titleEl.textContent = currentTrackTitle;
           artistEl.textContent = currentTrackArtist;
+          
           const url = await fetchCover(currentTrackArtist, currentTrackTitle);
-          setCover(url || STATION_LOGO);
-          if (isPlaying) applyMediaSession();
+          setCover(url);
+          if (isPlaying) updateMediaSession();
         }
       } catch (e) {}
     }
 
     async function updateHistory() {
       try {
-        const res = await fetch(LAUT_API + '/last_songs');
+        const res = await fetch(LAUT_API + '/last_songs?t=' + Date.now());
         const data = await res.json();
         historyList.innerHTML = '';
         for (const song of data.slice(0, 5)) {
@@ -206,7 +209,7 @@
     }
 
     updateNowPlaying(); updateHistory(); updateListeners();
-    setInterval(updateNowPlaying, 15000);
+    setInterval(updateNowPlaying, 10000); // Проверяем чаще (каждые 10 сек)
     setInterval(updateHistory, 60000);
     setInterval(updateListeners, 30000);
   </script>
