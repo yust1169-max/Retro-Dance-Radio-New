@@ -295,7 +295,6 @@
         <p id="title-el">Нажмите Play</p>
       </div>
 
-      <!-- Элемент аудио без src для корректной работы Safari -->
       <audio id="player" preload="none" crossorigin="anonymous"></audio>
 
       <div class="custom-player">
@@ -322,7 +321,6 @@
       <div class="legal">
         <p>Radio-Hosting powered by <b>laut.fm</b> | Verantwortlich für die Inhalte: <b>laut.ag</b></p>
         <p style="margin-top: 8px;">Some content on this site is created with AI assistance. / Einige Inhalte dieser Website wurden mit Hilfe von KI erstellt.</p>
-        <p style="margin-top: 12px; font-size: 8px; opacity: 0.3;">Retro Dance &copy; 2026</p>
       </div>
     </div>
   </div>
@@ -366,15 +364,11 @@
       soundBars.classList.toggle('playing', isPlaying && !isLoading);
     }
 
-    // Логика запуска, адаптированная для iPhone/Safari
     playBtn.addEventListener('click', function() {
       if (!isPlaying) {
         isLoading = true;
         updateUI();
-        
-        // Принудительно устанавливаем новый src с меткой времени для обхода кэша iPhone
         player.src = STREAM_URL + "?cache=" + Date.now();
-        
         player.play().then(() => {
           isPlaying = true;
           isLoading = false;
@@ -386,7 +380,7 @@
         });
       } else {
         player.pause();
-        player.src = ""; // Очистка src обязательна для остановки загрузки данных на мобильных
+        player.src = "";
         isPlaying = false;
         isLoading = false;
         updateUI();
@@ -412,19 +406,16 @@
       try {
         const res = await fetch(`${LAUT_API}/current_song?t=${Date.now()}`);
         const data = await res.json();
-        
         if (data && data.title && data.title !== currentTrackId) {
           currentTrackId = data.title;
           titleEl.textContent = data.title;
           artistEl.textContent = data.artist.name;
-          
           const art = await fetchCover(data.artist.name, data.title);
           coverImg.style.opacity = 0;
           setTimeout(() => {
             coverImg.src = art;
             coverImg.style.opacity = 1;
           }, 300);
-          
           updateHistory();
         }
       } catch (e) {}
@@ -435,7 +426,6 @@
         const res = await fetch(`${LAUT_API}/last_songs`);
         const data = await res.json();
         if (!Array.isArray(data)) return;
-        
         historyList.innerHTML = '';
         for (const song of data.slice(0, 5)) {
           const art = await fetchCover(song.artist.name, song.title);
