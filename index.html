@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -362,7 +362,7 @@
     <div class="glass-card">
       <div class="card-header">
         <span class="live-badge">● Live</span>
-        <span class="listeners-count" id="listeners-el">Listeners: 0</span>
+        <span class="listeners-count" id="listeners-el">Слушатели: 0</span>
       </div>
 
       <div class="cover-wrapper">
@@ -374,10 +374,11 @@
       <div class="track-info">
         <h1 class="station-name">Retro<span class="accent">Dance</span></h1>
         <p id="artist-el">Retro Radio</p>
-        <p id="title-el">Loading...</p>
+        <p id="title-el">Загрузка...</p>
       </div>
 
-      <audio id="player" preload="none" crossorigin="anonymous">
+      <!-- Исправленный аудио-элемент -->
+      <audio id="player" preload="auto" crossorigin="anonymous">
         <source src="https://stream.laut.fm/retrodance" type="audio/mpeg">
       </audio>
 
@@ -402,16 +403,16 @@
         </div>
       </div>
 
-      <a href="https://laut.fm/retrodance" target="_blank" rel="noreferrer" class="laut-btn">Listen on laut.fm</a>
+      <a href="https://laut.fm/retrodance" target="_blank" rel="noreferrer" class="laut-btn">Слушать на laut.fm</a>
 
       <div class="history-section" id="history-section" style="display:none">
-        <h3 class="history-label">Recently Played</h3>
+        <h3 class="history-label">Недавно в эфире</h3>
         <div id="history-list"></div>
       </div>
 
       <p class="legal">
         Radio-Hosting powered by laut.fm | Verantwortlich für die Inhalte: laut.ag<br>
-        Some content on this site is created with AI assistance. / Einige Inhalte dieser Website wurden mit Hilfe von KI erstellt.
+        Some content on this site is created with AI assistance.
       </p>
     </div>
   </div>
@@ -443,8 +444,7 @@
 
     let currentTrackTitle = 'Loading...';
     let currentTrackArtist = 'Retro Radio';
-    let mediaSessionGuardian = null;
-
+    
     const coverCache = {};
 
     const VOL_HIGH = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
@@ -484,23 +484,38 @@
       } else {
         isLoading = true;
         setPlayIcon();
-        player.src = "https://stream.laut.fm/retrodance?t=" + Date.now();
-        player.load();
-        player.play().catch(() => { isLoading = false; setPlayIcon(); });
+        
+        // Для iOS: сначала вызываем load, потом play
+        player.load(); 
+        
+        const playPromise = player.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.log("Playback error:", error);
+            isLoading = false;
+            setPlayIcon();
+          });
+        }
       }
     });
 
-    player.addEventListener('play', () => {
-      isPlaying = true; isLoading = false;
+    player.addEventListener('playing', () => {
+      isPlaying = true;
+      isLoading = false;
       setPlayIcon();
       applyMediaSession();
-      updateNowPlaying();
     });
 
     player.addEventListener('pause', () => {
       isPlaying = false;
+      isLoading = false;
       setPlayIcon();
       if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+    });
+
+    player.addEventListener('waiting', () => {
+      isLoading = true;
+      setPlayIcon();
     });
 
     muteBtn.addEventListener('click', () => {
@@ -518,37 +533,33 @@
       setVolIcon();
     });
 
-    // Оптимизированная функция смены обложки для iOS Safari
     function setCover(url) {
       if (!url) url = STATION_LOGO;
       if (currentCover === url) return;
       currentCover = url;
       
-      // Прямая смена src более надежна для iOS чем сложные перерисовки в памяти
-      coverImg.style.opacity = '0.3';
-      
       const img = new Image();
-      img.onload = function() {
-          coverImg.src = url;
-          coverImg.style.opacity = '1';
+      img.onload = () => {
+        coverImg.src = url;
+        applyMediaSession();
       };
-      img.onerror = function() {
-          coverImg.src = STATION_LOGO;
-          coverImg.style.opacity = '1';
-          currentCover = STATION_LOGO;
+      img.onerror = () => {
+        coverImg.src = STATION_LOGO;
+        currentCover = STATION_LOGO;
+        applyMediaSession();
       };
       img.src = url;
     }
 
     async function fetchCover(artist, title) {
-      if (!artist || !title || title === 'Loading...') return null;
+      if (!artist || !title || title === 'Загрузка...') return null;
       const key = (artist + '|' + title).toLowerCase();
       if (key in coverCache) return coverCache[key];
       try {
         const term = encodeURIComponent(artist + ' ' + title);
-        const res  = await fetch('https://itunes.apple.com/search?term=' + term + '&media=music&limit=1');
+        const res  = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`);
         const data = await res.json();
-        if (data.results && data.results.length > 0) {
+        if (data.results?.length > 0) {
           const url = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
           coverCache[key] = url;
           return url;
@@ -568,25 +579,16 @@
           { src: currentCover, sizes: '600x600', type: 'image/jpeg' }
         ]
       });
-      navigator.mediaSession.playbackState = 'playing';
-    }
-
-    function startMediaSessionGuardian() {
-      applyMediaSession();
-      if (mediaSessionGuardian) clearInterval(mediaSessionGuardian);
-      mediaSessionGuardian = setInterval(() => {
-        if (isPlaying) applyMediaSession();
-      }, 4000);
     }
 
     async function updateNowPlaying() {
       try {
-        const res  = await fetch(LAUT_API + '/current_song?t=' + Date.now());
+        const res  = await fetch(`${LAUT_API}/current_song?t=${Date.now()}`);
         const data = await res.json();
         if (!data) return;
 
-        const newTitle  = data.title ? data.title.trim() : '';
-        const newArtist = data.artist ? data.artist.name.trim() : '';
+        const newTitle  = data.title?.trim() || 'Retro Dance';
+        const newArtist = data.artist?.name?.trim() || 'Retro Radio';
 
         if (newTitle !== currentTrackTitle || newArtist !== currentTrackArtist) {
           titleEl.textContent  = newTitle;
@@ -594,34 +596,34 @@
           currentTrackTitle  = newTitle;
           currentTrackArtist = newArtist;
           
-          const imgUrl = await fetchCover(currentTrackArtist, currentTrackTitle);
+          const imgUrl = await fetchCover(newArtist, newTitle);
           setCover(imgUrl || STATION_LOGO);
-          startMediaSessionGuardian();
         }
       } catch(e) {}
     }
 
     async function updateHistory() {
       try {
-        const res   = await fetch(LAUT_API + '/last_songs');
+        const res   = await fetch(`${LAUT_API}/last_songs`);
         const data  = await res.json();
         const songs = data.slice(0, 5);
         historyList.innerHTML = '';
         for (const song of songs) {
           const item  = document.createElement('div');
           item.className = 'history-item';
+          
           const thumb = document.createElement('img');
           thumb.className = 'history-thumb';
-          thumb.src = STATION_LOGO; // Placeholder
+          thumb.src = STATION_LOGO;
           
-          // Асинхронная подгрузка обложек для истории
           fetchCover(song.artist.name, song.title).then(url => {
-              if(url) thumb.src = url;
+            if (url) thumb.src = url;
           });
 
           const text = document.createElement('div');
           text.className = 'history-text';
           text.innerHTML = `<span class="history-artist">${song.artist.name}</span><span class="history-song-title">${song.title}</span>`;
+          
           item.appendChild(thumb);
           item.appendChild(text);
           historyList.appendChild(item);
@@ -632,9 +634,9 @@
 
     async function updateListeners() {
       try {
-        const res   = await fetch(LAUT_API + '/listeners');
+        const res   = await fetch(`${LAUT_API}/listeners`);
         const count = await res.text();
-        listenersEl.textContent = 'Listeners: ' + (parseInt(count) || 0);
+        listenersEl.textContent = 'Слушатели: ' + (parseInt(count) || 0);
       } catch(e) {}
     }
 
@@ -643,9 +645,9 @@
     updateHistory();
     updateListeners();
     
-    // Интервалы обновления
+    // Интервалы
     setInterval(updateNowPlaying, 5000);
-    setInterval(updateHistory,   60000);
+    setInterval(updateHistory, 60000);
     setInterval(updateListeners, 30000);
   </script>
 </body>
