@@ -195,6 +195,9 @@
       padding: 0;
       outline: none;
       -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .play-btn:active { transform: scale(0.92); }
@@ -296,7 +299,7 @@
       </div>
 
       <!-- Важно: атрибуты для мобильной совместимости -->
-      <audio id="player" preload="none" crossorigin="anonymous" playsinline webkit-playsinline></audio>
+      <audio id="player" preload="none" playsinline webkit-playsinline></audio>
 
       <div class="custom-player">
         <div class="sound-bars" id="sound-bars">
@@ -365,47 +368,94 @@
       soundBars.classList.toggle('playing', isPlaying && !isLoading);
     }
 
-    // Супер-надежный метод для Android Chrome и iOS Safari
-    playBtn.onclick = function() {
-      if (!isPlaying) {
-        isLoading = true;
-        updateUI();
-        
-        // 1. Присваиваем URL
-        const streamSrc = STREAM_URL + "?nocache=" + Date.now();
-        player.src = streamSrc;
-        
-        // 2. Явно вызываем загрузку
-        player.load();
-        
-        // 3. Запуск внутри пользовательского события (click)
-        const playPromise = player.play();
-        
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            isPlaying = true;
-            isLoading = false;
-            updateUI();
-          }).catch(err => {
-            console.error("Playback Error:", err);
-            // Фолбэк для блокировки браузером: пробуем еще раз без лоадера
-            isLoading = false;
-            isPlaying = false;
-            updateUI();
-          });
+    // Исправлено для Android Chrome:
+    // 1) Не ставим crossorigin на <audio> — у radio-stream часто нет CORS-заголовков.
+    // 2) Не вызываем player.load() прямо перед play() — на Android это может сбросить пользовательский tap.
+    // 3) Не удаляем src при паузе — Chrome Android иногда после этого не стартует повторно.
+    async function startRadio() {
+      if (isLoading) return;
+
+      isLoading = true;
+      updateUI();
+
+      try {
+        if (!player.getAttribute('src')) {
+          player.src = STREAM_URL;
         }
-      } else {
-        player.pause();
-        // Важно для Android: очищаем src полностью, чтобы не висел буфер
-        player.removeAttribute('src'); 
-        player.load();
-        isPlaying = false;
+
+        player.volume = Number(volSlider.value);
+        await player.play();
+
+        isPlaying = true;
         isLoading = false;
         updateUI();
-      }
-    };
+      } catch (err) {
+        console.error('Playback Error:', err);
 
-    volSlider.oninput = () => { player.volume = volSlider.value; };
+        // Мягкий фолбэк: если Android не принял старый поток, меняем URL,
+        // но всё ещё НЕ вызываем load() перед play().
+        try {
+          player.src = STREAM_URL + '?t=' + Date.now();
+          await player.play();
+
+          isPlaying = true;
+          isLoading = false;
+          updateUI();
+        } catch (err2) {
+          console.error('Playback Fallback Error:', err2);
+          isPlaying = false;
+          isLoading = false;
+          titleEl.textContent = 'Не удалось запустить радио';
+          updateUI();
+        }
+      }
+    }
+
+    function stopRadio() {
+      player.pause();
+      isPlaying = false;
+      isLoading = false;
+      updateUI();
+    }
+
+    function toggleRadio(e) {
+      if (e) e.preventDefault();
+      if (isPlaying || isLoading) {
+        stopRadio();
+      } else {
+        startRadio();
+      }
+    }
+
+    playBtn.addEventListener('click', toggleRadio);
+
+    player.addEventListener('playing', () => {
+      isPlaying = true;
+      isLoading = false;
+      updateUI();
+    });
+
+    player.addEventListener('pause', () => {
+      isPlaying = false;
+      isLoading = false;
+      updateUI();
+    });
+
+    player.addEventListener('waiting', () => {
+      if (isPlaying) {
+        isLoading = true;
+        updateUI();
+      }
+    });
+
+    player.addEventListener('error', () => {
+      console.error('Audio element error:', player.error);
+      isPlaying = false;
+      isLoading = false;
+      updateUI();
+    });
+
+    volSlider.oninput = () => { player.volume = Number(volSlider.value); };
 
     async function fetchCover(artist, title) {
       if (!artist || !title) return STATION_LOGO;
