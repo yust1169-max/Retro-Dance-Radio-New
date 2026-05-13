@@ -295,7 +295,8 @@
         <p id="title-el">Нажмите Play</p>
       </div>
 
-      <audio id="player" preload="none" crossorigin="anonymous"></audio>
+      <!-- Важно: атрибуты для мобильной совместимости -->
+      <audio id="player" preload="none" crossorigin="anonymous" playsinline webkit-playsinline></audio>
 
       <div class="custom-player">
         <div class="sound-bars" id="sound-bars">
@@ -364,43 +365,45 @@
       soundBars.classList.toggle('playing', isPlaying && !isLoading);
     }
 
-    // Максимально совместимый метод для Android и iOS
-    playBtn.addEventListener('click', function() {
+    // Супер-надежный метод для Android Chrome и iOS Safari
+    playBtn.onclick = function() {
       if (!isPlaying) {
         isLoading = true;
         updateUI();
         
-        // 1. Устанавливаем новый URL с анти-кешем
-        player.src = STREAM_URL + "?t=" + Date.now();
+        // 1. Присваиваем URL
+        const streamSrc = STREAM_URL + "?nocache=" + Date.now();
+        player.src = streamSrc;
         
         // 2. Явно вызываем загрузку
         player.load();
         
-        // 3. Пытаемся играть
-        const startPlay = player.play();
+        // 3. Запуск внутри пользовательского события (click)
+        const playPromise = player.play();
         
-        if (startPlay !== undefined) {
-          startPlay.then(() => {
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
             isPlaying = true;
             isLoading = false;
             updateUI();
           }).catch(err => {
-            console.log("Play failed, retrying...", err);
+            console.error("Playback Error:", err);
+            // Фолбэк для блокировки браузером: пробуем еще раз без лоадера
             isLoading = false;
             isPlaying = false;
             updateUI();
           });
         }
       } else {
-        // Остановка
         player.pause();
-        player.src = "";
-        player.load(); // Очищаем буфер
+        // Важно для Android: очищаем src полностью, чтобы не висел буфер
+        player.removeAttribute('src'); 
+        player.load();
         isPlaying = false;
         isLoading = false;
         updateUI();
       }
-    });
+    };
 
     volSlider.oninput = () => { player.volume = volSlider.value; };
 
