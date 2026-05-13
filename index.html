@@ -519,31 +519,55 @@
       setVolIcon();
     });
 
-    function setCover(url) {
-      if (!url) url = STATION_LOGO;
-      if (currentCover === url) return;
+    function buildArtworkUrls(artworkUrl100) {
+      if (!artworkUrl100) return [];
 
-      currentCover = url;
+      const cleanUrl = artworkUrl100.split('?')[0];
+      const urls = [
+        cleanUrl.replace(/[0-9]+x[0-9]+bb[.](jpg|png|webp)$/i, '600x600bb.$1'),
+        cleanUrl.replace(/[0-9]+x[0-9]+bb[.](jpg|png|webp)$/i, '300x300bb.$1'),
+        cleanUrl.replace(/[0-9]+x[0-9]+bb[.](jpg|png|webp)$/i, '100x100bb.$1'),
+        cleanUrl
+      ];
+
+      return [...new Set(urls)];
+    }
+
+    function loadImageWithFallback(imgEl, input, onSuccess) {
+      const urls = Array.isArray(input) ? input.filter(Boolean) : [input].filter(Boolean);
+      urls.push(STATION_LOGO);
+
+      let index = 0;
+
+      function tryNext() {
+        const url = urls[index++];
+        if (!url) return;
+
+        const tmp = new Image();
+
+        tmp.onload = () => {
+          requestAnimationFrame(() => {
+            imgEl.src = '';
+            imgEl.src = url;
+            if (typeof onSuccess === 'function') onSuccess(url);
+          });
+        };
+
+        tmp.onerror = tryNext;
+        tmp.src = url;
+      }
+
+      tryNext();
+    }
+
+    function setCover(input) {
       coverImg.style.opacity = 0;
 
-      const tmp = new Image();
-
-      tmp.onload = () => {
-        setTimeout(() => {
-          coverImg.src = url;
-          coverImg.style.opacity = 1;
-        }, 400);
-      };
-
-      tmp.onerror = () => {
-        setTimeout(() => {
-          coverImg.src = STATION_LOGO;
-          coverImg.style.opacity = 1;
-          currentCover = STATION_LOGO;
-        }, 400);
-      };
-
-      tmp.src = url;
+      loadImageWithFallback(coverImg, input, (loadedUrl) => {
+        currentCover = loadedUrl;
+        coverImg.style.opacity = 1;
+        applyMediaSession();
+      });
     }
 
     async function fetchCover(artist, title) {
@@ -555,9 +579,9 @@
         const res  = await fetch('https://itunes.apple.com/search?term=' + term + '&media=music&limit=1');
         const data = await res.json();
         if (data.results && data.results.length > 0) {
-          const url = data.results[0].artworkUrl100.replace(/100x100bb\.(jpg|png|webp)/, '600x600bb.$1');
-          coverCache[key] = url;
-          return url;
+          const urls = buildArtworkUrls(data.results[0].artworkUrl100);
+          coverCache[key] = urls;
+          return urls;
         }
       } catch(e) {}
       coverCache[key] = null;
@@ -618,8 +642,7 @@
           const thumb = document.createElement('img');
           thumb.className = 'history-thumb';
           const cUrl = (await fetchCover(song.artist.name, song.title)) || STATION_LOGO;
-          thumb.src = cUrl;
-          thumb.onerror = () => { thumb.src = STATION_LOGO; };
+          loadImageWithFallback(thumb, cUrl);
           const text = document.createElement('div');
           text.className = 'history-text';
           text.innerHTML = `<span class="history-artist">${song.artist.name}</span><span class="history-song-title">${song.title}</span>`;
