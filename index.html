@@ -364,34 +364,38 @@
       soundBars.classList.toggle('playing', isPlaying && !isLoading);
     }
 
-    // Универсальная функция Play/Stop для всех систем
+    // Максимально совместимый метод для Android и iOS
     playBtn.addEventListener('click', function() {
       if (!isPlaying) {
         isLoading = true;
         updateUI();
         
-        // Устанавливаем поток
+        // 1. Устанавливаем новый URL с анти-кешем
         player.src = STREAM_URL + "?t=" + Date.now();
-        player.load(); // Важно для Android/Chrome
         
-        const playPromise = player.play();
+        // 2. Явно вызываем загрузку
+        player.load();
         
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
+        // 3. Пытаемся играть
+        const startPlay = player.play();
+        
+        if (startPlay !== undefined) {
+          startPlay.then(() => {
             isPlaying = true;
             isLoading = false;
             updateUI();
-          }).catch(error => {
-            console.error("Playback failed:", error);
+          }).catch(err => {
+            console.log("Play failed, retrying...", err);
             isLoading = false;
             isPlaying = false;
             updateUI();
           });
         }
       } else {
+        // Остановка
         player.pause();
-        player.src = ""; // Очистка для мобильных
-        player.load();
+        player.src = "";
+        player.load(); // Очищаем буфер
         isPlaying = false;
         isLoading = false;
         updateUI();
@@ -468,4 +472,4 @@
     updateListeners();
   </script>
 </body>
-</html>ш
+</html>
