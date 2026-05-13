@@ -176,12 +176,6 @@
       animation: bar-bounce 1.2s ease-in-out infinite;
     }
 
-    .sound-bars.playing span:nth-child(1) { animation-delay: 0s; }
-    .sound-bars.playing span:nth-child(2) { animation-delay: 0.15s; }
-    .sound-bars.playing span:nth-child(3) { animation-delay: 0.3s; }
-    .sound-bars.playing span:nth-child(4) { animation-delay: 0.1s; }
-    .sound-bars.playing span:nth-child(5) { animation-delay: 0.25s; }
-
     @keyframes bar-bounce { 0%, 100% { height: 6px; } 50% { height: 26px; } }
 
     .play-btn {
@@ -211,9 +205,9 @@
       display: block;
     }
     
-    /* Специальное смещение для оптического центра треугольника */
-    .play-btn svg.ico-play-shape {
-      transform: translateX(2px);
+    /* Оптическая центровка треугольника: он визуально смещен влево из-за формы, поэтому пушим вправо */
+    .ico-play-shape {
+      transform: translateX(4px);
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -329,8 +323,7 @@
         </div>
 
         <button class="play-btn" id="play-btn" aria-label="Play/Pause">
-          <svg id="play-icon" class="ico-play-shape" viewBox="0 0 24 24" fill="currentColor">
-            <!-- Начальное состояние: Треугольник Play -->
+          <svg id="play-svg" class="ico-play-shape" viewBox="0 0 24 24" fill="currentColor">
             <path d="M7 5v14l11-7z"/>
           </svg>
         </button>
@@ -365,7 +358,7 @@
 
     const player    = document.getElementById('player');
     const playBtn   = document.getElementById('play-btn');
-    const playIcon  = document.getElementById('play-icon');
+    const playSvg   = document.getElementById('play-svg');
     const soundBars = document.getElementById('sound-bars');
     const volSlider = document.getElementById('vol-slider');
     const coverImg  = document.getElementById('cover-img');
@@ -377,23 +370,22 @@
 
     let isPlaying = false;
     let isLoading = false;
-    let currentTrack = "";
+    let currentTrackId = "";
 
-    // Чистые SVG пути без лишних атрибутов
-    const PATH_PLAY = '<path d="M7 5v14l11-7z"/>';
-    const PATH_STOP = '<path d="M6 6h12v12H6z"/>';
-    const PATH_LOAD = '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="40 20" fill="none" class="spin"/>';
+    const SVG_PLAY = '<path d="M7 5v14l11-7z"/>';
+    const SVG_STOP = '<path d="M6 6h12v12H6z"/>';
+    const SVG_LOAD = '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="40 20" fill="none" class="spin"/>';
 
     function updateUI() {
       if (isLoading) {
-        playIcon.innerHTML = PATH_LOAD;
-        playIcon.classList.remove('ico-play-shape');
+        playSvg.innerHTML = SVG_LOAD;
+        playSvg.classList.remove('ico-play-shape');
       } else if (isPlaying) {
-        playIcon.innerHTML = PATH_STOP;
-        playIcon.classList.remove('ico-play-shape');
+        playSvg.innerHTML = SVG_STOP;
+        playSvg.classList.remove('ico-play-shape');
       } else {
-        playIcon.innerHTML = PATH_PLAY;
-        playIcon.classList.add('ico-play-shape');
+        playSvg.innerHTML = SVG_PLAY;
+        playSvg.classList.add('ico-play-shape');
       }
       soundBars.classList.toggle('playing', isPlaying && !isLoading);
     }
@@ -403,14 +395,13 @@
         isLoading = true;
         updateUI();
         player.src = STREAM_URL;
-        player.load(); 
         player.play().then(() => {
           isPlaying = true;
           isLoading = false;
           updateUI();
         }).catch(() => {
-          isLoading = false;
           isPlaying = false;
+          isLoading = false;
           updateUI();
         });
       } else {
@@ -422,49 +413,57 @@
       }
     });
 
-    player.onplaying = () => { isPlaying = true; isLoading = false; updateUI(); };
-    player.onwaiting = () => { isLoading = true; updateUI(); };
-    player.onerror   = () => { isLoading = false; isPlaying = false; updateUI(); };
-
     volSlider.oninput = () => { player.volume = volSlider.value; };
 
+    // Ищем ТОЛЬКО в iTunes, т.к. Laut.fm не отдает картинки
     async function fetchCover(artist, title) {
+      if (!artist || !title) return STATION_LOGO;
       try {
-        const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artist + ' ' + title)}&limit=1`);
-        const data = await res.json();
-        return data.results?.[0]?.artworkUrl100.replace('100x100', '600x600') || STATION_LOGO;
-      } catch(e) { return STATION_LOGO; }
+        const query = encodeURIComponent(`${artist} ${title}`);
+        const response = await fetch(`https://itunes.apple.com/search?term=${query}&limit=1&entity=song`);
+        const data = await response.json();
+        if (data.results?.length > 0) {
+          return data.results[0].artworkUrl100.replace('100x100', '600x600');
+        }
+      } catch (e) {}
+      return STATION_LOGO;
     }
 
     async function updateMetadata() {
       try {
         const res = await fetch(`${LAUT_API}/current_song?t=${Date.now()}`);
         const data = await res.json();
-        if (data && data.title !== currentTrack) {
-          currentTrack = data.title;
+        
+        if (data?.title && data.title !== currentTrackId) {
+          currentTrackId = data.title;
           titleEl.textContent = data.title;
           artistEl.textContent = data.artist.name;
+          
           const art = await fetchCover(data.artist.name, data.title);
-          if (coverImg.src !== art) {
-            coverImg.style.opacity = 0;
-            setTimeout(() => { coverImg.src = art; coverImg.style.opacity = 1; }, 300);
-          }
+          coverImg.style.opacity = 0;
+          setTimeout(() => {
+            coverImg.src = art;
+            coverImg.style.opacity = 1;
+          }, 300);
+          
           updateHistory();
         }
-      } catch(e) {}
+      } catch (e) {}
     }
 
     async function updateHistory() {
       try {
         const res = await fetch(`${LAUT_API}/last_songs`);
         const data = await res.json();
+        if (!Array.isArray(data)) return;
+        
         historyList.innerHTML = '';
         for (const song of data.slice(0, 5)) {
+          const art = await fetchCover(song.artist.name, song.title);
           const item = document.createElement('div');
           item.className = 'history-item';
-          const art = await fetchCover(song.artist.name, song.title);
           item.innerHTML = `
-            <img class="history-thumb" src="${art}" onerror="this.src='${STATION_LOGO}'">
+            <img class="history-thumb" src="${art}">
             <div class="history-text">
               <span class="history-artist">${song.artist.name}</span>
               <span class="history-song-title">${song.title}</span>
@@ -472,7 +471,7 @@
           historyList.appendChild(item);
         }
         historySection.style.display = 'block';
-      } catch(e) {}
+      } catch (e) {}
     }
 
     async function updateListeners() {
@@ -480,11 +479,11 @@
         const res = await fetch(`${LAUT_API}/listeners`);
         const count = await res.text();
         listenersEl.textContent = 'Слушатели: ' + (count || 0);
-      } catch(e) {}
+      } catch (e) {}
     }
 
-    setInterval(updateMetadata, 10000);
-    setInterval(updateListeners, 30000);
+    setInterval(updateMetadata, 15000);
+    setInterval(updateListeners, 45000);
     updateMetadata();
     updateListeners();
   </script>
