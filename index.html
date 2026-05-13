@@ -522,15 +522,7 @@
     function getArtworkCandidates(artworkUrl100) {
       if (!artworkUrl100) return [STATION_LOGO];
 
-      const cleanUrl = artworkUrl100.split('?')[0];
-      const candidates = [
-        cleanUrl,
-        cleanUrl.replace(/100x100bb\.(jpg|jpeg|png|webp)$/i, '300x300bb.$1'),
-        cleanUrl.replace(/100x100bb\.(jpg|jpeg|png|webp)$/i, '600x600bb.$1'),
-        STATION_LOGO
-      ];
-
-      return [...new Set(candidates.filter(Boolean))];
+      return [artworkUrl100, STATION_LOGO];
     }
 
     function setImageSafely(imgEl, candidates, onLoaded) {
