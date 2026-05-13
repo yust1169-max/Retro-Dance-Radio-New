@@ -366,9 +366,7 @@
       </div>
 
       <div class="cover-wrapper">
-        <img id="cover-img"
-             src="https://i.postimg.cc/28VKXjCx/logo.png"
-             alt="Album cover">
+        <img id="cover-img" src="https://i.postimg.cc/28VKXjCx/logo.png" alt="Album cover">
       </div>
 
       <div class="track-info">
@@ -377,29 +375,27 @@
         <p id="title-el">Загрузка...</p>
       </div>
 
-      <!-- Исправленный аудио-элемент -->
-      <audio id="player" preload="auto" crossorigin="anonymous">
-        <source src="https://stream.laut.fm/retrodance" type="audio/mpeg">
-      </audio>
+      <!-- Аудио без source, прямой src для Safari -->
+      <audio id="player" crossorigin="anonymous" preload="none" src="https://stream.laut.fm/retrodance"></audio>
 
       <div class="custom-player">
         <div class="sound-bars" id="sound-bars">
           <span></span><span></span><span></span><span></span><span></span>
         </div>
 
-        <button class="play-btn" id="play-btn" aria-label="Play">
+        <button class="play-btn" id="play-btn" aria-label="Play/Pause">
           <svg id="play-icon" viewBox="0 0 24 24" fill="currentColor">
             <path d="M8 5.14v14l11-7-11-7z"/>
           </svg>
         </button>
 
         <div class="volume-wrap">
-          <button class="mute-btn" id="mute-btn" aria-label="Mute">
+          <button class="mute-btn" id="mute-btn">
             <svg viewBox="0 0 24 24" fill="currentColor" class="vol-icon" id="vol-icon">
               <path id="vol-path" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
             </svg>
           </button>
-          <input type="range" class="vol-slider" id="vol-slider" min="0" max="1" step="0.01" value="1" aria-label="Volume">
+          <input type="range" class="vol-slider" id="vol-slider" min="0" max="1" step="0.01" value="1">
         </div>
       </div>
 
@@ -411,14 +407,15 @@
       </div>
 
       <p class="legal">
-        Radio-Hosting powered by laut.fm | Verantwortlich für die Inhalte: laut.ag<br>
-        Some content on this site is created with AI assistance.
+        Radio-Hosting powered by laut.fm | Verantwortlich: laut.ag<br>
+        Built with passion for retro dance.
       </p>
     </div>
   </div>
 
   <script>
     const STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
+    const STREAM_URL   = 'https://stream.laut.fm/retrodance';
     const LAUT_API     = 'https://api.laut.fm/station/retrodance';
 
     const player         = document.getElementById('player');
@@ -436,218 +433,157 @@
     const historySection = document.getElementById('history-section');
     const historyList    = document.getElementById('history-list');
 
-    let isPlaying  = false;
-    let isLoading  = false;
-    let isMuted    = false;
-    let volume     = 1;
+    let isPlaying = false;
+    let isLoading = false;
+    let volume    = 1;
+    let currentTrackTitle = '';
     let currentCover = STATION_LOGO;
 
-    let currentTrackTitle = 'Loading...';
-    let currentTrackArtist = 'Retro Radio';
-    
-    const coverCache = {};
+    // SVG иконки
+    const ICO_PLAY  = '<path d="M8 5.14v14l11-7-11-7z"/>';
+    const ICO_PAUSE = '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>';
+    const ICO_LOAD  = '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-dasharray="40 20" class="spin"/>';
 
-    const VOL_HIGH = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
-    const VOL_LOW  = 'M18.5 12A4.5 4.5 0 0016 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z';
-    const VOL_MUTE = 'M16.5 12A4.5 4.5 0 0014 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0021 12c0-4.28-3-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 003.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z';
-
-    function setPlayIcon() {
+    function updateUI() {
       if (isLoading) {
+        playIcon.innerHTML = ICO_LOAD;
         playIcon.setAttribute('fill', 'none');
-        playIcon.innerHTML = '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-dasharray="40 20" class="spin"/>';
       } else if (isPlaying) {
+        playIcon.innerHTML = ICO_PAUSE;
         playIcon.setAttribute('fill', 'currentColor');
-        playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>';
       } else {
+        playIcon.innerHTML = ICO_PLAY;
         playIcon.setAttribute('fill', 'currentColor');
-        playIcon.innerHTML = '<path d="M8 5.14v14l11-7-11-7z"/>';
       }
       soundBars.classList.toggle('playing', isPlaying && !isLoading);
     }
 
-    function setVolIcon() {
-      if (isMuted || volume === 0) {
-        volPath.setAttribute('d', VOL_MUTE);
-        volIcon.classList.add('muted');
-      } else if (volume < 0.5) {
-        volPath.setAttribute('d', VOL_LOW);
-        volIcon.classList.remove('muted');
-      } else {
-        volPath.setAttribute('d', VOL_HIGH);
-        volIcon.classList.remove('muted');
-      }
-    }
-
-    playBtn.addEventListener('click', () => {
-      if (isPlaying) {
-        player.pause();
-      } else {
+    playBtn.addEventListener('click', function() {
+      if (!isPlaying) {
+        // Запуск
         isLoading = true;
-        setPlayIcon();
+        updateUI();
         
-        // Для iOS: сначала вызываем load, потом play
-        player.load(); 
+        // Переподключаем поток, чтобы не было задержки
+        player.src = STREAM_URL; 
+        player.load();
         
         const playPromise = player.play();
         if (playPromise !== undefined) {
           playPromise.catch(error => {
-            console.log("Playback error:", error);
+            console.error("Playback error:", error);
             isLoading = false;
-            setPlayIcon();
+            isPlaying = false;
+            updateUI();
           });
         }
+      } else {
+        // Стоп
+        player.pause();
+        // Полностью очищаем src для мобильных, чтобы освободить память и поток
+        player.src = ""; 
+        isPlaying = false;
+        isLoading = false;
+        updateUI();
       }
     });
 
-    player.addEventListener('playing', () => {
-      isPlaying = true;
-      isLoading = false;
-      setPlayIcon();
-      applyMediaSession();
-    });
+    player.onplaying = () => { isPlaying = true; isLoading = false; updateUI(); };
+    player.onwaiting = () => { isLoading = true; updateUI(); };
+    player.onstalled = () => { isLoading = true; updateUI(); };
+    player.onerror   = () => { isPlaying = false; isLoading = false; updateUI(); };
 
-    player.addEventListener('pause', () => {
-      isPlaying = false;
-      isLoading = false;
-      setPlayIcon();
-      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
-    });
-
-    player.addEventListener('waiting', () => {
-      isLoading = true;
-      setPlayIcon();
-    });
-
-    muteBtn.addEventListener('click', () => {
-      isMuted = !isMuted;
-      player.muted = isMuted;
-      volSlider.value = isMuted ? 0 : volume;
-      setVolIcon();
-    });
-
-    volSlider.addEventListener('input', () => {
-      volume = parseFloat(volSlider.value);
+    // Громкость
+    volSlider.oninput = () => {
+      volume = volSlider.value;
       player.volume = volume;
-      isMuted = false;
-      player.muted = false;
-      setVolIcon();
-    });
+      player.muted = (volume == 0);
+      updateVolIcon();
+    };
 
-    function setCover(url) {
-      if (!url) url = STATION_LOGO;
-      if (currentCover === url) return;
-      currentCover = url;
-      
-      const img = new Image();
-      img.onload = () => {
-        coverImg.src = url;
-        applyMediaSession();
-      };
-      img.onerror = () => {
-        coverImg.src = STATION_LOGO;
-        currentCover = STATION_LOGO;
-        applyMediaSession();
-      };
-      img.src = url;
+    function updateVolIcon() {
+      if (volume == 0) volIcon.classList.add('muted');
+      else volIcon.classList.remove('muted');
     }
 
-    async function fetchCover(artist, title) {
-      if (!artist || !title || title === 'Загрузка...') return null;
-      const key = (artist + '|' + title).toLowerCase();
-      if (key in coverCache) return coverCache[key];
+    muteBtn.onclick = () => {
+      if (player.volume > 0) {
+        player.volume = 0;
+        volSlider.value = 0;
+      } else {
+        player.volume = volume || 1;
+        volSlider.value = volume || 1;
+      }
+      updateVolIcon();
+    };
+
+    // Данные
+    async function updateMetadata() {
       try {
-        const term = encodeURIComponent(artist + ' ' + title);
-        const res  = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&limit=1`);
+        const res = await fetch(`${LAUT_API}/current_song?t=${Date.now()}`);
         const data = await res.json();
-        if (data.results?.length > 0) {
-          const url = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
-          coverCache[key] = url;
-          return url;
+        if (!data || data.title === currentTrackTitle) return;
+
+        currentTrackTitle = data.title;
+        titleEl.textContent = data.title;
+        artistEl.textContent = data.artist.name;
+
+        // Обложка
+        const itunes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(data.artist.name + ' ' + data.title)}&limit=1&media=music`);
+        const itData = await itunes.json();
+        const newCover = itData.results?.[0]?.artworkUrl100.replace('100x100', '600x600') || STATION_LOGO;
+        
+        if (currentCover !== newCover) {
+          currentCover = newCover;
+          coverImg.style.opacity = '0';
+          setTimeout(() => {
+            coverImg.src = newCover;
+            coverImg.style.opacity = '1';
+          }, 300);
         }
-      } catch(e) {}
-      coverCache[key] = null;
-      return null;
-    }
 
-    function applyMediaSession() {
-      if (!('mediaSession' in navigator)) return;
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentTrackTitle,
-        artist: currentTrackArtist,
-        album: 'RetroDance Radio',
-        artwork: [
-          { src: currentCover, sizes: '600x600', type: 'image/jpeg' }
-        ]
-      });
-    }
-
-    async function updateNowPlaying() {
-      try {
-        const res  = await fetch(`${LAUT_API}/current_song?t=${Date.now()}`);
-        const data = await res.json();
-        if (!data) return;
-
-        const newTitle  = data.title?.trim() || 'Retro Dance';
-        const newArtist = data.artist?.name?.trim() || 'Retro Radio';
-
-        if (newTitle !== currentTrackTitle || newArtist !== currentTrackArtist) {
-          titleEl.textContent  = newTitle;
-          artistEl.textContent = newArtist;
-          currentTrackTitle  = newTitle;
-          currentTrackArtist = newArtist;
-          
-          const imgUrl = await fetchCover(newArtist, newTitle);
-          setCover(imgUrl || STATION_LOGO);
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: data.title,
+            artist: data.artist.name,
+            artwork: [{ src: currentCover, sizes: '600x600', type: 'image/jpeg' }]
+          });
         }
       } catch(e) {}
     }
 
     async function updateHistory() {
       try {
-        const res   = await fetch(`${LAUT_API}/last_songs`);
-        const data  = await res.json();
-        const songs = data.slice(0, 5);
+        const res = await fetch(`${LAUT_API}/last_songs`);
+        const data = await res.json();
         historyList.innerHTML = '';
-        for (const song of songs) {
-          const item  = document.createElement('div');
-          item.className = 'history-item';
-          
-          const thumb = document.createElement('img');
-          thumb.className = 'history-thumb';
-          thumb.src = STATION_LOGO;
-          
-          fetchCover(song.artist.name, song.title).then(url => {
-            if (url) thumb.src = url;
-          });
-
-          const text = document.createElement('div');
-          text.className = 'history-text';
-          text.innerHTML = `<span class="history-artist">${song.artist.name}</span><span class="history-song-title">${song.title}</span>`;
-          
-          item.appendChild(thumb);
-          item.appendChild(text);
-          historyList.appendChild(item);
-        }
+        data.slice(0, 5).forEach(song => {
+          const div = document.createElement('div');
+          div.className = 'history-item';
+          div.innerHTML = `
+            <div class="history-text">
+              <span class="history-artist">${song.artist.name}</span>
+              <span class="history-song-title">${song.title}</span>
+            </div>`;
+          historyList.appendChild(div);
+        });
         historySection.style.display = 'block';
       } catch(e) {}
     }
 
     async function updateListeners() {
       try {
-        const res   = await fetch(`${LAUT_API}/listeners`);
+        const res = await fetch(`${LAUT_API}/listeners`);
         const count = await res.text();
-        listenersEl.textContent = 'Слушатели: ' + (parseInt(count) || 0);
+        listenersEl.textContent = 'Слушатели: ' + (count || 0);
       } catch(e) {}
     }
 
-    // Инициализация
-    updateNowPlaying();
+    // Старт
+    updateMetadata();
     updateHistory();
     updateListeners();
-    
-    // Интервалы
-    setInterval(updateNowPlaying, 5000);
-    setInterval(updateHistory, 60000);
+    setInterval(updateMetadata, 10000);
     setInterval(updateListeners, 30000);
   </script>
 </body>
