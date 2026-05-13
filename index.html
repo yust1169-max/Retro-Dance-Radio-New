@@ -296,7 +296,7 @@
       </div>
 
       <!-- src пустой изначально, чтобы iOS не блокировала play() как фоновый процесс -->
-      <audio id="player" preload="none" crossorigin="anonymous"></audio>
+      <audio id="player" preload="none" playsinline></audio>
 
       <div class="custom-player">
         <div class="sound-bars" id="sound-bars">
@@ -365,36 +365,36 @@
       soundBars.classList.toggle('playing', isPlaying && !isLoading);
     }
 
-    // Обработка клика максимально просто для iOS
-    playBtn.addEventListener('click', function() {
-      if (!isPlaying) {
-        isLoading = true;
-        updateUI();
-        
-        // Для iOS: сначала присваиваем src с кэш-бастером, потом сразу вызываем play() в том же потоке выполнения
-        player.src = STREAM_URL + "?cache=" + Date.now();
-        
-        player.play().then(() => {
-          isPlaying = true;
-          isLoading = false;
-          updateUI();
-        }).catch((err) => {
-          console.error("Playback failed", err);
-          // Повторная попытка без кэш-бастера если не сработало
-          player.src = STREAM_URL;
-          player.play().then(() => {
-            isPlaying = true;
-            isLoading = false;
-            updateUI();
-          }).catch(e => {
-            isLoading = false;
-            updateUI();
-          });
-        });
-      } else {
-        // Остановка должна быть полной, чтобы не висел фоновый процесс
+    // Надёжная обработка Play/Pause для iPhone Safari.
+    // Важно: play() вызывается прямо внутри клика пользователя.
+    // Обложки и metadata ниже не трогаем.
+    playBtn.addEventListener('click', async function() {
+      if (isPlaying) {
         player.pause();
-        player.src = ""; // Сбрасываем src для iPhone
+        isPlaying = false;
+        isLoading = false;
+        updateUI();
+        return;
+      }
+
+      isLoading = true;
+      updateUI();
+
+      try {
+        // Не используем crossorigin и не делаем повторный play() в catch:
+        // iPhone Safari может это заблокировать.
+        if (!player.src) {
+          player.src = STREAM_URL;
+          player.load();
+        }
+
+        await player.play();
+
+        isPlaying = true;
+        isLoading = false;
+        updateUI();
+      } catch (err) {
+        console.error("iPhone playback error:", err);
         isPlaying = false;
         isLoading = false;
         updateUI();
