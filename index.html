@@ -519,54 +519,59 @@
       setVolIcon();
     });
 
-    function buildArtworkUrls(artworkUrl100) {
-      if (!artworkUrl100) return [];
+    function getArtworkCandidates(artworkUrl100) {
+      if (!artworkUrl100) return [STATION_LOGO];
 
       const cleanUrl = artworkUrl100.split('?')[0];
-      const urls = [
-        cleanUrl.replace(/[0-9]+x[0-9]+bb[.](jpg|png|webp)$/i, '600x600bb.$1'),
-        cleanUrl.replace(/[0-9]+x[0-9]+bb[.](jpg|png|webp)$/i, '300x300bb.$1'),
-        cleanUrl.replace(/[0-9]+x[0-9]+bb[.](jpg|png|webp)$/i, '100x100bb.$1'),
-        cleanUrl
+      const candidates = [
+        cleanUrl,
+        cleanUrl.replace(/100x100bb\.(jpg|jpeg|png|webp)$/i, '300x300bb.$1'),
+        cleanUrl.replace(/100x100bb\.(jpg|jpeg|png|webp)$/i, '600x600bb.$1'),
+        STATION_LOGO
       ];
 
-      return [...new Set(urls)];
+      return [...new Set(candidates.filter(Boolean))];
     }
 
-    function loadImageWithFallback(imgEl, input, onSuccess) {
-      const urls = Array.isArray(input) ? input.filter(Boolean) : [input].filter(Boolean);
-      urls.push(STATION_LOGO);
-
+    function setImageSafely(imgEl, candidates, onLoaded) {
+      const urls = Array.isArray(candidates) ? candidates : [candidates];
       let index = 0;
 
-      function tryNext() {
-        const url = urls[index++];
-        if (!url) return;
+      function tryUrl() {
+        const url = urls[index++] || STATION_LOGO;
 
-        const tmp = new Image();
-
-        tmp.onload = () => {
-          requestAnimationFrame(() => {
-            imgEl.src = '';
-            imgEl.src = url;
-            if (typeof onSuccess === 'function') onSuccess(url);
-          });
+        const testImg = new Image();
+        testImg.onload = () => {
+          imgEl.onload = null;
+          imgEl.onerror = null;
+          imgEl.src = url;
+          if (typeof onLoaded === 'function') onLoaded(url);
         };
-
-        tmp.onerror = tryNext;
-        tmp.src = url;
+        testImg.onerror = () => {
+          if (index < urls.length) {
+            tryUrl();
+          } else {
+            imgEl.src = STATION_LOGO;
+            if (typeof onLoaded === 'function') onLoaded(STATION_LOGO);
+          }
+        };
+        testImg.src = url;
       }
 
-      tryNext();
+      tryUrl();
     }
 
-    function setCover(input) {
+    function setCover(candidates) {
+      const urls = Array.isArray(candidates) ? candidates : [candidates || STATION_LOGO];
+
       coverImg.style.opacity = 0;
 
-      loadImageWithFallback(coverImg, input, (loadedUrl) => {
+      setImageSafely(coverImg, urls, (loadedUrl) => {
         currentCover = loadedUrl;
-        coverImg.style.opacity = 1;
-        applyMediaSession();
+        setTimeout(() => {
+          coverImg.style.opacity = 1;
+          applyMediaSession();
+        }, 80);
       });
     }
 
@@ -576,16 +581,16 @@
       if (key in coverCache) return coverCache[key];
       try {
         const term = encodeURIComponent(artist + ' ' + title);
-        const res  = await fetch('https://itunes.apple.com/search?term=' + term + '&media=music&limit=1');
+        const res  = await fetch('https://itunes.apple.com/search?term=' + term + '&media=music&entity=song&limit=1');
         const data = await res.json();
         if (data.results && data.results.length > 0) {
-          const urls = buildArtworkUrls(data.results[0].artworkUrl100);
+          const urls = getArtworkCandidates(data.results[0].artworkUrl100);
           coverCache[key] = urls;
           return urls;
         }
       } catch(e) {}
-      coverCache[key] = null;
-      return null;
+      coverCache[key] = [STATION_LOGO];
+      return [STATION_LOGO];
     }
 
     function applyMediaSession() {
@@ -641,8 +646,8 @@
           item.className = 'history-item';
           const thumb = document.createElement('img');
           thumb.className = 'history-thumb';
-          const cUrl = (await fetchCover(song.artist.name, song.title)) || STATION_LOGO;
-          loadImageWithFallback(thumb, cUrl);
+          const cUrl = (await fetchCover(song.artist.name, song.title)) || [STATION_LOGO];
+          setImageSafely(thumb, cUrl);
           const text = document.createElement('div');
           text.className = 'history-text';
           text.innerHTML = `<span class="history-artist">${song.artist.name}</span><span class="history-song-title">${song.title}</span>`;
