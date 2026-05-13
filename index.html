@@ -232,21 +232,6 @@
       cursor: pointer;
     }
 
-    .laut-btn {
-      display: inline-block;
-      margin-bottom: 28px;
-      padding: 8px 18px;
-      border: 1px solid rgba(225,29,72,0.45);
-      border-radius: 20px;
-      font-size: 10px;
-      font-weight: 700;
-      color: #fb7185;
-      text-decoration: none;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      transition: all 0.25s;
-    }
-
     .history-section { text-align: left; margin-bottom: 20px; }
 
     .history-label {
@@ -310,8 +295,8 @@
         <p id="title-el">Нажмите Play</p>
       </div>
 
-      <!-- Важно: src прописан сразу для стабильности на iOS -->
-      <audio id="player" src="https://stream.laut.fm/retrodance" preload="auto" crossorigin="anonymous"></audio>
+      <!-- src пустой изначально, чтобы iOS не блокировала play() как фоновый процесс -->
+      <audio id="player" preload="none" crossorigin="anonymous"></audio>
 
       <div class="custom-player">
         <div class="sound-bars" id="sound-bars">
@@ -329,8 +314,6 @@
         </div>
       </div>
 
-      <a href="https://laut.fm/retrodance" target="_blank" class="laut-btn">Слушать на laut.fm</a>
-
       <div class="history-section" id="history-section" style="display:none">
         <h3 class="history-label">Недавно в эфире</h3>
         <div id="history-list"></div>
@@ -338,7 +321,6 @@
 
       <div class="legal">
         <p>Radio-Hosting powered by <b>laut.fm</b> | Verantwortlich: <b>laut.ag</b></p>
-        <p style="margin-top: 8px;">Some content created with AI assistance.</p>
         <p style="margin-top: 12px; font-size: 8px; opacity: 0.3;">Retro Dance &copy; 2026</p>
       </div>
     </div>
@@ -385,12 +367,12 @@
 
     // Обработка клика максимально просто для iOS
     playBtn.addEventListener('click', function() {
-      if (player.paused) {
+      if (!isPlaying) {
         isLoading = true;
         updateUI();
         
-        // Перезагружаем поток, чтобы не было задержки из буфера
-        player.load(); 
+        // Для iOS: сначала присваиваем src с кэш-бастером, потом сразу вызываем play() в том же потоке выполнения
+        player.src = STREAM_URL + "?cache=" + Date.now();
         
         player.play().then(() => {
           isPlaying = true;
@@ -398,11 +380,21 @@
           updateUI();
         }).catch((err) => {
           console.error("Playback failed", err);
-          isLoading = false;
-          updateUI();
+          // Повторная попытка без кэш-бастера если не сработало
+          player.src = STREAM_URL;
+          player.play().then(() => {
+            isPlaying = true;
+            isLoading = false;
+            updateUI();
+          }).catch(e => {
+            isLoading = false;
+            updateUI();
+          });
         });
       } else {
+        // Остановка должна быть полной, чтобы не висел фоновый процесс
         player.pause();
+        player.src = ""; // Сбрасываем src для iPhone
         isPlaying = false;
         isLoading = false;
         updateUI();
