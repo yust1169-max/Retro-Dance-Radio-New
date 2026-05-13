@@ -364,23 +364,31 @@
       soundBars.classList.toggle('playing', isPlaying && !isLoading);
     }
 
+    // Восстановленная рабочая функция для iPhone
     playBtn.addEventListener('click', function() {
       if (!isPlaying) {
         isLoading = true;
         updateUI();
+        
+        // Прямое назначение и запуск для Safari
         player.src = STREAM_URL + "?cache=" + Date.now();
-        player.play().then(() => {
-          isPlaying = true;
-          isLoading = false;
-          updateUI();
-        }).catch((err) => {
-          console.error("Playback failed", err);
-          isLoading = false;
-          updateUI();
-        });
+        
+        const playPromise = player.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            isPlaying = true;
+            isLoading = false;
+            updateUI();
+          }).catch(error => {
+            console.error("Playback error:", error);
+            isLoading = false;
+            isPlaying = false;
+            updateUI();
+          });
+        }
       } else {
         player.pause();
-        player.src = "";
+        player.src = ""; // Обязательный сброс для остановки потока на мобильных
         isPlaying = false;
         isLoading = false;
         updateUI();
