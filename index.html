@@ -520,18 +520,21 @@
     });
 
     function setCover(url) {
+      if (!url) url = STATION_LOGO;
       if (currentCover === url) return;
-      const finalUrl = url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
+
       currentCover = url;
       coverImg.style.opacity = 0;
 
       const tmp = new Image();
+
       tmp.onload = () => {
         setTimeout(() => {
-          coverImg.src = finalUrl;
+          coverImg.src = url;
           coverImg.style.opacity = 1;
         }, 400);
       };
+
       tmp.onerror = () => {
         setTimeout(() => {
           coverImg.src = STATION_LOGO;
@@ -539,7 +542,8 @@
           currentCover = STATION_LOGO;
         }, 400);
       };
-      tmp.src = finalUrl;
+
+      tmp.src = url;
     }
 
     async function fetchCover(artist, title) {
@@ -551,7 +555,7 @@
         const res  = await fetch('https://itunes.apple.com/search?term=' + term + '&media=music&limit=1');
         const data = await res.json();
         if (data.results && data.results.length > 0) {
-          const url = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
+          const url = data.results[0].artworkUrl100.replace(/100x100bb\.(jpg|png|webp)/, '600x600bb.$1');
           coverCache[key] = url;
           return url;
         }
