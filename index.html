@@ -295,8 +295,9 @@
         <p id="title-el">Нажмите Play</p>
       </div>
 
-      <!-- src пустой изначально, чтобы iOS не блокировала play() как фоновый процесс -->
-      <audio id="player" preload="none" playsinline></audio>
+      <audio id="player" preload="none" playsinline webkit-playsinline>
+        <source src="https://stream.laut.fm/retrodance" type="audio/mpeg">
+      </audio>
 
       <div class="custom-player">
         <div class="sound-bars" id="sound-bars">
@@ -313,6 +314,8 @@
           <input type="range" class="vol-slider" id="vol-slider" min="0" max="1" step="0.01" value="1">
         </div>
       </div>
+
+      <a href="https://stream.laut.fm/retrodance" target="_blank" rel="noreferrer" style="display:inline-block;margin-bottom:20px;color:#fb7185;font-size:10px;text-transform:uppercase;letter-spacing:.1em;text-decoration:none;">Если iPhone блокирует — открыть поток напрямую</a>
 
       <div class="history-section" id="history-section" style="display:none">
         <h3 class="history-label">Недавно в эфире</h3>
@@ -365,11 +368,15 @@
       soundBars.classList.toggle('playing', isPlaying && !isLoading);
     }
 
-    // Надёжная обработка Play/Pause для iPhone Safari.
-    // Важно: play() вызывается прямо внутри клика пользователя.
-    // Обложки и metadata ниже не трогаем.
-    playBtn.addEventListener('click', async function() {
-      if (isPlaying) {
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    async function togglePlay(event) {
+      if (event) event.preventDefault();
+
+      if (!player.paused) {
         player.pause();
         isPlaying = false;
         isLoading = false;
@@ -381,24 +388,57 @@
       updateUI();
 
       try {
-        // Не используем crossorigin и не делаем повторный play() в catch:
-        // iPhone Safari может это заблокировать.
-        if (!player.src) {
-          player.src = STREAM_URL;
+        player.muted = false;
+        player.volume = parseFloat(volSlider.value || '1');
+
+        // ВАЖНО для iPhone: не менять src перед каждым кликом.
+        // Safari стабильнее запускает <audio><source>...</audio>, который уже есть в HTML.
+        if (player.readyState === 0) {
           player.load();
         }
 
         await player.play();
-
-        isPlaying = true;
-        isLoading = false;
-        updateUI();
       } catch (err) {
-        console.error("iPhone playback error:", err);
+        console.error('iPhone/Safari play error:', err);
         isPlaying = false;
         isLoading = false;
         updateUI();
+        titleEl.textContent = 'Нажмите ещё раз или откройте в Safari';
       }
+    }
+
+    playBtn.addEventListener('click', togglePlay);
+
+    // На iPhone иногда click запаздывает/блокируется, поэтому отдельно ловим touchend.
+    playBtn.addEventListener('touchend', function(event) {
+      if (isIOS()) togglePlay(event);
+    }, { passive: false });
+
+    player.addEventListener('playing', () => {
+      isPlaying = true;
+      isLoading = false;
+      updateUI();
+    });
+
+    player.addEventListener('pause', () => {
+      isPlaying = false;
+      isLoading = false;
+      updateUI();
+    });
+
+    player.addEventListener('waiting', () => {
+      if (!player.paused) {
+        isLoading = true;
+        updateUI();
+      }
+    });
+
+    player.addEventListener('error', () => {
+      console.error('Audio element error:', player.error);
+      isPlaying = false;
+      isLoading = false;
+      updateUI();
+      titleEl.textContent = 'Ошибка запуска потока';
     });
 
     volSlider.oninput = () => { player.volume = volSlider.value; };
