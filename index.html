@@ -276,14 +276,16 @@
     .legal {
       font-size: 9px;
       opacity: 0.4;
-      text-transform: uppercase;
+      text-transform: none;
       line-height: 1.6;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.02em;
       border-top: 1px solid rgba(255,255,255,0.08);
       padding-top: 20px;
       margin-top: 10px;
       text-align: center;
     }
+    
+    .legal b { color: rgba(255,255,255,0.6); }
   </style>
 </head>
 <body>
@@ -306,7 +308,6 @@
         <p id="title-el">Нажмите Play</p>
       </div>
 
-      <!-- Аудио-элемент подготовлен для Safari -->
       <audio id="player" preload="none"></audio>
 
       <div class="custom-player">
@@ -332,11 +333,15 @@
         <div id="history-list"></div>
       </div>
 
-      <!-- Восстановленный юридический текст (DE/EN) -->
-      <p class="legal">
-        Radio-Hosting powered by laut.fm | Verantwortlich: laut.ag<br>
-        Retro Dance &copy; 2026. Все права защищены.
-      </p>
+      <!-- Полный текст футера по вашему требованию -->
+      <div class="legal">
+        <p>Radio-Hosting powered by <b>laut.fm</b> | Verantwortlich für die Inhalte: <b>laut.ag</b></p>
+        <p style="margin-top: 8px;">
+          Some content on this site is created with AI assistance. /<br>
+          Einige Inhalte dieser Website wurden mit Hilfe von KI erstellt.
+        </p>
+        <p style="margin-top: 12px; font-size: 8px; opacity: 0.3;">Retro Dance &copy; 2026</p>
+      </div>
     </div>
   </div>
 
@@ -383,7 +388,6 @@
       if (!isPlaying) {
         isLoading = true;
         updateUI();
-        // Метод активации аудио в Safari
         player.src = STREAM_URL;
         player.load(); 
         player.play().then(() => {
