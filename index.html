@@ -295,9 +295,8 @@
         <p id="title-el">Нажмите Play</p>
       </div>
 
-      <audio id="player" preload="none" playsinline webkit-playsinline>
-        <source src="https://stream.laut.fm/retrodance" type="audio/mpeg">
-      </audio>
+      <!-- Элемент аудио без src для корректной работы Safari -->
+      <audio id="player" preload="none" crossorigin="anonymous"></audio>
 
       <div class="custom-player">
         <div class="sound-bars" id="sound-bars">
@@ -315,15 +314,14 @@
         </div>
       </div>
 
-      <a href="https://stream.laut.fm/retrodance" target="_blank" rel="noreferrer" style="display:inline-block;margin-bottom:20px;color:#fb7185;font-size:10px;text-transform:uppercase;letter-spacing:.1em;text-decoration:none;">Если iPhone блокирует — открыть поток напрямую</a>
-
       <div class="history-section" id="history-section" style="display:none">
         <h3 class="history-label">Недавно в эфире</h3>
         <div id="history-list"></div>
       </div>
 
       <div class="legal">
-        <p>Radio-Hosting powered by <b>laut.fm</b> | Verantwortlich: <b>laut.ag</b></p>
+        <p>Radio-Hosting powered by <b>laut.fm</b> | Verantwortlich für die Inhalte: <b>laut.ag</b></p>
+        <p style="margin-top: 8px;">Some content on this site is created with AI assistance. / Einige Inhalte dieser Website wurden mit Hilfe von KI erstellt.</p>
         <p style="margin-top: 12px; font-size: 8px; opacity: 0.3;">Retro Dance &copy; 2026</p>
       </div>
     </div>
@@ -368,77 +366,31 @@
       soundBars.classList.toggle('playing', isPlaying && !isLoading);
     }
 
-    function isIOS() {
-      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    }
-
-    async function togglePlay(event) {
-      if (event) event.preventDefault();
-
-      if (!player.paused) {
-        player.pause();
-        isPlaying = false;
-        isLoading = false;
-        updateUI();
-        return;
-      }
-
-      isLoading = true;
-      updateUI();
-
-      try {
-        player.muted = false;
-        player.volume = parseFloat(volSlider.value || '1');
-
-        // ВАЖНО для iPhone: не менять src перед каждым кликом.
-        // Safari стабильнее запускает <audio><source>...</audio>, который уже есть в HTML.
-        if (player.readyState === 0) {
-          player.load();
-        }
-
-        await player.play();
-      } catch (err) {
-        console.error('iPhone/Safari play error:', err);
-        isPlaying = false;
-        isLoading = false;
-        updateUI();
-        titleEl.textContent = 'Нажмите ещё раз или откройте в Safari';
-      }
-    }
-
-    playBtn.addEventListener('click', togglePlay);
-
-    // На iPhone иногда click запаздывает/блокируется, поэтому отдельно ловим touchend.
-    playBtn.addEventListener('touchend', function(event) {
-      if (isIOS()) togglePlay(event);
-    }, { passive: false });
-
-    player.addEventListener('playing', () => {
-      isPlaying = true;
-      isLoading = false;
-      updateUI();
-    });
-
-    player.addEventListener('pause', () => {
-      isPlaying = false;
-      isLoading = false;
-      updateUI();
-    });
-
-    player.addEventListener('waiting', () => {
-      if (!player.paused) {
+    // Логика запуска, адаптированная для iPhone/Safari
+    playBtn.addEventListener('click', function() {
+      if (!isPlaying) {
         isLoading = true;
         updateUI();
+        
+        // Принудительно устанавливаем новый src с меткой времени для обхода кэша iPhone
+        player.src = STREAM_URL + "?cache=" + Date.now();
+        
+        player.play().then(() => {
+          isPlaying = true;
+          isLoading = false;
+          updateUI();
+        }).catch((err) => {
+          console.error("Playback failed", err);
+          isLoading = false;
+          updateUI();
+        });
+      } else {
+        player.pause();
+        player.src = ""; // Очистка src обязательна для остановки загрузки данных на мобильных
+        isPlaying = false;
+        isLoading = false;
+        updateUI();
       }
-    });
-
-    player.addEventListener('error', () => {
-      console.error('Audio element error:', player.error);
-      isPlaying = false;
-      isLoading = false;
-      updateUI();
-      titleEl.textContent = 'Ошибка запуска потока';
     });
 
     volSlider.oninput = () => { player.volume = volSlider.value; };
