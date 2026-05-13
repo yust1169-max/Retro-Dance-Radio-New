@@ -364,23 +364,25 @@
       soundBars.classList.toggle('playing', isPlaying && !isLoading);
     }
 
-    // Восстановленная рабочая функция для iPhone
+    // Универсальная функция Play/Stop для всех систем
     playBtn.addEventListener('click', function() {
       if (!isPlaying) {
         isLoading = true;
         updateUI();
         
-        // Прямое назначение и запуск для Safari
-        player.src = STREAM_URL + "?cache=" + Date.now();
+        // Устанавливаем поток
+        player.src = STREAM_URL + "?t=" + Date.now();
+        player.load(); // Важно для Android/Chrome
         
         const playPromise = player.play();
+        
         if (playPromise !== undefined) {
           playPromise.then(() => {
             isPlaying = true;
             isLoading = false;
             updateUI();
           }).catch(error => {
-            console.error("Playback error:", error);
+            console.error("Playback failed:", error);
             isLoading = false;
             isPlaying = false;
             updateUI();
@@ -388,7 +390,8 @@
         }
       } else {
         player.pause();
-        player.src = ""; // Обязательный сброс для остановки потока на мобильных
+        player.src = ""; // Очистка для мобильных
+        player.load();
         isPlaying = false;
         isLoading = false;
         updateUI();
@@ -465,4 +468,4 @@
     updateListeners();
   </script>
 </body>
-</html>
+</html>ш
