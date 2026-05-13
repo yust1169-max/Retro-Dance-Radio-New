@@ -205,7 +205,6 @@
       display: block;
     }
     
-    /* Оптическая центровка треугольника: он визуально смещен влево из-за формы, поэтому пушим вправо */
     .ico-play-shape {
       transform: translateX(4px);
     }
@@ -248,8 +247,6 @@
       transition: all 0.25s;
     }
 
-    .laut-btn:hover { background: rgba(225,29,72,0.1); border-color: #e11d48; color: white; }
-
     .history-section { text-align: left; margin-bottom: 20px; }
 
     .history-label {
@@ -291,8 +288,6 @@
       margin-top: 10px;
       text-align: center;
     }
-    
-    .legal b { color: rgba(255,255,255,0.6); }
   </style>
 </head>
 <body>
@@ -315,7 +310,8 @@
         <p id="title-el">Нажмите Play</p>
       </div>
 
-      <audio id="player" preload="none" crossorigin="anonymous"></audio>
+      <!-- Важно: src прописан сразу для стабильности на iOS -->
+      <audio id="player" src="https://stream.laut.fm/retrodance" preload="auto" crossorigin="anonymous"></audio>
 
       <div class="custom-player">
         <div class="sound-bars" id="sound-bars">
@@ -341,11 +337,8 @@
       </div>
 
       <div class="legal">
-        <p>Radio-Hosting powered by <b>laut.fm</b> | Verantwortlich für die Inhalte: <b>laut.ag</b></p>
-        <p style="margin-top: 8px;">
-          Some content on this site is created with AI assistance. /<br>
-          Einige Inhalte dieser Website wurden mit Hilfe von KI erstellt.
-        </p>
+        <p>Radio-Hosting powered by <b>laut.fm</b> | Verantwortlich: <b>laut.ag</b></p>
+        <p style="margin-top: 8px;">Some content created with AI assistance.</p>
         <p style="margin-top: 12px; font-size: 8px; opacity: 0.3;">Retro Dance &copy; 2026</p>
       </div>
     </div>
@@ -390,23 +383,26 @@
       soundBars.classList.toggle('playing', isPlaying && !isLoading);
     }
 
+    // Обработка клика максимально просто для iOS
     playBtn.addEventListener('click', function() {
-      if (!isPlaying) {
+      if (player.paused) {
         isLoading = true;
         updateUI();
-        player.src = STREAM_URL;
+        
+        // Перезагружаем поток, чтобы не было задержки из буфера
+        player.load(); 
+        
         player.play().then(() => {
           isPlaying = true;
           isLoading = false;
           updateUI();
-        }).catch(() => {
-          isPlaying = false;
+        }).catch((err) => {
+          console.error("Playback failed", err);
           isLoading = false;
           updateUI();
         });
       } else {
         player.pause();
-        player.src = "";
         isPlaying = false;
         isLoading = false;
         updateUI();
@@ -415,14 +411,13 @@
 
     volSlider.oninput = () => { player.volume = volSlider.value; };
 
-    // Ищем ТОЛЬКО в iTunes, т.к. Laut.fm не отдает картинки
     async function fetchCover(artist, title) {
       if (!artist || !title) return STATION_LOGO;
       try {
         const query = encodeURIComponent(`${artist} ${title}`);
         const response = await fetch(`https://itunes.apple.com/search?term=${query}&limit=1&entity=song`);
         const data = await response.json();
-        if (data.results?.length > 0) {
+        if (data.results && data.results.length > 0) {
           return data.results[0].artworkUrl100.replace('100x100', '600x600');
         }
       } catch (e) {}
@@ -434,7 +429,7 @@
         const res = await fetch(`${LAUT_API}/current_song?t=${Date.now()}`);
         const data = await res.json();
         
-        if (data?.title && data.title !== currentTrackId) {
+        if (data && data.title && data.title !== currentTrackId) {
           currentTrackId = data.title;
           titleEl.textContent = data.title;
           artistEl.textContent = data.artist.name;
@@ -463,7 +458,7 @@
           const item = document.createElement('div');
           item.className = 'history-item';
           item.innerHTML = `
-            <img class="history-thumb" src="${art}">
+            <img class="history-thumb" src="${art}" onerror="this.src='${STATION_LOGO}'">
             <div class="history-text">
               <span class="history-artist">${song.artist.name}</span>
               <span class="history-song-title">${song.title}</span>
