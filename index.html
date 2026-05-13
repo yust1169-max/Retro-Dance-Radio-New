@@ -11,7 +11,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       background-color: #0d0d0d;
       font-family: 'Inter', sans-serif;
@@ -22,7 +21,6 @@
       justify-content: center;
       overflow-x: hidden;
     }
-
     .app-bg {
       width: 100%;
       min-height: 100vh;
@@ -32,7 +30,6 @@
       padding: 20px;
       position: relative;
     }
-
     .bg-sphere {
       position: fixed;
       inset: 0;
@@ -42,12 +39,10 @@
       animation: sphereMove 30s infinite alternate linear;
       pointer-events: none;
     }
-
     @keyframes sphereMove {
       from { transform: translate(-15%, -15%) scale(1.2); }
       to   { transform: translate(15%, 15%) scale(0.9); }
     }
-
     .glass-card {
       position: relative;
       z-index: 10;
@@ -62,7 +57,6 @@
       text-align: center;
       box-shadow: 0 30px 80px rgba(0,0,0,0.7);
     }
-
     .card-header {
       display: flex;
       justify-content: space-between;
@@ -70,7 +64,6 @@
       margin-bottom: 24px;
       padding: 0 4px;
     }
-
     .live-badge {
       font-size: 10px;
       font-weight: 700;
@@ -79,19 +72,8 @@
       letter-spacing: 0.15em;
       animation: pulse 2s ease-in-out infinite;
     }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.5; }
-    }
-
-    .listeners-count {
-      font-size: 10px;
-      opacity: 0.5;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-    }
-
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .listeners-count { font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.12em; }
     .cover-wrapper {
       width: 260px;
       height: 260px;
@@ -104,16 +86,8 @@
       align-items: center;
       justify-content: center;
     }
-
-    #cover-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: opacity 0.5s ease;
-    }
-
+    #cover-img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.5s ease; }
     .track-info { margin-bottom: 24px; }
-
     .station-name {
       font-size: 26px;
       font-weight: 900;
@@ -123,19 +97,8 @@
       margin-bottom: 12px;
       line-height: 1;
     }
-
     .accent { color: #e11d48; }
-
-    #artist-el {
-      font-size: 10px;
-      font-weight: 700;
-      color: #fb7185;
-      text-transform: uppercase;
-      letter-spacing: 0.3em;
-      opacity: 0.85;
-      margin-bottom: 8px;
-    }
-
+    #artist-el { font-size: 10px; font-weight: 700; color: #fb7185; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.85; margin-bottom: 8px; }
     #title-el {
       font-size: 18px;
       font-weight: 900;
@@ -149,47 +112,16 @@
       justify-content: center;
       padding: 0 8px;
     }
-
-    .custom-player {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-
-    .sound-bars {
-      display: flex;
-      align-items: flex-end;
-      gap: 3px;
-      height: 28px;
-    }
-
-    .sound-bars span {
-      display: block;
-      width: 4px;
-      border-radius: 2px;
-      background: rgba(225,29,72,0.35);
-      height: 6px;
-      transition: background 0.3s;
-    }
-
-    .sound-bars.playing span {
-      background: #e11d48;
-      animation: bar-bounce 1.2s ease-in-out infinite;
-    }
-
-    .sound-bars.playing span:nth-child(1) { animation-delay: 0s;    animation-duration: 1.0s; }
-    .sound-bars.playing span:nth-child(2) { animation-delay: 0.15s; animation-duration: 1.3s; }
-    .sound-bars.playing span:nth-child(3) { animation-delay: 0.3s;  animation-duration: 0.9s; }
-    .sound-bars.playing span:nth-child(4) { animation-delay: 0.1s;  animation-duration: 1.15s; }
-    .sound-bars.playing span:nth-child(5) { animation-delay: 0.25s; animation-duration: 1.05s; }
-
-    @keyframes bar-bounce {
-      0%, 100% { height: 6px; }
-      50%       { height: 26px; }
-    }
-
+    .custom-player { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px; }
+    .sound-bars { display: flex; align-items: flex-end; gap: 3px; height: 28px; }
+    .sound-bars span { display: block; width: 4px; border-radius: 2px; background: rgba(225,29,72,0.35); height: 6px; }
+    .sound-bars.playing span { background: #e11d48; animation: bar-bounce 1.2s ease-in-out infinite; }
+    .sound-bars.playing span:nth-child(1) { animation-delay: 0s; }
+    .sound-bars.playing span:nth-child(2) { animation-delay: 0.15s; }
+    .sound-bars.playing span:nth-child(3) { animation-delay: 0.3s; }
+    .sound-bars.playing span:nth-child(4) { animation-delay: 0.1s; }
+    .sound-bars.playing span:nth-child(5) { animation-delay: 0.25s; }
+    @keyframes bar-bounce { 0%, 100% { height: 6px; } 50% { height: 26px; } }
     .play-btn {
       width: 64px;
       height: 64px;
@@ -201,215 +133,51 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
       box-shadow: 0 4px 24px rgba(225,29,72,0.45);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      transition: transform 0.15s ease;
     }
-
-    .play-btn:hover { transform: scale(1.07); box-shadow: 0 6px 32px rgba(225,29,72,0.6); }
-    .play-btn:active { transform: scale(0.96); }
+    .play-btn:active { transform: scale(0.92); }
     .play-btn svg { width: 28px; height: 28px; }
-
     @keyframes spin { to { transform: rotate(360deg); } }
     .spin { animation: spin 1s linear infinite; }
-
     .volume-wrap { display: flex; align-items: center; gap: 6px; }
-
-    .mute-btn {
-      background: none;
-      border: none;
-      padding: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: background 0.2s;
-    }
-
-    .mute-btn:hover { background: rgba(255,255,255,0.08); }
-
-    .vol-icon {
-      width: 18px;
-      height: 18px;
-      color: rgba(255,255,255,0.55);
-      transition: color 0.2s;
-      display: block;
-    }
-
-    .vol-icon.muted { color: #e11d48; }
-
-    .vol-slider {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 70px;
-      height: 3px;
-      border-radius: 2px;
-      background: rgba(255,255,255,0.15);
-      outline: none;
-      cursor: pointer;
-    }
-
-    .vol-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #e11d48;
-      cursor: pointer;
-      box-shadow: 0 0 6px rgba(225,29,72,0.5);
-    }
-
-    .vol-slider::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #e11d48;
-      border: none;
-      cursor: pointer;
-    }
-
-    .laut-btn {
-      display: inline-block;
-      margin-bottom: 28px;
-      padding: 8px 18px;
-      border: 1px solid rgba(225,29,72,0.45);
-      border-radius: 20px;
-      font-size: 10px;
-      font-weight: 700;
-      color: #fb7185;
-      text-decoration: none;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      transition: background 0.25s, border-color 0.25s, color 0.25s;
-    }
-
-    .laut-btn:hover { background: rgba(225,29,72,0.1); border-color: #e11d48; color: white; }
-
-    .history-section { text-align: left; margin-bottom: 20px; }
-
-    .history-label {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.25em;
-      opacity: 0.35;
-      margin-bottom: 12px;
-    }
-
-    .history-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      animation: fadeIn 0.4s ease-out;
-    }
-
-    .history-item:last-child { border-bottom: none; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .history-thumb {
-      width: 38px;
-      height: 38px;
-      border-radius: 8px;
-      object-fit: cover;
-      flex-shrink: 0;
-      background: #1a1a1a;
-    }
-
-    .history-text { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
-
-    .history-artist {
-      color: #fb7185;
-      font-weight: 700;
-      font-size: 11px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .history-song-title {
-      color: rgba(255,255,255,0.75);
-      font-size: 11px;
-      font-weight: 500;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .legal {
-      font-size: 9px;
-      opacity: 0.4;
-      text-transform: uppercase;
-      line-height: 1.6;
-      letter-spacing: 0.04em;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      padding-top: 20px;
-      margin-top: 10px;
-      text-align: center;
-    }
+    .vol-slider { -webkit-appearance: none; width: 70px; height: 3px; background: rgba(255,255,255,0.15); border-radius: 2px; outline: none; }
+    .vol-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #e11d48; cursor: pointer; }
+    .legal { font-size: 9px; opacity: 0.4; text-transform: uppercase; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; margin-top: 10px; }
   </style>
 </head>
 <body>
   <div class="app-bg">
     <div class="bg-sphere"></div>
-
     <div class="glass-card">
       <div class="card-header">
         <span class="live-badge">● Live</span>
         <span class="listeners-count" id="listeners-el">Слушатели: 0</span>
       </div>
-
       <div class="cover-wrapper">
         <img id="cover-img" src="https://i.postimg.cc/28VKXjCx/logo.png" alt="Album cover">
       </div>
-
       <div class="track-info">
         <h1 class="station-name">Retro<span class="accent">Dance</span></h1>
         <p id="artist-el">Retro Radio</p>
-        <p id="title-el">Загрузка...</p>
+        <p id="title-el">Нажмите Play</p>
       </div>
-
-      <!-- Аудио без source, прямой src для Safari -->
-      <audio id="player" crossorigin="anonymous" preload="none" src="https://stream.laut.fm/retrodance"></audio>
-
+      <!-- Плеер без src в начале -->
+      <audio id="player" preload="none"></audio>
       <div class="custom-player">
         <div class="sound-bars" id="sound-bars">
           <span></span><span></span><span></span><span></span><span></span>
         </div>
-
-        <button class="play-btn" id="play-btn" aria-label="Play/Pause">
+        <button class="play-btn" id="play-btn">
           <svg id="play-icon" viewBox="0 0 24 24" fill="currentColor">
             <path d="M8 5.14v14l11-7-11-7z"/>
           </svg>
         </button>
-
         <div class="volume-wrap">
-          <button class="mute-btn" id="mute-btn">
-            <svg viewBox="0 0 24 24" fill="currentColor" class="vol-icon" id="vol-icon">
-              <path id="vol-path" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-            </svg>
-          </button>
           <input type="range" class="vol-slider" id="vol-slider" min="0" max="1" step="0.01" value="1">
         </div>
       </div>
-
-      <a href="https://laut.fm/retrodance" target="_blank" rel="noreferrer" class="laut-btn">Слушать на laut.fm</a>
-
-      <div class="history-section" id="history-section" style="display:none">
-        <h3 class="history-label">Недавно в эфире</h3>
-        <div id="history-list"></div>
-      </div>
-
-      <p class="legal">
-        Radio-Hosting powered by laut.fm | Verantwortlich: laut.ag<br>
-        Built with passion for retro dance.
-      </p>
+      <p class="legal">Radio Retro Dance &copy; 2026<br>Powered by laut.fm</p>
     </div>
   </div>
 
@@ -418,30 +186,22 @@
     const STREAM_URL   = 'https://stream.laut.fm/retrodance';
     const LAUT_API     = 'https://api.laut.fm/station/retrodance';
 
-    const player         = document.getElementById('player');
-    const playBtn        = document.getElementById('play-btn');
-    const playIcon       = document.getElementById('play-icon');
-    const soundBars      = document.getElementById('sound-bars');
-    const muteBtn        = document.getElementById('mute-btn');
-    const volIcon        = document.getElementById('vol-icon');
-    const volPath        = document.getElementById('vol-path');
-    const volSlider      = document.getElementById('vol-slider');
-    const coverImg       = document.getElementById('cover-img');
-    const artistEl       = document.getElementById('artist-el');
-    const titleEl        = document.getElementById('title-el');
-    const listenersEl    = document.getElementById('listeners-el');
-    const historySection = document.getElementById('history-section');
-    const historyList    = document.getElementById('history-list');
+    const player    = document.getElementById('player');
+    const playBtn   = document.getElementById('play-btn');
+    const playIcon  = document.getElementById('play-icon');
+    const soundBars = document.getElementById('sound-bars');
+    const volSlider = document.getElementById('vol-slider');
+    const coverImg  = document.getElementById('cover-img');
+    const artistEl  = document.getElementById('artist-el');
+    const titleEl   = document.getElementById('title-el');
+    const listenersEl = document.getElementById('listeners-el');
 
     let isPlaying = false;
     let isLoading = false;
-    let volume    = 1;
-    let currentTrackTitle = '';
-    let currentCover = STATION_LOGO;
+    let initialized = false;
 
-    // SVG иконки
     const ICO_PLAY  = '<path d="M8 5.14v14l11-7-11-7z"/>';
-    const ICO_PAUSE = '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>';
+    const ICO_STOP  = '<rect x="6" y="6" width="12" height="12" rx="2"/>';
     const ICO_LOAD  = '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-dasharray="40 20" class="spin"/>';
 
     function updateUI() {
@@ -449,7 +209,7 @@
         playIcon.innerHTML = ICO_LOAD;
         playIcon.setAttribute('fill', 'none');
       } else if (isPlaying) {
-        playIcon.innerHTML = ICO_PAUSE;
+        playIcon.innerHTML = ICO_STOP;
         playIcon.setAttribute('fill', 'currentColor');
       } else {
         playIcon.innerHTML = ICO_PLAY;
@@ -460,131 +220,69 @@
 
     playBtn.addEventListener('click', function() {
       if (!isPlaying) {
-        // Запуск
         isLoading = true;
         updateUI();
-        
-        // Переподключаем поток, чтобы не было задержки
-        player.src = STREAM_URL; 
-        player.load();
+
+        // МАГИЯ ДЛЯ IOS: Сначала присваиваем src, потом load, потом play
+        player.src = STREAM_URL;
+        player.load(); 
         
         const playPromise = player.play();
+        
         if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.error("Playback error:", error);
+          playPromise.then(() => {
+            isPlaying = true;
             isLoading = false;
-            isPlaying = false;
             updateUI();
+          }).catch(error => {
+            console.error("Ошибка iOS:", error);
+            // Если ошибка, пробуем еще раз через секунду
+            setTimeout(() => { player.play(); }, 500);
           });
         }
       } else {
-        // Стоп
         player.pause();
-        // Полностью очищаем src для мобильных, чтобы освободить память и поток
-        player.src = ""; 
+        player.src = ""; // Очистка потока
         isPlaying = false;
         isLoading = false;
         updateUI();
       }
     });
 
+    // Слушатели событий плеера
     player.onplaying = () => { isPlaying = true; isLoading = false; updateUI(); };
     player.onwaiting = () => { isLoading = true; updateUI(); };
-    player.onstalled = () => { isLoading = true; updateUI(); };
-    player.onerror   = () => { isPlaying = false; isLoading = false; updateUI(); };
+    player.onerror   = () => { console.error("Player Error"); isPlaying = false; isLoading = false; updateUI(); };
 
-    // Громкость
-    volSlider.oninput = () => {
-      volume = volSlider.value;
-      player.volume = volume;
-      player.muted = (volume == 0);
-      updateVolIcon();
-    };
+    volSlider.oninput = () => { player.volume = volSlider.value; };
 
-    function updateVolIcon() {
-      if (volume == 0) volIcon.classList.add('muted');
-      else volIcon.classList.remove('muted');
-    }
-
-    muteBtn.onclick = () => {
-      if (player.volume > 0) {
-        player.volume = 0;
-        volSlider.value = 0;
-      } else {
-        player.volume = volume || 1;
-        volSlider.value = volume || 1;
-      }
-      updateVolIcon();
-    };
-
-    // Данные
     async function updateMetadata() {
       try {
         const res = await fetch(`${LAUT_API}/current_song?t=${Date.now()}`);
         const data = await res.json();
-        if (!data || data.title === currentTrackTitle) return;
-
-        currentTrackTitle = data.title;
-        titleEl.textContent = data.title;
-        artistEl.textContent = data.artist.name;
-
-        // Обложка
-        const itunes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(data.artist.name + ' ' + data.title)}&limit=1&media=music`);
-        const itData = await itunes.json();
-        const newCover = itData.results?.[0]?.artworkUrl100.replace('100x100', '600x600') || STATION_LOGO;
-        
-        if (currentCover !== newCover) {
-          currentCover = newCover;
-          coverImg.style.opacity = '0';
-          setTimeout(() => {
-            coverImg.src = newCover;
-            coverImg.style.opacity = '1';
-          }, 300);
+        if (data) {
+          titleEl.textContent = data.title;
+          artistEl.textContent = data.artist.name;
+          
+          const itunes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(data.artist.name + ' ' + data.title)}&limit=1`);
+          const itData = await itunes.json();
+          const art = itData.results?.[0]?.artworkUrl100.replace('100x100', '600x600') || STATION_LOGO;
+          if (coverImg.src !== art) coverImg.src = art;
         }
-
-        if ('mediaSession' in navigator) {
-          navigator.mediaSession.metadata = new MediaMetadata({
-            title: data.title,
-            artist: data.artist.name,
-            artwork: [{ src: currentCover, sizes: '600x600', type: 'image/jpeg' }]
-          });
-        }
-      } catch(e) {}
-    }
-
-    async function updateHistory() {
-      try {
-        const res = await fetch(`${LAUT_API}/last_songs`);
-        const data = await res.json();
-        historyList.innerHTML = '';
-        data.slice(0, 5).forEach(song => {
-          const div = document.createElement('div');
-          div.className = 'history-item';
-          div.innerHTML = `
-            <div class="history-text">
-              <span class="history-artist">${song.artist.name}</span>
-              <span class="history-song-title">${song.title}</span>
-            </div>`;
-          historyList.appendChild(div);
-        });
-        historySection.style.display = 'block';
       } catch(e) {}
     }
 
     async function updateListeners() {
       try {
         const res = await fetch(`${LAUT_API}/listeners`);
-        const count = await res.text();
-        listenersEl.textContent = 'Слушатели: ' + (count || 0);
+        listenersEl.textContent = 'Слушатели: ' + (await res.text());
       } catch(e) {}
     }
 
-    // Старт
-    updateMetadata();
-    updateHistory();
-    updateListeners();
     setInterval(updateMetadata, 10000);
     setInterval(updateListeners, 30000);
+    updateMetadata();
+    updateListeners();
   </script>
 </body>
 </html>
