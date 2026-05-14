@@ -82,11 +82,25 @@
 
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-    .listeners-count {
-      font-size: 10px;
-      opacity: 0.5;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
+    .listeners-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.78);
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .listeners-pill svg {
+      width: 14px;
+      height: 14px;
+      color: #e11d48;
+      flex-shrink: 0;
     }
 
     .cover-wrapper {
@@ -151,32 +165,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 20px;
+      gap: 16px;
       margin-bottom: 20px;
     }
-
-    .sound-bars {
-      display: flex;
-      align-items: flex-end;
-      gap: 3px;
-      height: 28px;
-    }
-
-    .sound-bars span {
-      display: block;
-      width: 4px;
-      border-radius: 2px;
-      background: rgba(225,29,72,0.35);
-      height: 6px;
-      transition: background 0.3s;
-    }
-
-    .sound-bars.playing span {
-      background: #e11d48;
-      animation: bar-bounce 1.2s ease-in-out infinite;
-    }
-
-    @keyframes bar-bounce { 0%, 100% { height: 6px; } 50% { height: 26px; } }
 
     .play-btn {
       width: 68px;
@@ -215,7 +206,64 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .spin { animation: spin 1s linear infinite; }
 
-    .volume-wrap { display: flex; align-items: center; gap: 6px; }
+    .volume-wrap { display: flex; align-items: center; gap: 8px; }
+
+    .mute-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.70);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .mute-btn:active { transform: scale(0.94); }
+    .mute-btn.is-muted { color: #e11d48; background: rgba(225,29,72,0.12); }
+    .mute-btn svg { width: 18px; height: 18px; display: block; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      width: 100%;
+      padding: 4px;
+      margin: 0 0 20px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      border: 0;
+      border-radius: 14px;
+      padding: 10px 8px;
+      background: transparent;
+      color: rgba(255,255,255,0.42);
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .tab-btn.active {
+      background: #e11d48;
+      color: white;
+      box-shadow: 0 8px 22px rgba(225,29,72,0.25);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
     .vol-slider {
       -webkit-appearance: none;
@@ -285,7 +333,15 @@
     <div class="glass-card">
       <div class="card-header">
         <span class="live-badge">● Live</span>
-        <span class="listeners-count" id="listeners-el">Слушатели: 0</span>
+        <span class="listeners-pill" aria-label="Количество слушателей">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span id="listeners-el">0</span>
+        </span>
       </div>
 
       <div class="cover-wrapper">
@@ -301,25 +357,35 @@
       <!-- Важно: атрибуты для мобильной совместимости -->
       <audio id="player" preload="none" playsinline webkit-playsinline></audio>
 
-      <div class="custom-player">
-        <div class="sound-bars" id="sound-bars">
-          <span></span><span></span><span></span><span></span><span></span>
-        </div>
+      <div class="tabs" role="tablist" aria-label="Разделы радио">
+        <button class="tab-btn active" id="tab-player" type="button" data-tab="player" role="tab" aria-selected="true">Плеер</button>
+        <button class="tab-btn" id="tab-history" type="button" data-tab="history" role="tab" aria-selected="false">История</button>
+      </div>
 
-        <button class="play-btn" id="play-btn" aria-label="Play/Pause">
-          <svg id="play-svg" class="ico-play-shape" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M7 5v14l11-7z"/>
-          </svg>
-        </button>
+      <div class="tab-panel active" id="panel-player" role="tabpanel" aria-labelledby="tab-player">
+        <div class="custom-player">
+          <button class="play-btn" id="play-btn" aria-label="Play/Pause">
+            <svg id="play-svg" class="ico-play-shape" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7 5v14l11-7z"/>
+            </svg>
+          </button>
 
-        <div class="volume-wrap">
-          <input type="range" class="vol-slider" id="vol-slider" min="0" max="1" step="0.01" value="1">
+          <div class="volume-wrap">
+            <button class="mute-btn" id="mute-btn" type="button" aria-label="Выключить звук">
+              <svg id="mute-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path id="mute-path" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+              </svg>
+            </button>
+            <input type="range" class="vol-slider" id="vol-slider" min="0" max="1" step="0.01" value="1" aria-label="Громкость">
+          </div>
         </div>
       </div>
 
-      <div class="history-section" id="history-section" style="display:none">
-        <h3 class="history-label">Недавно в эфире</h3>
-        <div id="history-list"></div>
+      <div class="tab-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history">
+        <div class="history-section" id="history-section">
+          <h3 class="history-label">История эфира</h3>
+          <div id="history-list"></div>
+        </div>
       </div>
 
       <div class="legal">
@@ -337,8 +403,9 @@
     const player    = document.getElementById('player');
     const playBtn   = document.getElementById('play-btn');
     const playSvg   = document.getElementById('play-svg');
-    const soundBars = document.getElementById('sound-bars');
     const volSlider = document.getElementById('vol-slider');
+    const muteBtn   = document.getElementById('mute-btn');
+    const mutePath  = document.getElementById('mute-path');
     const coverImg  = document.getElementById('cover-img');
     const artistEl  = document.getElementById('artist-el');
     const titleEl   = document.getElementById('title-el');
@@ -348,11 +415,16 @@
 
     let isPlaying = false;
     let isLoading = false;
+    let isMuted = false;
+    let lastVolume = 1;
     let currentTrackId = "";
 
     const SVG_PLAY = '<path d="M7 5v14l11-7z"/>';
     const SVG_STOP = '<path d="M6 6h12v12H6z"/>';
     const SVG_LOAD = '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="40 20" fill="none" class="spin"/>';
+    const VOL_HIGH = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
+    const VOL_LOW  = 'M5 9v6h4l5 5V4L9 9H5zm13.5 3A4.5 4.5 0 0 0 16 7.97v8.05A4.5 4.5 0 0 0 18.5 12z';
+    const VOL_MUTE = 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-3-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z';
 
     function updateUI() {
       if (isLoading) {
@@ -365,7 +437,23 @@
         playSvg.innerHTML = SVG_PLAY;
         playSvg.classList.add('ico-play-shape');
       }
-      soundBars.classList.toggle('playing', isPlaying && !isLoading);
+    }
+
+    function updateVolumeIcon() {
+      const value = Number(volSlider.value);
+      if (isMuted || value === 0) {
+        mutePath.setAttribute('d', VOL_MUTE);
+        muteBtn.classList.add('is-muted');
+        muteBtn.setAttribute('aria-label', 'Включить звук');
+      } else if (value < 0.5) {
+        mutePath.setAttribute('d', VOL_LOW);
+        muteBtn.classList.remove('is-muted');
+        muteBtn.setAttribute('aria-label', 'Выключить звук');
+      } else {
+        mutePath.setAttribute('d', VOL_HIGH);
+        muteBtn.classList.remove('is-muted');
+        muteBtn.setAttribute('aria-label', 'Выключить звук');
+      }
     }
 
     // Исправлено для Android Chrome:
@@ -455,7 +543,30 @@
       updateUI();
     });
 
-    volSlider.oninput = () => { player.volume = Number(volSlider.value); };
+    volSlider.oninput = () => {
+      const value = Number(volSlider.value);
+      player.volume = value;
+      isMuted = value === 0;
+      player.muted = isMuted;
+      if (value > 0) lastVolume = value;
+      updateVolumeIcon();
+    };
+
+    muteBtn.addEventListener('click', () => {
+      if (isMuted || Number(volSlider.value) === 0) {
+        isMuted = false;
+        const restore = lastVolume > 0 ? lastVolume : 1;
+        volSlider.value = restore;
+        player.volume = restore;
+        player.muted = false;
+      } else {
+        lastVolume = Number(volSlider.value) || lastVolume || 1;
+        isMuted = true;
+        volSlider.value = 0;
+        player.muted = true;
+      }
+      updateVolumeIcon();
+    });
 
     async function fetchCover(artist, title) {
       if (!artist || !title) return STATION_LOGO;
@@ -515,13 +626,30 @@
       try {
         const res = await fetch(`${LAUT_API}/listeners`);
         const count = await res.text();
-        listenersEl.textContent = 'Слушатели: ' + (count || 0);
+        listenersEl.textContent = count || 0;
       } catch (e) {}
     }
 
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach((b) => {
+          const active = b.dataset.tab === tab;
+          b.classList.toggle('active', active);
+          b.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        document.querySelectorAll('.tab-panel').forEach((panel) => {
+          panel.classList.toggle('active', panel.id === 'panel-' + tab);
+        });
+        if (tab === 'history') updateHistory();
+      });
+    });
+
+    updateVolumeIcon();
     setInterval(updateMetadata, 15000);
     setInterval(updateListeners, 45000);
     updateMetadata();
+    updateHistory();
     updateListeners();
   </script>
 </body>
