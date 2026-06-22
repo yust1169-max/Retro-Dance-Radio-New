@@ -354,10 +354,9 @@
         <p id="title-el">Нажмите Play</p>
       </div>
 
-      <!-- Важно: атрибуты для мобильной совместимости -->
       <audio id="player" preload="none" playsinline webkit-playsinline></audio>
 
-      <div class="tabs" role="tablist" aria-label="Разделы радио">
+      <div class="tabs" role="tablist" aria-label="Разделы radio">
         <button class="tab-btn active" id="tab-player" type="button" data-tab="player" role="tab" aria-selected="true">Плеер</button>
         <button class="tab-btn" id="tab-history" type="button" data-tab="history" role="tab" aria-selected="false">История</button>
       </div>
@@ -474,7 +473,6 @@
     function applyMediaSession() {
       document.title = `${currentTrackArtist} - ${currentTrackTitle} | RetroDance Radio`;
 
-      // Дублируем данные прямо в audio: часть Android-плееров берёт заголовок отсюда.
       player.title = `${currentTrackArtist} - ${currentTrackTitle}`;
 
       if (!('mediaSession' in navigator)) return;
@@ -501,14 +499,6 @@
       } catch (e) {}
     }
 
-    function keepMediaSessionAlive() {
-      applyMediaSession();
-      if (mediaSessionTimer) clearInterval(mediaSessionTimer);
-      mediaSessionTimer = setInterval(() => {
-        if (isPlaying) applyMediaSession();
-      }, 3000);
-    }
-
     async function setMainCover(art) {
       const safeArt = await preloadImage(art || STATION_LOGO);
       currentArtwork = safeArt;
@@ -530,10 +520,6 @@
       });
     }
 
-    // Исправлено для Android Chrome:
-    // 1) Не ставим crossorigin на <audio> — у radio-stream часто нет CORS-заголовков.
-    // 2) Не вызываем player.load() прямо перед play() — на Android это может сбросить пользовательский tap.
-    // 3) Не удаляем src при паузе — Chrome Android иногда после этого не стартует повторно.
     async function startRadio() {
       if (isLoading) return;
 
@@ -551,12 +537,10 @@
         isPlaying = true;
         isLoading = false;
         updateUI();
-        keepMediaSessionAlive();
+        applyMediaSession();
       } catch (err) {
         console.error('Playback Error:', err);
 
-        // Мягкий фолбэк: если Android не принял старый поток, меняем URL,
-        // но всё ещё НЕ вызываем load() перед play().
         try {
           player.src = STREAM_URL + '?t=' + Date.now();
           await player.play();
@@ -564,7 +548,7 @@
           isPlaying = true;
           isLoading = false;
           updateUI();
-          keepMediaSessionAlive();
+          applyMediaSession();
         } catch (err2) {
           console.error('Playback Fallback Error:', err2);
           isPlaying = false;
@@ -598,7 +582,7 @@
       isPlaying = true;
       isLoading = false;
       updateUI();
-      keepMediaSessionAlive();
+      applyMediaSession();
     });
 
     player.addEventListener('pause', () => {
@@ -649,19 +633,39 @@
 
     async function fetchCover(artist, title) {
       if (!artist || !title) return STATION_LOGO;
+
       const key = `${artist}|${title}`.toLowerCase();
       if (coverCache[key]) return coverCache[key];
 
       try {
+        const controller = new AbortController();
+
+        const timeout = setTimeout(() => {
+          controller.abort();
+        }, 2500);
+
         const query = encodeURIComponent(`${artist} ${title}`);
-        const response = await fetch(`https://itunes.apple.com/search?term=${query}&limit=1&entity=song`);
+
+        const response = await fetch(
+          `https://itunes.apple.com/search?term=${query}&limit=1&entity=song`,
+          { signal: controller.signal }
+        );
+
+        clearTimeout(timeout);
+
         const data = await response.json();
+
         if (data.results && data.results.length > 0) {
-          const art = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
+          const art = data.results[0].artworkUrl100
+            .replace('100x100bb.jpg', '600x600bb.jpg')
+            .replace('100x100', '600x600');
+
           coverCache[key] = art;
           return art;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.log('Artwork timeout');
+      }
 
       coverCache[key] = STATION_LOGO;
       return STATION_LOGO;
@@ -671,11 +675,20 @@
       try {
         const res = await fetch(`${LAUT_API}/current_song?t=${Date.now()}`);
         const data = await res.json();
-        if (!data || !data.title) return;
+        if (!data) return;
 
-        const artist = data.artist && data.artist.name ? data.artist.name : 'Retro Radio';
-        const title = data.title;
-        const trackKey = `${artist} - ${title}`;
+        const artist =
+          data.artist && data.artist.name
+            ? data.artist.name
+            : 'Retro Radio';
+
+        const title =
+          data.title && data.title.trim()
+            ? data.title
+            : 'Station Jingle';
+
+        const trackKey =
+          `${data.id || ''}_${artist}_${title}`;
 
         if (trackKey !== currentTrackId) {
           currentTrackId = trackKey;
@@ -687,10 +700,8 @@
 
           const art = await fetchCover(artist, title);
 
-          // Важно: сначала обновляем обложку главного плеера и Media Session,
-          // и только потом перерисовываем историю. Так история больше не обгоняет плеер.
           await setMainCover(art);
-          keepMediaSessionAlive();
+          applyMediaSession();
           updateHistory();
         } else {
           applyMediaSession();
@@ -745,7 +756,7 @@
 
     updateVolumeIcon();
     applyMediaSession();
-    setInterval(updateMetadata, 15000);
+    setInterval(updateMetadata, 5000);
     setInterval(updateListeners, 45000);
     updateMetadata();
     updateListeners();
