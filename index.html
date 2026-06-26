@@ -354,7 +354,6 @@
         <p id="title-el">Нажмите Play</p>
       </div>
 
-      <!-- Важно: атрибуты для мобильной совместимости -->
       <audio id="player" preload="none" playsinline webkit-playsinline></audio>
 
       <div class="tabs" role="tablist" aria-label="Разделы радио">
@@ -682,16 +681,19 @@
           currentTrackTitle = title;
           currentTrackArtist = artist;
 
+          // МГНОВЕННО выводим текст (не ждем обложку!)
           titleEl.textContent = title;
           artistEl.textContent = artist;
+          
+          applyMediaSession();
 
-          const art = await fetchCover(artist, title);
+          // АСИНХРОННО запускаем поиск обложки в фоновом режиме
+          fetchCover(artist, title).then(async (art) => {
+            await setMainCover(art);
+            keepMediaSessionAlive();
+            updateHistory();
+          });
 
-          // Важно: сначала обновляем обложку главного плеера и Media Session,
-          // и только потом перерисовываем историю. Так история больше не обгоняет плеер.
-          await setMainCover(art);
-          keepMediaSessionAlive();
-          updateHistory();
         } else {
           applyMediaSession();
         }
@@ -745,8 +747,11 @@
 
     updateVolumeIcon();
     applyMediaSession();
-    setInterval(updateMetadata, 15000);
+    
+    // Безопасный интервал опроса 8 секунд, чтобы не перегружать API laut.fm
+    setInterval(updateMetadata, 8000);
     setInterval(updateListeners, 45000);
+    
     updateMetadata();
     updateListeners();
   </script>
