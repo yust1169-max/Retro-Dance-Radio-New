@@ -165,13 +165,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 16px;
-      margin-bottom: 20px;
+      gap: 20px;
+      margin-bottom: 24px;
     }
 
     .play-btn {
-      width: 68px;
-      height: 68px;
+      width: 74px;
+      height: 74px;
       border-radius: 50%;
       border: none;
       background: linear-gradient(135deg, #e11d48, #9f1239);
@@ -194,8 +194,8 @@
     .play-btn:active { transform: scale(0.92); }
 
     .play-btn svg {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       display: block;
     }
     
@@ -206,28 +206,40 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .spin { animation: spin 1s linear infinite; }
 
-    .volume-wrap { display: flex; align-items: center; gap: 8px; }
-
-    .mute-btn {
-      width: 34px;
-      height: 34px;
+    .side-btn {
+      width: 74px;
+      height: 74px; 
       border-radius: 50%;
       border: 1px solid rgba(255,255,255,0.08);
       background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.70);
+      color: rgba(255,255,255,0.85);
       cursor: pointer;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0;
       outline: none;
+      transition: all 0.2s ease;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
+      flex-shrink: 0;
+      text-decoration: none;
     }
 
-    .mute-btn:active { transform: scale(0.94); }
-    .mute-btn.is-muted { color: #e11d48; background: rgba(225,29,72,0.12); }
-    .mute-btn svg { width: 18px; height: 18px; display: block; }
+    .side-btn:active { transform: scale(0.94); }
+
+    /* Крупный текст LAUT.FM внутри круглой кнопки */
+    .laut-text {
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      color: rgba(255,255,255,0.9);
+      display: block;
+      line-height: 1;
+    }
+    
+    .side-btn.is-muted { color: #e11d48; background: rgba(225,29,72,0.12); border-color: rgba(225,29,72,0.2); }
+    .side-btn svg { width: 24px; height: 24px; display: block; }
 
     .tabs {
       display: flex;
@@ -244,14 +256,14 @@
       flex: 1;
       border: 0;
       border-radius: 14px;
-      padding: 10px 8px;
+      padding: 10px 4px;
       background: transparent;
       color: rgba(255,255,255,0.42);
       cursor: pointer;
       font-size: 10px;
       font-weight: 900;
       text-transform: uppercase;
-      letter-spacing: 0.16em;
+      letter-spacing: 0.12em;
       transition: background 0.2s, color 0.2s, box-shadow 0.2s;
       -webkit-tap-highlight-color: transparent;
     }
@@ -265,27 +277,9 @@
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
-    .vol-slider {
-      -webkit-appearance: none;
-      width: 70px;
-      height: 3px;
-      background: rgba(255,255,255,0.15);
-      border-radius: 2px;
-      outline: none;
-    }
+    .history-section, .contacts-section { text-align: left; margin-bottom: 20px; }
 
-    .vol-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #e11d48;
-      cursor: pointer;
-    }
-
-    .history-section { text-align: left; margin-bottom: 20px; }
-
-    .history-label {
+    .history-label, .contacts-label {
       font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
@@ -314,6 +308,70 @@
 
     .history-artist { color: #fb7185; font-weight: 700; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .history-song-title { color: rgba(255,255,255,0.75); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .contacts-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 4px;
+    }
+
+    .contact-link {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      color: white;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .contact-link:active {
+      transform: scale(0.98);
+      background: rgba(255,255,255,0.08);
+    }
+
+    .contact-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fb7185;
+      flex-shrink: 0;
+    }
+
+    .contact-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .contact-info {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .contact-title {
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #fb7185;
+      margin-bottom: 2px;
+    }
+
+    .contact-value {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     .legal {
       font-size: 9px;
@@ -356,27 +414,29 @@
 
       <audio id="player" preload="none" playsinline webkit-playsinline></audio>
 
-      <div class="tabs" role="tablist" aria-label="Разделы радио">
+      <div class="tabs" role="tablist" aria-label="Разделы radio">
         <button class="tab-btn active" id="tab-player" type="button" data-tab="player" role="tab" aria-selected="true">Плеер</button>
         <button class="tab-btn" id="tab-history" type="button" data-tab="history" role="tab" aria-selected="false">История</button>
+        <button class="tab-btn" id="tab-contacts" type="button" data-tab="contacts" role="tab" aria-selected="false">Контакты</button>
       </div>
 
       <div class="tab-panel active" id="panel-player" role="tabpanel" aria-labelledby="tab-player">
         <div class="custom-player">
+          <a href="https://laut.fm/retrodance" target="_blank" rel="noopener" class="side-btn" id="laut-btn" aria-label="Слушать на laut.fm">
+            <span class="laut-text">LAUT.FM</span>
+          </a>
+
           <button class="play-btn" id="play-btn" aria-label="Play/Pause">
             <svg id="play-svg" class="ico-play-shape" viewBox="0 0 24 24" fill="currentColor">
               <path d="M7 5v14l11-7z"/>
             </svg>
           </button>
 
-          <div class="volume-wrap">
-            <button class="mute-btn" id="mute-btn" type="button" aria-label="Выключить звук">
-              <svg id="mute-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path id="mute-path" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-              </svg>
-            </button>
-            <input type="range" class="vol-slider" id="vol-slider" min="0" max="1" step="0.01" value="1" aria-label="Громкость">
-          </div>
+          <button class="side-btn" id="mute-btn" type="button" aria-label="Выключить звук">
+            <svg id="mute-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path id="mute-path" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -384,6 +444,36 @@
         <div class="history-section" id="history-section">
           <h3 class="history-label">История эфира</h3>
           <div id="history-list"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-contacts" role="tabpanel" aria-labelledby="tab-contacts">
+        <div class="contacts-section">
+          <h3 class="contacts-label">Мы на связи</h3>
+          <div class="contacts-grid">
+            <a href="https://t.me/retrodance_radio" target="_blank" rel="noopener" class="contact-link">
+              <div class="contact-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-1-.65-.35-1 .22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.24-5.54 3.65-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.35-.49.97-.74 3.79-1.65 6.32-2.74 7.57-3.27 3.61-1.53 4.36-1.8 4.85-1.8.11 0 .35.03.5.15.13.1.17.25.18.35-.01.07-.01.19-.02.29z"/>
+                </svg>
+              </div>
+              <div class="contact-info">
+                <span class="contact-title">Telegram</span>
+                <span class="contact-value">Канал RetroDance</span>
+              </div>
+            </a>
+            <a href="mailto:retrodanceradiomusic.com" class="contact-link">
+              <div class="contact-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                </svg>
+              </div>
+              <div class="contact-info">
+                <span class="contact-title">Gmail</span>
+                <span class="contact-value">retrodanceradiomusic.com</span>
+              </div>
+            </a>
+          </div>
         </div>
       </div>
 
@@ -402,7 +492,6 @@
     const player    = document.getElementById('player');
     const playBtn   = document.getElementById('play-btn');
     const playSvg   = document.getElementById('play-svg');
-    const volSlider = document.getElementById('vol-slider');
     const muteBtn   = document.getElementById('mute-btn');
     const mutePath  = document.getElementById('mute-path');
     const coverImg  = document.getElementById('cover-img');
@@ -415,19 +504,18 @@
     let isPlaying = false;
     let isLoading = false;
     let isMuted = false;
-    let lastVolume = 1;
     let currentTrackId = "";
     let currentTrackTitle = "Нажмите Play";
     let currentTrackArtist = "Retro Radio";
     let currentArtwork = STATION_LOGO;
     let mediaSessionTimer = null;
+
     const coverCache = {};
 
     const SVG_PLAY = '<path d="M7 5v14l11-7z"/>';
     const SVG_STOP = '<path d="M6 6h12v12H6z"/>';
     const SVG_LOAD = '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="40 20" fill="none" class="spin"/>';
     const VOL_HIGH = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
-    const VOL_LOW  = 'M5 9v6h4l5 5V4L9 9H5zm13.5 3A4.5 4.5 0 0 0 16 7.97v8.05A4.5 4.5 0 0 0 18.5 12z';
     const VOL_MUTE = 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-3-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z';
 
     function updateUI() {
@@ -444,22 +532,16 @@
     }
 
     function updateVolumeIcon() {
-      const value = Number(volSlider.value);
-      if (isMuted || value === 0) {
+      if (isMuted) {
         mutePath.setAttribute('d', VOL_MUTE);
         muteBtn.classList.add('is-muted');
         muteBtn.setAttribute('aria-label', 'Включить звук');
-      } else if (value < 0.5) {
-        mutePath.setAttribute('d', VOL_LOW);
-        muteBtn.classList.remove('is-muted');
-        muteBtn.setAttribute('aria-label', 'Выключить звук');
       } else {
         mutePath.setAttribute('d', VOL_HIGH);
         muteBtn.classList.remove('is-muted');
         muteBtn.setAttribute('aria-label', 'Выключить звук');
       }
     }
-
 
     function preloadImage(url) {
       return new Promise((resolve) => {
@@ -472,8 +554,6 @@
 
     function applyMediaSession() {
       document.title = `${currentTrackArtist} - ${currentTrackTitle} | RetroDance Radio`;
-
-      // Дублируем данные прямо в audio: часть Android-плееров берёт заголовок отсюда.
       player.title = `${currentTrackArtist} - ${currentTrackTitle}`;
 
       if (!('mediaSession' in navigator)) return;
@@ -529,13 +609,8 @@
       });
     }
 
-    // Исправлено для Android Chrome:
-    // 1) Не ставим crossorigin на <audio> — у radio-stream часто нет CORS-заголовков.
-    // 2) Не вызываем player.load() прямо перед play() — на Android это может сбросить пользовательский tap.
-    // 3) Не удаляем src при паузе — Chrome Android иногда после этого не стартует повторно.
     async function startRadio() {
       if (isLoading) return;
-
       isLoading = true;
       updateUI();
 
@@ -543,23 +618,17 @@
         if (!player.getAttribute('src')) {
           player.src = STREAM_URL;
         }
-
-        player.volume = Number(volSlider.value);
+        player.volume = isMuted ? 0 : 1;
         await player.play();
-
         isPlaying = true;
         isLoading = false;
         updateUI();
         keepMediaSessionAlive();
       } catch (err) {
         console.error('Playback Error:', err);
-
-        // Мягкий фолбэк: если Android не принял старый поток, меняем URL,
-        // но всё ещё НЕ вызываем load() перед play().
         try {
           player.src = STREAM_URL + '?t=' + Date.now();
           await player.play();
-
           isPlaying = true;
           isLoading = false;
           updateUI();
@@ -621,28 +690,10 @@
       updateUI();
     });
 
-    volSlider.oninput = () => {
-      const value = Number(volSlider.value);
-      player.volume = value;
-      isMuted = value === 0;
-      player.muted = isMuted;
-      if (value > 0) lastVolume = value;
-      updateVolumeIcon();
-    };
-
     muteBtn.addEventListener('click', () => {
-      if (isMuted || Number(volSlider.value) === 0) {
-        isMuted = false;
-        const restore = lastVolume > 0 ? lastVolume : 1;
-        volSlider.value = restore;
-        player.volume = restore;
-        player.muted = false;
-      } else {
-        lastVolume = Number(volSlider.value) || lastVolume || 1;
-        isMuted = true;
-        volSlider.value = 0;
-        player.muted = true;
-      }
+      isMuted = !isMuted;
+      player.muted = isMuted;
+      player.volume = isMuted ? 0 : 1;
       updateVolumeIcon();
     });
 
@@ -672,7 +723,15 @@
         const data = await res.json();
         if (!data || !data.title) return;
 
-        const artist = data.artist && data.artist.name ? data.artist.name : 'Retro Radio';
+        let artist = 'Retro Radio';
+        if (data.artist) {
+          if (typeof data.artist === 'object' && data.artist.name) {
+            artist = data.artist.name;
+          } else if (typeof data.artist === 'string') {
+            artist = data.artist;
+          }
+        }
+        
         const title = data.title;
         const trackKey = `${artist} - ${title}`;
 
@@ -681,23 +740,25 @@
           currentTrackTitle = title;
           currentTrackArtist = artist;
 
-          // МГНОВЕННО выводим текст (не ждем обложку!)
           titleEl.textContent = title;
           artistEl.textContent = artist;
-          
+
           applyMediaSession();
 
-          // АСИНХРОННО запускаем поиск обложки в фоновом режиме
           fetchCover(artist, title).then(async (art) => {
             await setMainCover(art);
             keepMediaSessionAlive();
-            updateHistory();
+            
+            const currentTab = document.querySelector('.tab-btn.active').dataset.tab;
+            if (currentTab === 'history') updateHistory();
           });
 
         } else {
           applyMediaSession();
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error('Ошибка получения метаданных:', e);
+      }
     }
 
     async function updateHistory() {
@@ -707,13 +768,14 @@
         if (!Array.isArray(data)) return;
         historyList.innerHTML = '';
         for (const song of data.slice(0, 5)) {
-          const art = await fetchCover(song.artist.name, song.title);
+          const artistName = (song.artist && song.artist.name) ? song.artist.name : (typeof song.artist === 'string' ? song.artist : 'Retro Radio');
+          const art = await fetchCover(artistName, song.title);
           const item = document.createElement('div');
           item.className = 'history-item';
           item.innerHTML = `
             <img class="history-thumb" src="${art}" onerror="this.src='${STATION_LOGO}'">
             <div class="history-text">
-              <span class="history-artist">${song.artist.name}</span>
+              <span class="history-artist">${artistName}</span>
               <span class="history-song-title">${song.title}</span>
             </div>`;
           historyList.appendChild(item);
@@ -748,7 +810,6 @@
     updateVolumeIcon();
     applyMediaSession();
     
-    // Безопасный интервал опроса 8 секунд, чтобы не перегружать API laut.fm
     setInterval(updateMetadata, 8000);
     setInterval(updateListeners, 45000);
     
