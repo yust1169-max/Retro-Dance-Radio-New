@@ -360,16 +360,9 @@
       flex-shrink: 0;
     }
 
-    .contact-icon svg {
-      width: 100%;
-      height: 100%;
-    }
+    .contact-icon svg { width: 100%; height: 100%; }
 
-    .contact-info {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+    .contact-info { display: flex; flex-direction: column; overflow: hidden; }
 
     .contact-title {
       font-size: 12px;
@@ -509,9 +502,10 @@
     var STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
     var STREAM_URL   = 'https://stream.laut.fm/retrodance';
     var LAUT_API     = 'https://api.laut.fm/station/retrodance';
-    var CACHE_KEY    = 'rd_cover_cache_v1';
-    var CACHE_TTL    = 7 * 24 * 60 * 60 * 1000; // 7 дней
-    var DEBUG        = true; // ← выключи (false), когда всё заработает
+    var CACHE_KEY    = 'rd_cover_cache_v2'; // v2 → инвалидирует старые ошибочные обложки
+    var CACHE_TTL    = 7 * 24 * 60 * 60 * 1000;
+    var DEBUG        = true;
+    var MIN_SCORE    = 0.45; // ниже — считаем, что обложка чужая, не берём
 
     /* ============================================================
        DOM
@@ -544,6 +538,7 @@
     var reconnectTimer    = null;
     var reconnectAttempts = 0;
     var metadataTimer     = null;
+    var playToken         = 0;
 
     var SVG_PLAY = '<path d="M7 5v14l11-7z"/>';
     var SVG_STOP = '<path d="M6 6h12v12H6z"/>';
@@ -584,7 +579,7 @@
     }
 
     /* ============================================================
-       Кэш обложек (localStorage, TTL 7 дней)
+       Кэш обложек
     ============================================================ */
     var coverCache = (function () {
       try {
@@ -624,7 +619,40 @@
     }
 
     /* ============================================================
-       Парсер даты laut.fm: "2026-09-15 19:59:22 +0200"
+       Сравнение строк (для отсева чужих обложек)
+    ============================================================ */
+    function normalize(s) {
+      return String(s || '')
+        .toLowerCase()
+        .replace(/\(.*?\)/g, ' ')
+        .replace(/\[.*?\]/g, ' ')
+        .replace(/\bfeat\.?\b.*$/i, ' ')
+        .replace(/\bft\.?\b.*$/i, ' ')
+        .replace(/[^a-zа-яё0-9]+/gi, ' ')
+        .trim();
+    }
+
+    function similarity(a, b) {
+      a = normalize(a); b = normalize(b);
+      if (!a || !b) return 0;
+      if (a === b) return 1;
+      var as = a.split(/\s+/);
+      var bs = b.split(/\s+/);
+      var setB = {};
+      for (var i = 0; i < bs.length; i++) setB[bs[i]] = 1;
+      var hit = 0;
+      for (var j = 0; j < as.length; j++) if (setB[as[j]]) hit++;
+      return (2 * hit) / (as.length + bs.length);
+    }
+
+    function scoreResult(rArtist, rTitle, tArtist, tTitle) {
+      var sa = similarity(rArtist, tArtist);
+      var st = similarity(rTitle,  tTitle);
+      return sa * 0.4 + st * 0.6;
+    }
+
+    /* ============================================================
+       Парсер даты laut.fm
     ============================================================ */
     function parseLautDate(s) {
       if (!s) return null;
@@ -636,36 +664,73 @@
     }
 
     /* ============================================================
-       Поиск обложек: iTunes → Deezer → логотип
+       iTunes (JSON, CORS ок) — с проверкой совпадения
     ============================================================ */
     function fetchCoverITunes(artist, title) {
       var q = encodeURIComponent(artist + ' ' + title);
-      return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=1&entity=song', 3000)
+      return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=8&entity=song', 3500)
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (data && data.results && data.results.length) {
-            var u = data.results[0].artworkUrl100;
-            if (u) return u.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
-          }
-          return null;
+          if (!data || !data.results || !data.results.length) return null;
+          var best = null, bestScore = 0;
+          data.results.forEach(function (r) {
+            var s = scoreResult(r.artistName, r.trackName, artist, title);
+            if (s > bestScore) { bestScore = s; best = r; }
+          });
+          log('iTunes best score:', bestScore.toFixed(2), best && best.artistName, '-', best && best.trackName);
+          if (!best || bestScore < MIN_SCORE) return null;
+          var u = best.artworkUrl100;
+          if (!u) return null;
+          return u.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
         })
         .catch(function () { return null; });
     }
 
+    /* ============================================================
+       Deezer через JSONP (обходит CORS)
+    ============================================================ */
+    var deezerCbSeq = 0;
     function fetchCoverDeezer(artist, title) {
-      var q = encodeURIComponent('artist:"' + artist + '" track:"' + title + '"');
-      return fetchWithTimeout('https://api.deezer.com/search?q=' + q + '&limit=1', 3000)
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (data && data.data && data.data.length) {
-            var t = data.data[0];
-            if (t.album && (t.album.cover_xl || t.album.cover_big)) {
-              return t.album.cover_xl || t.album.cover_big;
+      return new Promise(function (resolve) {
+        var cbName = '__rd_dz_' + (++deezerCbSeq) + '_' + Date.now();
+        var script = document.createElement('script');
+        var finished = false;
+        var timer = setTimeout(function () { cleanup(); resolve(null); }, 3500);
+
+        function cleanup() {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timer);
+          try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        window[cbName] = function (data) {
+          var result = null;
+          try {
+            if (data && data.data && data.data.length) {
+              var best = null, bestScore = 0;
+              data.data.slice(0, 5).forEach(function (t) {
+                var a = t.artist && t.artist.name;
+                var s = scoreResult(a, t.title, artist, title);
+                if (s > bestScore) { bestScore = s; best = t; }
+              });
+              log('Deezer best score:', bestScore.toFixed(2), best && best.artist && best.artist.name, '-', best && best.title);
+              if (best && bestScore >= MIN_SCORE && best.album) {
+                result = best.album.cover_xl || best.album.cover_big || best.album.cover_medium || null;
+              }
             }
-          }
-          return null;
-        })
-        .catch(function () { return null; });
+          } catch (e) {}
+          cleanup();
+          resolve(result);
+        };
+
+        script.onerror = function () { cleanup(); resolve(null); };
+
+        var q = encodeURIComponent('artist:"' + artist + '" track:"' + title + '"');
+        script.src = 'https://api.deezer.com/search?q=' + q + '&limit=5&output=jsonp&callback=' + cbName;
+        document.head.appendChild(script);
+      });
     }
 
     function fetchCover(artist, title, cacheKey) {
@@ -677,12 +742,14 @@
 
       log('cover lookup:', artist, '-', title);
       return fetchCoverITunes(artist, title).then(function (art) {
-        if (art) { log('cover from iTunes'); return art; }
-        log('iTunes miss, trying Deezer');
-        return fetchCoverDeezer(artist, title);
+        if (art) { log('cover: iTunes'); return art; }
+        log('iTunes miss/низкий score, пробую Deezer');
+        return fetchCoverDeezer(artist, title).then(function (art2) {
+          if (art2) { log('cover: Deezer'); return art2; }
+          log('cover: логотип (совпадений нет)');
+          return STATION_LOGO;
+        });
       }).then(function (art) {
-        if (!art) { log('cover fallback to logo'); art = STATION_LOGO; }
-        else log('cover from Deezer/other:', art);
         coverCache[key] = art;
         saveCache();
         return art;
@@ -717,9 +784,8 @@
 
     function applyMediaSessionState() {
       if (!('mediaSession' in navigator)) return;
-      try {
-        navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
-      } catch (e) {}
+      try { navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'; }
+      catch (e) {}
     }
 
     /* ============================================================
@@ -739,12 +805,8 @@
         currentArtwork = url;
         applyMediaSessionMetadata();
       };
-      if (pre.decode) {
-        pre.decode().then(done).catch(done);
-      } else {
-        pre.onload = done;
-        pre.onerror = done;
-      }
+      if (pre.decode) pre.decode().then(done).catch(done);
+      else { pre.onload = done; pre.onerror = done; }
     }
 
     /* ============================================================
@@ -754,12 +816,20 @@
       if (isLoading) return;
       isLoading = true;
       updateUI();
-      player.src = STREAM_URL + '?t=' + Date.now();
-      player.volume = isMuted ? 0 : 1;
-      player.muted = isMuted;
+      var myToken = ++playToken;
+
+      try {
+        player.src = STREAM_URL + '?t=' + Date.now();
+        player.load();
+        player.volume = isMuted ? 0 : 1;
+        player.muted  = isMuted;
+      } catch (e) {}
+
       var p = player.play();
       if (p && p.catch) {
         p.catch(function (err) {
+          if (myToken !== playToken) return;
+          if (err && err.name === 'AbortError') return;
           console.error('Playback error:', err);
           isLoading = false;
           isPlaying = false;
@@ -770,11 +840,9 @@
     }
 
     function stopRadio() {
+      playToken++;
       player.pause();
-      try {
-        player.removeAttribute('src');
-        player.load();
-      } catch (e) {}
+      try { player.removeAttribute('src'); player.load(); } catch (e) {}
       isPlaying = false;
       isLoading = false;
       updateUI();
@@ -801,11 +869,7 @@
     function scheduleReconnect() {
       if (!userIntent) return;
       if (reconnectTimer) return;
-      if (reconnectAttempts >= 6) {
-        isLoading = false;
-        updateUI();
-        return;
-      }
+      if (reconnectAttempts >= 6) { isLoading = false; updateUI(); return; }
       reconnectAttempts++;
       var delay = Math.min(15000, 1500 * Math.pow(1.6, reconnectAttempts - 1));
       isLoading = true;
@@ -819,11 +883,18 @@
     }
 
     function tryReconnect() {
-      player.src = STREAM_URL + '?t=' + Date.now();
-      player.load();
+      var myToken = ++playToken;
+      try {
+        player.src = STREAM_URL + '?t=' + Date.now();
+        player.load();
+      } catch (e) {}
       var p = player.play();
       if (p && p.catch) {
-        p.catch(function () { scheduleReconnect(); });
+        p.catch(function (err) {
+          if (myToken !== playToken) return;
+          if (err && err.name === 'AbortError') return;
+          scheduleReconnect();
+        });
       }
     }
 
@@ -876,7 +947,7 @@
     });
 
     /* ============================================================
-       Сеть: online / offline
+       Online/offline
     ============================================================ */
     window.addEventListener('online', function () {
       log('browser online');
@@ -885,10 +956,7 @@
       reconnectAttempts = 0;
       isLoading = true;
       updateUI();
-      setTimeout(function () {
-        if (!userIntent) return;
-        tryReconnect();
-      }, 800);
+      setTimeout(function () { if (userIntent) tryReconnect(); }, 800);
     });
 
     window.addEventListener('offline', function () {
@@ -936,38 +1004,29 @@
     }
 
     function updateMetadata() {
-      if (!navigator.onLine) {
-        scheduleMetadata(8000);
-        return;
-      }
+      if (!navigator.onLine) { scheduleMetadata(8000); return; }
+
       fetchWithTimeout(LAUT_API + '/current_song?t=' + Date.now(), 5000)
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (!data || !data.title) {
-            scheduleMetadata(8000);
-            return;
-          }
+          if (!data || !data.title) { scheduleMetadata(8000); return; }
 
           var artist = (data.artist && data.artist.name)
             ? data.artist.name
             : (typeof data.artist === 'string' ? data.artist : 'Retro Radio');
           var title = data.title;
 
-          // Смена трека определяем по паре artist+title.
-          // data.id у laut.fm не уникален для трека — не используем его для сравнения.
+          // Сравниваем по паре artist+title (id у laut.fm не уникален)
           var trackKey = (artist + ' - ' + title).toLowerCase();
-          // id оставляем только как ключ кэша обложек
           var cacheKey = data.id ? ('id_' + data.id) : trackKey;
 
-          // Планируем следующий опрос
+          // Умный polling по ends_at
           var nextDelay = 8000;
           if (data.ends_at) {
             var endTime = parseLautDate(data.ends_at);
             if (endTime) {
               var diff = endTime - Date.now();
-              if (diff > 2000 && diff < 30 * 60 * 1000) {
-                nextDelay = diff + 1200;
-              }
+              if (diff > 2000 && diff < 30 * 60 * 1000) nextDelay = diff + 1200;
             }
           }
           scheduleMetadata(nextDelay);
@@ -991,7 +1050,7 @@
     }
 
     /* ============================================================
-       История (Promise.all + DOM API, XSS-safe)
+       История
     ============================================================ */
     function updateHistory() {
       if (!navigator.onLine) return;
