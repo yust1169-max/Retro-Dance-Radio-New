@@ -496,20 +496,18 @@
   (function () {
     'use strict';
 
-    /* ============================================================
-       Константы
-    ============================================================ */
     var STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
     var STREAM_URL   = 'https://stream.laut.fm/retrodance';
     var LAUT_API     = 'https://api.laut.fm/station/retrodance';
-    var CACHE_KEY    = 'rd_cover_cache_v3'; // v3 → инвалидирует старые ошибочные ключи по id
+    var CACHE_KEY    = 'rd_cover_cache_v4';
     var CACHE_TTL    = 7 * 24 * 60 * 60 * 1000;
     var DEBUG        = true;
-    var MIN_SCORE    = 0.45;
 
-    /* ============================================================
-       DOM
-    ============================================================ */
+    // Порог итогового совпадения
+    var MIN_SCORE       = 0.55;
+    // Жёсткое требование к артисту — если артист не совпал хотя бы на столько, результат отбрасываем
+    var MIN_ARTIST_SCORE = 0.5;
+
     var player         = document.getElementById('player');
     var playBtn        = document.getElementById('play-btn');
     var playSvg        = document.getElementById('play-svg');
@@ -520,25 +518,11 @@
     var titleEl        = document.getElementById('title-el');
     var listenersEl    = document.getElementById('listeners-el');
     var historyList    = document.getElementById('history-list');
-    var historySection = document.getElementById('history-section');
 
-    /* ============================================================
-       Состояние
-    ============================================================ */
-    var userIntent   = false;
-    var isPlaying    = false;
-    var isLoading    = false;
-    var isMuted      = false;
-
-    var currentTrackKey    = '';
-    var currentTrackTitle  = 'Нажмите Play';
-    var currentTrackArtist = 'Retro Radio';
-    var currentArtwork     = STATION_LOGO;
-
-    var reconnectTimer    = null;
-    var reconnectAttempts = 0;
-    var metadataTimer     = null;
-    var playToken         = 0;
+    var userIntent = false, isPlaying = false, isLoading = false, isMuted = false;
+    var currentTrackKey = '', currentTrackTitle = 'Нажмите Play', currentTrackArtist = 'Retro Radio';
+    var currentArtwork = STATION_LOGO;
+    var reconnectTimer = null, reconnectAttempts = 0, metadataTimer = null, playToken = 0;
 
     var SVG_PLAY = '<path d="M7 5v14l11-7z"/>';
     var SVG_STOP = '<path d="M6 6h12v12H6z"/>';
@@ -550,9 +534,6 @@
       if (DEBUG && window.console) console.log.apply(console, ['[RD]'].concat([].slice.call(arguments)));
     }
 
-    /* ============================================================
-       UI
-    ============================================================ */
     function updateUI() {
       if (isLoading) {
         playSvg.innerHTML = SVG_LOAD;
@@ -578,16 +559,12 @@
       }
     }
 
-    /* ============================================================
-       Кэш обложек
-    ============================================================ */
+    /* ---------- Кэш ---------- */
     var coverCache = (function () {
       try {
         var raw = localStorage.getItem(CACHE_KEY);
         if (!raw) return {};
-        var data = JSON.parse(raw);
-        var now = Date.now();
-        var out = {};
+        var data = JSON.parse(raw), now = Date.now(), out = {};
         for (var k in data) {
           if (data[k] && data[k].t && (now - data[k].t) < CACHE_TTL) out[k] = data[k].v;
         }
@@ -597,8 +574,7 @@
 
     function saveCache() {
       try {
-        var out = {};
-        var i = 0;
+        var out = {}, i = 0;
         for (var k in coverCache) {
           if (i++ >= 300) break;
           out[k] = { v: coverCache[k], t: Date.now() };
@@ -607,20 +583,13 @@
       } catch (e) {}
     }
 
-    /* ============================================================
-       Fetch с таймаутом
-    ============================================================ */
     function fetchWithTimeout(url, ms) {
       var controller = new AbortController();
       var timer = setTimeout(function () { controller.abort(); }, ms || 5000);
-      return fetch(url, { signal: controller.signal }).finally(function () {
-        clearTimeout(timer);
-      });
+      return fetch(url, { signal: controller.signal }).finally(function () { clearTimeout(timer); });
     }
 
-    /* ============================================================
-       Сравнение строк
-    ============================================================ */
+    /* ---------- Сравнение ---------- */
     function normalize(s) {
       return String(s || '')
         .toLowerCase()
@@ -636,8 +605,7 @@
       a = normalize(a); b = normalize(b);
       if (!a || !b) return 0;
       if (a === b) return 1;
-      var as = a.split(/\s+/);
-      var bs = b.split(/\s+/);
+      var as = a.split(/\s+/), bs = b.split(/\s+/);
       var setB = {};
       for (var i = 0; i < bs.length; i++) setB[bs[i]] = 1;
       var hit = 0;
@@ -648,12 +616,11 @@
     function scoreResult(rArtist, rTitle, tArtist, tTitle) {
       var sa = similarity(rArtist, tArtist);
       var st = similarity(rTitle,  tTitle);
-      return sa * 0.4 + st * 0.6;
+      // Жёсткий gate: артист обязан совпасть
+      if (sa < MIN_ARTIST_SCORE) return 0;
+      return sa * 0.35 + st * 0.65;
     }
 
-    /* ============================================================
-       Парсер даты laut.fm
-    ============================================================ */
     function parseLautDate(s) {
       if (!s) return null;
       var m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s*([+-])(\d{2})(\d{2})$/);
@@ -663,76 +630,70 @@
       return isNaN(t) ? null : t;
     }
 
-    /* ============================================================
-       iTunes
-    ============================================================ */
+    /* ---------- iTunes ---------- */
     function fetchCoverITunes(artist, title) {
       var q = encodeURIComponent(artist + ' ' + title);
       return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=8&entity=song', 3500)
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (!data || !data.results || !data.results.length) return null;
+          if (!data || !data.results || !data.results.length) {
+            log('iTunes: пустой ответ');
+            return null;
+          }
           var best = null, bestScore = 0;
           data.results.forEach(function (r) {
             var s = scoreResult(r.artistName, r.trackName, artist, title);
             if (s > bestScore) { bestScore = s; best = r; }
           });
-          log('iTunes best score:', bestScore.toFixed(2), best && best.artistName, '-', best && best.trackName);
+          log('iTunes best:', bestScore.toFixed(2), best && best.artistName, '-', best && best.trackName);
           if (!best || bestScore < MIN_SCORE) return null;
           var u = best.artworkUrl100;
           if (!u) return null;
           return u.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
         })
-        .catch(function () { return null; });
+        .catch(function (e) { log('iTunes error:', e && e.message); return null; });
     }
 
-    /* ============================================================
-       Deezer через JSONP
-    ============================================================ */
-    var deezerCbSeq = 0;
-    function fetchCoverDeezer(artist, title) {
-      return new Promise(function (resolve) {
-        var cbName = '__rd_dz_' + (++deezerCbSeq) + '_' + Date.now();
-        var script = document.createElement('script');
-        var finished = false;
-        var timer = setTimeout(function () { cleanup(); resolve(null); }, 3500);
+    /* ---------- MusicBrainz + Cover Art Archive (throttled 1.1s) ---------- */
+    var mbQueue = Promise.resolve();
+    function mbThrottle(fn) {
+      var p = mbQueue.then(function () {
+        return new Promise(function (res) { setTimeout(res, 1100); });
+      }).then(fn);
+      mbQueue = p.catch(function () {});
+      return p;
+    }
 
-        function cleanup() {
-          if (finished) return;
-          finished = true;
-          clearTimeout(timer);
-          try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
-          if (script.parentNode) script.parentNode.removeChild(script);
-        }
-
-        window[cbName] = function (data) {
-          var result = null;
-          try {
-            if (data && data.data && data.data.length) {
-              var best = null, bestScore = 0;
-              data.data.slice(0, 5).forEach(function (t) {
-                var a = t.artist && t.artist.name;
-                var s = scoreResult(a, t.title, artist, title);
-                if (s > bestScore) { bestScore = s; best = t; }
-              });
-              log('Deezer best score:', bestScore.toFixed(2), best && best.artist && best.artist.name, '-', best && best.title);
-              if (best && bestScore >= MIN_SCORE && best.album) {
-                result = best.album.cover_xl || best.album.cover_big || best.album.cover_medium || null;
+    function fetchCoverMusicBrainz(artist, title) {
+      return mbThrottle(function () {
+        var q = 'artist:"' + artist.replace(/"/g,'') + '" AND recording:"' + title.replace(/"/g,'') + '"';
+        var url = 'https://musicbrainz.org/ws/2/recording/?query=' + encodeURIComponent(q) + '&fmt=json&limit=3';
+        return fetchWithTimeout(url, 4000)
+          .then(function (r) {
+            if (!r.ok) { log('MusicBrainz HTTP', r.status); return null; }
+            return r.json();
+          })
+          .then(function (data) {
+            if (!data || !data.recordings || !data.recordings.length) {
+              log('MusicBrainz: пусто');
+              return null;
+            }
+            for (var i = 0; i < data.recordings.length; i++) {
+              var rec = data.recordings[i];
+              if (rec.releases && rec.releases.length) {
+                var mbid = rec.releases[0].id;
+                log('MusicBrainz match:', rec.artistCredit && rec.artistCredit[0] && rec.artistCredit[0].name, '-', rec.title);
+                return 'https://coverartarchive.org/release/' + mbid + '/front-500';
               }
             }
-          } catch (e) {}
-          cleanup();
-          resolve(result);
-        };
-
-        script.onerror = function () { cleanup(); resolve(null); };
-
-        var q = encodeURIComponent('artist:"' + artist + '" track:"' + title + '"');
-        script.src = 'https://api.deezer.com/search?q=' + q + '&limit=5&output=jsonp&callback=' + cbName;
-        document.head.appendChild(script);
+            log('MusicBrainz: releases пусто');
+            return null;
+          })
+          .catch(function (e) { log('MusicBrainz error:', e && e.message); return null; });
       });
     }
 
+    /* ---------- Основной поиск: iTunes → MusicBrainz → логотип ---------- */
     function fetchCover(artist, title, cacheKey) {
       var key = cacheKey;
       if (coverCache[key]) {
@@ -741,12 +702,13 @@
       }
 
       log('cover lookup:', artist, '-', title);
+
       return fetchCoverITunes(artist, title).then(function (art) {
-        if (art) { log('cover: iTunes'); return art; }
-        log('iTunes miss/низкий score, пробую Deezer');
-        return fetchCoverDeezer(artist, title).then(function (art2) {
-          if (art2) { log('cover: Deezer'); return art2; }
-          log('cover: логотип (совпадений нет)');
+        if (art) { log('→ источник: iTunes'); return art; }
+        log('iTunes miss, пробую MusicBrainz');
+        return fetchCoverMusicBrainz(artist, title).then(function (art2) {
+          if (art2) { log('→ источник: MusicBrainz'); return art2; }
+          log('→ источник: логотип');
           return STATION_LOGO;
         });
       }).then(function (art) {
@@ -760,9 +722,7 @@
       });
     }
 
-    /* ============================================================
-       Media Session
-    ============================================================ */
+    /* ---------- Media Session ---------- */
     function applyMediaSessionMetadata() {
       document.title = currentTrackArtist + ' - ' + currentTrackTitle + ' | RetroDance Radio';
       if (!('mediaSession' in navigator)) return;
@@ -788,9 +748,6 @@
       catch (e) {}
     }
 
-    /* ============================================================
-       Смена обложки без "чёрного квадрата"
-    ============================================================ */
     function setMainCover(art) {
       var url = art || STATION_LOGO;
       log('setMainCover →', url.slice(0, 80));
@@ -810,31 +767,25 @@
       else { pre.onload = done; pre.onerror = done; }
     }
 
-    /* ============================================================
-       Управление потоком
-    ============================================================ */
+    /* ---------- Плеер ---------- */
     function startRadio() {
       if (isLoading) return;
       isLoading = true;
       updateUI();
       var myToken = ++playToken;
-
       try {
         player.src = STREAM_URL + '?t=' + Date.now();
         player.load();
         player.volume = isMuted ? 0 : 1;
         player.muted  = isMuted;
       } catch (e) {}
-
       var p = player.play();
       if (p && p.catch) {
         p.catch(function (err) {
           if (myToken !== playToken) return;
           if (err && err.name === 'AbortError') return;
           console.error('Playback error:', err);
-          isLoading = false;
-          isPlaying = false;
-          updateUI();
+          isLoading = false; isPlaying = false; updateUI();
           if (userIntent) scheduleReconnect();
         });
       }
@@ -844,10 +795,8 @@
       playToken++;
       player.pause();
       try { player.removeAttribute('src'); player.load(); } catch (e) {}
-      isPlaying = false;
-      isLoading = false;
-      updateUI();
-      applyMediaSessionState();
+      isPlaying = false; isLoading = false;
+      updateUI(); applyMediaSessionState();
     }
 
     function toggleRadio(e) {
@@ -858,23 +807,17 @@
         reconnectAttempts = 0;
         stopRadio();
       } else {
-        userIntent = true;
-        reconnectAttempts = 0;
-        startRadio();
+        userIntent = true; reconnectAttempts = 0; startRadio();
       }
     }
 
-    /* ============================================================
-       Авто-реконнект
-    ============================================================ */
     function scheduleReconnect() {
       if (!userIntent) return;
       if (reconnectTimer) return;
       if (reconnectAttempts >= 6) { isLoading = false; updateUI(); return; }
       reconnectAttempts++;
       var delay = Math.min(15000, 1500 * Math.pow(1.6, reconnectAttempts - 1));
-      isLoading = true;
-      updateUI();
+      isLoading = true; updateUI();
       log('reconnect attempt', reconnectAttempts, 'in', delay, 'ms');
       reconnectTimer = setTimeout(function () {
         reconnectTimer = null;
@@ -885,10 +828,7 @@
 
     function tryReconnect() {
       var myToken = ++playToken;
-      try {
-        player.src = STREAM_URL + '?t=' + Date.now();
-        player.load();
-      } catch (e) {}
+      try { player.src = STREAM_URL + '?t=' + Date.now(); player.load(); } catch (e) {}
       var p = player.play();
       if (p && p.catch) {
         p.catch(function (err) {
@@ -899,106 +839,63 @@
       }
     }
 
-    /* ============================================================
-       События audio
-    ============================================================ */
     player.addEventListener('playing', function () {
-      isPlaying = true;
-      isLoading = false;
-      reconnectAttempts = 0;
-      updateUI();
-      applyMediaSessionState();
-      applyMediaSessionMetadata();
+      isPlaying = true; isLoading = false; reconnectAttempts = 0;
+      updateUI(); applyMediaSessionState(); applyMediaSessionMetadata();
       log('stream playing');
     });
-
     player.addEventListener('pause', function () {
-      if (!userIntent) {
-        isPlaying = false;
-        isLoading = false;
-        updateUI();
-        applyMediaSessionState();
-      }
+      if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); applyMediaSessionState(); }
     });
-
     player.addEventListener('stalled', function () {
       log('stream stalled');
       if (userIntent && !reconnectTimer) scheduleReconnect();
     });
-
     player.addEventListener('ended', function () {
       log('stream ended');
       if (userIntent) scheduleReconnect();
     });
-
     player.addEventListener('error', function () {
       var code = player.error && player.error.code;
-      if (!userIntent) {
-        isPlaying = false;
-        isLoading = false;
-        updateUI();
-        return;
-      }
+      if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); return; }
       if (code === 1) return;
       console.error('Audio error:', player.error);
-      isPlaying = false;
-      isLoading = true;
-      updateUI();
+      isPlaying = false; isLoading = true; updateUI();
       scheduleReconnect();
     });
 
-    /* ============================================================
-       Online/offline
-    ============================================================ */
     window.addEventListener('online', function () {
       log('browser online');
       if (!userIntent) return;
       if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-      reconnectAttempts = 0;
-      isLoading = true;
-      updateUI();
+      reconnectAttempts = 0; isLoading = true; updateUI();
       setTimeout(function () { if (userIntent) tryReconnect(); }, 800);
     });
-
     window.addEventListener('offline', function () {
       log('browser offline');
       if (!userIntent) return;
-      isLoading = true;
-      updateUI();
+      isLoading = true; updateUI();
     });
 
-    /* ============================================================
-       Mute + Play
-    ============================================================ */
     muteBtn.addEventListener('click', function () {
       isMuted = !isMuted;
-      player.muted = isMuted;
-      player.volume = isMuted ? 0 : 1;
+      player.muted = isMuted; player.volume = isMuted ? 0 : 1;
       updateVolumeIcon();
     });
-
     playBtn.addEventListener('click', toggleRadio);
 
-    /* ============================================================
-       Media Session action handlers
-    ============================================================ */
     if ('mediaSession' in navigator) {
       try {
         navigator.mediaSession.setActionHandler('play', function () {
-          userIntent = true;
-          reconnectAttempts = 0;
-          startRadio();
+          userIntent = true; reconnectAttempts = 0; startRadio();
         });
         navigator.mediaSession.setActionHandler('pause', function () {
-          userIntent = false;
-          stopRadio();
+          userIntent = false; stopRadio();
         });
       } catch (e) {}
     }
 
-    /* ============================================================
-       Метаданные
-    ============================================================ */
+    /* ---------- Метаданные ---------- */
     function scheduleMetadata(delay) {
       if (metadataTimer) clearTimeout(metadataTimer);
       metadataTimer = setTimeout(updateMetadata, delay);
@@ -1006,24 +903,15 @@
 
     function updateMetadata() {
       if (!navigator.onLine) { scheduleMetadata(8000); return; }
-
       fetchWithTimeout(LAUT_API + '/current_song?t=' + Date.now(), 5000)
         .then(function (r) { return r.json(); })
         .then(function (data) {
           if (!data || !data.title) { scheduleMetadata(8000); return; }
-
           var artist = (data.artist && data.artist.name)
             ? data.artist.name
             : (typeof data.artist === 'string' ? data.artist : 'Retro Radio');
           var title = data.title;
-
-          // Сравниваем по паре artist+title
           var trackKey = (artist + ' - ' + title).toLowerCase();
-
-          // ВАЖНО: ключ кэша обложек — тоже trackKey.
-          // data.id у laut.fm НЕ уникален для трека (всегда одно и то же число),
-          // использовать его как ключ нельзя.
-          var cacheKey = trackKey;
 
           var nextDelay = 8000;
           if (data.ends_at) {
@@ -1034,17 +922,16 @@
             }
           }
           scheduleMetadata(nextDelay);
-
           log('track:', trackKey, '| same:', trackKey === currentTrackKey, '| next in', nextDelay, 'ms');
 
           if (trackKey !== currentTrackKey) {
-            currentTrackKey    = trackKey;
-            currentTrackTitle  = title;
+            currentTrackKey = trackKey;
+            currentTrackTitle = title;
             currentTrackArtist = artist;
-            titleEl.textContent  = title;
+            titleEl.textContent = title;
             artistEl.textContent = artist;
             applyMediaSessionMetadata();
-            fetchCover(artist, title, cacheKey).then(setMainCover);
+            fetchCover(artist, title, trackKey).then(setMainCover);
           }
         })
         .catch(function (e) {
@@ -1053,9 +940,7 @@
         });
     }
 
-    /* ============================================================
-       История
-    ============================================================ */
+    /* ---------- История ---------- */
     function updateHistory() {
       if (!navigator.onLine) return;
       fetchWithTimeout(LAUT_API + '/last_songs', 5000)
@@ -1068,40 +953,26 @@
             var artistName = (song.artist && song.artist.name)
               ? song.artist.name
               : (typeof song.artist === 'string' ? song.artist : 'Retro Radio');
-
             var item = document.createElement('div');
             item.className = 'history-item';
-
             var img = document.createElement('img');
             img.className = 'history-thumb';
             img.src = STATION_LOGO;
             img.alt = '';
-
             var textDiv = document.createElement('div');
             textDiv.className = 'history-text';
-
             var aSpan = document.createElement('span');
             aSpan.className = 'history-artist';
             aSpan.textContent = artistName;
-
             var tSpan = document.createElement('span');
             tSpan.className = 'history-song-title';
             tSpan.textContent = song.title || '';
-
-            textDiv.appendChild(aSpan);
-            textDiv.appendChild(tSpan);
-            item.appendChild(img);
-            item.appendChild(textDiv);
+            textDiv.appendChild(aSpan); textDiv.appendChild(tSpan);
+            item.appendChild(img); item.appendChild(textDiv);
             historyList.appendChild(item);
-
-            return {
-              img: img,
-              artist: artistName,
-              title: song.title,
-              key: (artistName + ' - ' + (song.title || '')).toLowerCase()
-            };
+            return { img: img, artist: artistName, title: song.title,
+                     key: (artistName + ' - ' + (song.title || '')).toLowerCase() };
           });
-
           return Promise.all(rows.map(function (row) {
             return fetchCover(row.artist, row.title, row.key).then(function (art) {
               if (art) row.img.src = art;
@@ -1111,22 +982,14 @@
         .catch(function (e) { console.error('History error:', e); });
     }
 
-    /* ============================================================
-       Слушатели
-    ============================================================ */
     function updateListeners() {
       if (!navigator.onLine) return;
       fetchWithTimeout(LAUT_API + '/listeners', 5000)
         .then(function (r) { return r.text(); })
-        .then(function (count) {
-          listenersEl.textContent = (count || '0').trim() || '0';
-        })
+        .then(function (count) { listenersEl.textContent = (count || '0').trim() || '0'; })
         .catch(function () {});
     }
 
-    /* ============================================================
-       Табы
-    ============================================================ */
     document.querySelectorAll('.tab-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var tab = btn.dataset.tab;
@@ -1142,9 +1005,6 @@
       });
     });
 
-    /* ============================================================
-       Init
-    ============================================================ */
     updateVolumeIcon();
     applyMediaSessionMetadata();
     updateMetadata();
