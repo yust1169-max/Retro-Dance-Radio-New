@@ -502,10 +502,10 @@
     var STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
     var STREAM_URL   = 'https://stream.laut.fm/retrodance';
     var LAUT_API     = 'https://api.laut.fm/station/retrodance';
-    var CACHE_KEY    = 'rd_cover_cache_v2'; // v2 → инвалидирует старые ошибочные обложки
+    var CACHE_KEY    = 'rd_cover_cache_v3'; // v3 → инвалидирует старые ошибочные ключи по id
     var CACHE_TTL    = 7 * 24 * 60 * 60 * 1000;
     var DEBUG        = true;
-    var MIN_SCORE    = 0.45; // ниже — считаем, что обложка чужая, не берём
+    var MIN_SCORE    = 0.45;
 
     /* ============================================================
        DOM
@@ -619,7 +619,7 @@
     }
 
     /* ============================================================
-       Сравнение строк (для отсева чужих обложек)
+       Сравнение строк
     ============================================================ */
     function normalize(s) {
       return String(s || '')
@@ -664,7 +664,7 @@
     }
 
     /* ============================================================
-       iTunes (JSON, CORS ок) — с проверкой совпадения
+       iTunes
     ============================================================ */
     function fetchCoverITunes(artist, title) {
       var q = encodeURIComponent(artist + ' ' + title);
@@ -687,7 +687,7 @@
     }
 
     /* ============================================================
-       Deezer через JSONP (обходит CORS)
+       Deezer через JSONP
     ============================================================ */
     var deezerCbSeq = 0;
     function fetchCoverDeezer(artist, title) {
@@ -734,7 +734,7 @@
     }
 
     function fetchCover(artist, title, cacheKey) {
-      var key = cacheKey || (artist + '|' + title).toLowerCase();
+      var key = cacheKey;
       if (coverCache[key]) {
         log('cover from cache:', key);
         return Promise.resolve(coverCache[key]);
@@ -793,6 +793,7 @@
     ============================================================ */
     function setMainCover(art) {
       var url = art || STATION_LOGO;
+      log('setMainCover →', url.slice(0, 80));
       if (coverImg.src === url) {
         currentArtwork = url;
         applyMediaSessionMetadata();
@@ -979,7 +980,7 @@
     playBtn.addEventListener('click', toggleRadio);
 
     /* ============================================================
-       Media Session action handlers — один раз
+       Media Session action handlers
     ============================================================ */
     if ('mediaSession' in navigator) {
       try {
@@ -1016,11 +1017,14 @@
             : (typeof data.artist === 'string' ? data.artist : 'Retro Radio');
           var title = data.title;
 
-          // Сравниваем по паре artist+title (id у laut.fm не уникален)
+          // Сравниваем по паре artist+title
           var trackKey = (artist + ' - ' + title).toLowerCase();
-          var cacheKey = data.id ? ('id_' + data.id) : trackKey;
 
-          // Умный polling по ends_at
+          // ВАЖНО: ключ кэша обложек — тоже trackKey.
+          // data.id у laut.fm НЕ уникален для трека (всегда одно и то же число),
+          // использовать его как ключ нельзя.
+          var cacheKey = trackKey;
+
           var nextDelay = 8000;
           if (data.ends_at) {
             var endTime = parseLautDate(data.ends_at);
@@ -1090,11 +1094,16 @@
             item.appendChild(textDiv);
             historyList.appendChild(item);
 
-            return { img: img, artist: artistName, title: song.title };
+            return {
+              img: img,
+              artist: artistName,
+              title: song.title,
+              key: (artistName + ' - ' + (song.title || '')).toLowerCase()
+            };
           });
 
           return Promise.all(rows.map(function (row) {
-            return fetchCover(row.artist, row.title).then(function (art) {
+            return fetchCover(row.artist, row.title, row.key).then(function (art) {
               if (art) row.img.src = art;
             });
           }));
