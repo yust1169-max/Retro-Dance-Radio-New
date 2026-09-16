@@ -119,25 +119,38 @@
       flex-shrink: 0;
     }
 
+    /* ОБЛОЖКА: два слоя.
+       - .cover-wrapper имеет ЛОГОТИП как CSS-фон (всегда виден)
+       - #cover-img лежит сверху, изначально прозрачный.
+         Показывается (.loaded) только когда картинка реально загрузилась.
+       Даже если сеть оборвётся в момент загрузки — пользователь увидит логотип. */
     .cover-wrapper {
       width: 260px;
       height: 260px;
       margin: 0 auto 28px;
-      background: #1a1a1a;
+      background-color: #1a1a1a;
+      background-image: url('https://i.postimg.cc/28VKXjCx/logo.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
       border-radius: 36px;
       overflow: hidden;
       box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: relative;
     }
 
     #cover-img {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
+      opacity: 0;
       transition: opacity 0.4s ease-in-out;
+      display: block;
     }
+
+    #cover-img.loaded { opacity: 1; }
 
     .track-info { margin-bottom: 24px; }
 
@@ -316,7 +329,7 @@
       height: 40px;
       border-radius: 10px;
       object-fit: cover;
-      background: #1a1a1a;
+      background: #1a1a1a url('https://i.postimg.cc/28VKXjCx/logo.png') center/cover no-repeat;
     }
 
     .history-text { display: flex; flex-direction: column; overflow: hidden; }
@@ -411,7 +424,7 @@
       </div>
 
       <div class="cover-wrapper">
-        <img id="cover-img" src="https://i.postimg.cc/28VKXjCx/logo.png" alt="Обложка">
+        <img id="cover-img" alt="">
       </div>
 
       <div class="track-info">
@@ -499,14 +512,34 @@
     var STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
     var STREAM_URL   = 'https://stream.laut.fm/retrodance';
     var LAUT_API     = 'https://api.laut.fm/station/retrodance';
-    var CACHE_KEY    = 'rd_cover_cache_v4';
+    var CACHE_KEY    = 'rd_cover_cache_v8';
     var CACHE_TTL    = 7 * 24 * 60 * 60 * 1000;
     var DEBUG        = true;
 
-    // Порог итогового совпадения
-    var MIN_SCORE       = 0.55;
-    // Жёсткое требование к артисту — если артист не совпал хотя бы на столько, результат отбрасываем
-    var MIN_ARTIST_SCORE = 0.5;
+    var MIN_SCORE           = 0.55;
+    var MIN_ARTIST_SCORE    = 0.5;
+    var MIN_TITLE_ONLY_SCORE = 0.85;
+    var MAX_POLL_DELAY      = 12000;
+
+    /* ---- Алиасы: солист → его группа. Дописывай сюда при новых кейсах. ---- */
+    var ARTIST_ALIASES = {
+      'виктор салтыков': ['форум', 'forum'],
+      'форум':           ['виктор салтыков'],
+      'владимир кузьмин':['динамик', 'dinamik'],
+      'динамик':         ['владимир кузьмин'],
+      'юрий шатунов':    ['ласковый май'],
+      'ласковый май':    ['юрий шатунов'],
+      'сергей кузнецов': ['ласковый май'],
+      'андрей разин':    ['ласковый май'],
+      'роман жуков':     ['мираж'],
+      'мираж':           ['роман жуков', 'наталья гулякина'],
+      'наталья гулякина':['мираж'],
+      'алексей горбашов':['мираж'],
+      'татьяна овсиенко':['мираж'],
+      'игорь соркин':    ['иванушки international', 'иванушки'],
+      'кирилл туриченко':['иванушки international'],
+      'андрей григорьев-апполонов':['иванушки international']
+    };
 
     var player         = document.getElementById('player');
     var playBtn        = document.getElementById('play-btn');
@@ -534,6 +567,30 @@
       if (DEBUG && window.console) console.log.apply(console, ['[RD]'].concat([].slice.call(arguments)));
     }
 
+    /* ============================================================
+       ОБЛОЖКА: новая, пуленепробиваемая логика.
+       - Логотип всегда как CSS-фон обёртки.
+       - <img> сверху, opacity 0 → класс .loaded → opacity 1.
+       - Если src не загрузился, класс .loaded не добавится,
+         и пользователь останется с фоном-логотипом.
+    ============================================================ */
+    coverImg.addEventListener('load', function () {
+      coverImg.classList.add('loaded');
+      log('cover img loaded');
+    });
+
+    coverImg.addEventListener('error', function () {
+      coverImg.classList.remove('loaded');
+      if (coverImg.src && coverImg.src !== STATION_LOGO && coverImg.getAttribute('data-want') !== STATION_LOGO) {
+        // Пробуем логотип как второй шанс.
+        coverImg.setAttribute('data-want', STATION_LOGO);
+        coverImg.src = STATION_LOGO;
+        currentArtwork = STATION_LOGO;
+        applyMediaSessionMetadata();
+      }
+      log('cover img error → keeping logo bg');
+    });
+
     function updateUI() {
       if (isLoading) {
         playSvg.innerHTML = SVG_LOAD;
@@ -559,7 +616,6 @@
       }
     }
 
-    /* ---------- Кэш ---------- */
     var coverCache = (function () {
       try {
         var raw = localStorage.getItem(CACHE_KEY);
@@ -589,7 +645,6 @@
       return fetch(url, { signal: controller.signal }).finally(function () { clearTimeout(timer); });
     }
 
-    /* ---------- Сравнение ---------- */
     function normalize(s) {
       return String(s || '')
         .toLowerCase()
@@ -613,12 +668,30 @@
       return (2 * hit) / (as.length + bs.length);
     }
 
+    function expandArtists(artist) {
+      var key = normalize(artist);
+      var out = [artist];
+      var aliases = ARTIST_ALIASES[key];
+      if (aliases) {
+        aliases.forEach(function (a) { if (a) out.push(a); });
+      }
+      return out;
+    }
+
     function scoreResult(rArtist, rTitle, tArtist, tTitle) {
-      var sa = similarity(rArtist, tArtist);
-      var st = similarity(rTitle,  tTitle);
-      // Жёсткий gate: артист обязан совпасть
-      if (sa < MIN_ARTIST_SCORE) return 0;
-      return sa * 0.35 + st * 0.65;
+      var artists = expandArtists(tArtist);
+      var bestArtistScore = 0;
+      for (var i = 0; i < artists.length; i++) {
+        var s = similarity(rArtist, artists[i]);
+        if (s > bestArtistScore) bestArtistScore = s;
+      }
+      var st = similarity(rTitle, tTitle);
+      if (bestArtistScore < MIN_ARTIST_SCORE) return 0;
+      return bestArtistScore * 0.35 + st * 0.65;
+    }
+
+    function scoreTitleOnly(rTitle, tTitle) {
+      return similarity(rTitle, tTitle);
     }
 
     function parseLautDate(s) {
@@ -630,31 +703,44 @@
       return isNaN(t) ? null : t;
     }
 
-    /* ---------- iTunes ---------- */
-    function fetchCoverITunes(artist, title) {
-      var q = encodeURIComponent(artist + ' ' + title);
-      return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=8&entity=song', 3500)
+    function iTunesSearch(q) {
+      return fetchWithTimeout('https://itunes.apple.com/search?term=' + encodeURIComponent(q) + '&limit=8&entity=song', 3500)
         .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (!data || !data.results || !data.results.length) {
-            log('iTunes: пустой ответ');
-            return null;
-          }
-          var best = null, bestScore = 0;
-          data.results.forEach(function (r) {
-            var s = scoreResult(r.artistName, r.trackName, artist, title);
-            if (s > bestScore) { bestScore = s; best = r; }
-          });
-          log('iTunes best:', bestScore.toFixed(2), best && best.artistName, '-', best && best.trackName);
-          if (!best || bestScore < MIN_SCORE) return null;
-          var u = best.artworkUrl100;
-          if (!u) return null;
-          return u.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
-        })
         .catch(function (e) { log('iTunes error:', e && e.message); return null; });
     }
 
-    /* ---------- MusicBrainz + Cover Art Archive (throttled 1.1s) ---------- */
+    function fetchCoverITunes(artist, title) {
+      return iTunesSearch(artist + ' ' + title).then(function (data) {
+        if (!data || !data.results || !data.results.length) {
+          log('iTunes: пустой ответ');
+          return null;
+        }
+        var best = null, bestScore = 0;
+        data.results.forEach(function (r) {
+          var s = scoreResult(r.artistName, r.trackName, artist, title);
+          if (s > bestScore) { bestScore = s; best = r; }
+        });
+        log('iTunes strict:', bestScore.toFixed(2), best && best.artistName, '-', best && best.trackName);
+        if (best && bestScore >= MIN_SCORE && best.artworkUrl100) {
+          return best.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
+        }
+        log('iTunes: пробую только по названию');
+        return iTunesSearch(title).then(function (data2) {
+          if (!data2 || !data2.results || !data2.results.length) return null;
+          var best2 = null, best2Score = 0;
+          data2.results.forEach(function (r) {
+            var s = scoreTitleOnly(r.trackName, title);
+            if (s > best2Score) { best2Score = s; best2 = r; }
+          });
+          log('iTunes title-only:', best2Score.toFixed(2), best2 && best2.artistName, '-', best2 && best2.trackName);
+          if (best2 && best2Score >= MIN_TITLE_ONLY_SCORE && best2.artworkUrl100) {
+            return best2.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
+          }
+          return null;
+        });
+      });
+    }
+
     var mbQueue = Promise.resolve();
     function mbThrottle(fn) {
       var p = mbQueue.then(function () {
@@ -664,36 +750,43 @@
       return p;
     }
 
-    function fetchCoverMusicBrainz(artist, title) {
+    function mbSearch(query) {
       return mbThrottle(function () {
-        var q = 'artist:"' + artist.replace(/"/g,'') + '" AND recording:"' + title.replace(/"/g,'') + '"';
-        var url = 'https://musicbrainz.org/ws/2/recording/?query=' + encodeURIComponent(q) + '&fmt=json&limit=3';
+        var url = 'https://musicbrainz.org/ws/2/recording/?query=' + encodeURIComponent(query) + '&fmt=json&limit=3';
         return fetchWithTimeout(url, 4000)
           .then(function (r) {
             if (!r.ok) { log('MusicBrainz HTTP', r.status); return null; }
             return r.json();
           })
-          .then(function (data) {
-            if (!data || !data.recordings || !data.recordings.length) {
-              log('MusicBrainz: пусто');
-              return null;
-            }
-            for (var i = 0; i < data.recordings.length; i++) {
-              var rec = data.recordings[i];
-              if (rec.releases && rec.releases.length) {
-                var mbid = rec.releases[0].id;
-                log('MusicBrainz match:', rec.artistCredit && rec.artistCredit[0] && rec.artistCredit[0].name, '-', rec.title);
-                return 'https://coverartarchive.org/release/' + mbid + '/front-500';
-              }
-            }
-            log('MusicBrainz: releases пусто');
-            return null;
-          })
           .catch(function (e) { log('MusicBrainz error:', e && e.message); return null; });
       });
     }
 
-    /* ---------- Основной поиск: iTunes → MusicBrainz → логотип ---------- */
+    function pickMbRelease(data) {
+      if (!data || !data.recordings || !data.recordings.length) return null;
+      for (var i = 0; i < data.recordings.length; i++) {
+        var rec = data.recordings[i];
+        if (rec.releases && rec.releases.length) {
+          var mb = rec.releases[0].id;
+          log('MusicBrainz match:', rec.artistCredit && rec.artistCredit[0] && rec.artistCredit[0].name, '-', rec.title);
+          return 'https://coverartarchive.org/release/' + mb + '/front-500';
+        }
+      }
+      return null;
+    }
+
+    function fetchCoverMusicBrainz(artist, title) {
+      var q = 'artist:"' + artist.replace(/"/g,'') + '" AND recording:"' + title.replace(/"/g,'') + '"';
+      return mbSearch(q).then(function (data) {
+        var art = pickMbRelease(data);
+        if (art) return art;
+        log('MusicBrainz: пробую только по названию');
+        return mbSearch('recording:"' + title.replace(/"/g,'') + '"').then(function (data2) {
+          return pickMbRelease(data2);
+        });
+      });
+    }
+
     function fetchCover(artist, title, cacheKey) {
       var key = cacheKey;
       if (coverCache[key]) {
@@ -722,7 +815,6 @@
       });
     }
 
-    /* ---------- Media Session ---------- */
     function applyMediaSessionMetadata() {
       document.title = currentTrackArtist + ' - ' + currentTrackTitle + ' | RetroDance Radio';
       if (!('mediaSession' in navigator)) return;
@@ -748,26 +840,25 @@
       catch (e) {}
     }
 
+    /* ---- Установка обложки. Просто меняем src и запоминаем что хотели. ---- */
     function setMainCover(art) {
       var url = art || STATION_LOGO;
       log('setMainCover →', url.slice(0, 80));
-      if (coverImg.src === url) {
+
+      // Если уже показываем именно этот URL — ничего не делаем
+      if (coverImg.getAttribute('data-want') === url && coverImg.classList.contains('loaded')) {
         currentArtwork = url;
         applyMediaSessionMetadata();
         return;
       }
-      var pre = new Image();
-      pre.src = url;
-      var done = function () {
-        coverImg.src = url;
-        currentArtwork = url;
-        applyMediaSessionMetadata();
-      };
-      if (pre.decode) pre.decode().then(done).catch(done);
-      else { pre.onload = done; pre.onerror = done; }
+
+      currentArtwork = url;
+      coverImg.setAttribute('data-want', url);
+      coverImg.classList.remove('loaded');
+      coverImg.src = url;
+      applyMediaSessionMetadata();
     }
 
-    /* ---------- Плеер ---------- */
     function startRadio() {
       if (isLoading) return;
       isLoading = true;
@@ -895,7 +986,6 @@
       } catch (e) {}
     }
 
-    /* ---------- Метаданные ---------- */
     function scheduleMetadata(delay) {
       if (metadataTimer) clearTimeout(metadataTimer);
       metadataTimer = setTimeout(updateMetadata, delay);
@@ -918,7 +1008,9 @@
             var endTime = parseLautDate(data.ends_at);
             if (endTime) {
               var diff = endTime - Date.now();
-              if (diff > 2000 && diff < 30 * 60 * 1000) nextDelay = diff + 1200;
+              if (diff > 2000 && diff < 30 * 60 * 1000) {
+                nextDelay = Math.min(diff + 1200, MAX_POLL_DELAY);
+              }
             }
           }
           scheduleMetadata(nextDelay);
@@ -940,9 +1032,10 @@
         });
     }
 
-    /* ---------- История ---------- */
     function updateHistory() {
       if (!navigator.onLine) return;
+      updateMetadata();
+
       fetchWithTimeout(LAUT_API + '/last_songs', 5000)
         .then(function (r) { return r.json(); })
         .then(function (data) {
@@ -957,7 +1050,6 @@
             item.className = 'history-item';
             var img = document.createElement('img');
             img.className = 'history-thumb';
-            img.src = STATION_LOGO;
             img.alt = '';
             var textDiv = document.createElement('div');
             textDiv.className = 'history-text';
@@ -975,7 +1067,13 @@
           });
           return Promise.all(rows.map(function (row) {
             return fetchCover(row.artist, row.title, row.key).then(function (art) {
-              if (art) row.img.src = art;
+              // В истории — фон-логотип уже есть в CSS, ставим src и пробуем показать
+              if (art && art !== STATION_LOGO) {
+                var test = new Image();
+                test.onload = function () { row.img.src = art; };
+                test.onerror = function () { /* оставляем фон */ };
+                test.src = art;
+              }
             });
           }));
         })
@@ -986,7 +1084,14 @@
       if (!navigator.onLine) return;
       fetchWithTimeout(LAUT_API + '/listeners', 5000)
         .then(function (r) { return r.text(); })
-        .then(function (count) { listenersEl.textContent = (count || '0').trim() || '0'; })
+        .then(function (count) {
+          var t = (count || '').trim();
+          if (t && t !== '0') {
+            listenersEl.textContent = t;
+          } else if (t === '0' && listenersEl.textContent === '0') {
+            listenersEl.textContent = '0';
+          }
+        })
         .catch(function () {});
     }
 
