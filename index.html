@@ -507,7 +507,7 @@
     var STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
     var STREAM_URL   = 'https://stream.laut.fm/retrodance';
     var LAUT_API     = 'https://api.laut.fm/station/retrodance';
-    var CACHE_KEY    = 'rd_cover_cache_v9';
+    var CACHE_KEY    = 'rd_cover_cache_v10';
     var CACHE_TTL    = 7 * 24 * 60 * 60 * 1000;
     var DEBUG        = true;
 
@@ -515,7 +515,21 @@
     var MIN_ARTIST_SCORE = 0.5;
     var MAX_POLL_DELAY   = 12000;
 
-    /* ---- Алиасы: солист → его группа. Дописывай сюда при новых кейсах. ---- */
+    /* ============================================================
+       РУЧНОЙ СПРАВОЧНИК ОБЛОЖЕК
+       Формат: 'артист - название' (в нижнем регистре) → URL картинки
+       Такие треки берутся МГНОВЕННО, минуя все API.
+       Сюда можно заносить классику, которую iTunes/MusicBrainz не знают.
+
+       Примеры:
+         'веселые ребята - мы бродячие артисты': 'https://example.com/cover.jpg',
+         'виктор салтыков - островок': 'https://example.com/cover2.jpg',
+    ============================================================ */
+    var MANUAL_COVERS = {
+      // 'веселые ребята - мы бродячие артисты': 'https://...',
+    };
+
+    /* ---- Алиасы: солист → его группа ---- */
     var ARTIST_ALIASES = {
       'виктор салтыков': ['форум', 'forum'],
       'форум':           ['виктор салтыков'],
@@ -563,12 +577,10 @@
 
     coverImg.addEventListener('load', function () {
       coverImg.classList.add('loaded');
-      log('cover img loaded');
     });
 
     coverImg.addEventListener('error', function () {
       coverImg.classList.remove('loaded');
-      log('cover img error → keeping logo bg');
     });
 
     function updateUI() {
@@ -658,8 +670,6 @@
       return out;
     }
 
-    /* Единая функция оценки. Без title-only fallback.
-       Если артист не совпадает (даже через алиасы) — результат = 0. */
     function scoreResult(rArtist, rTitle, tArtist, tTitle) {
       var artists = expandArtists(tArtist);
       var bestArtistScore = 0;
@@ -681,14 +691,14 @@
       return isNaN(t) ? null : t;
     }
 
-    /* ---- iTunes: только строгий запрос с артистом ---- */
+    /* ---- iTunes ---- */
     function fetchCoverITunes(artist, title) {
       var q = encodeURIComponent(artist + ' ' + title);
       return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=8&entity=song', 3500)
         .then(function (r) { return r.json(); })
         .then(function (data) {
           if (!data || !data.results || !data.results.length) {
-            log('iTunes: пустой ответ');
+            log('iTunes: пусто');
             return null;
           }
           var best = null, bestScore = 0;
@@ -696,14 +706,45 @@
             var s = scoreResult(r.artistName, r.trackName, artist, title);
             if (s > bestScore) { bestScore = s; best = r; }
           });
-          log('iTunes best:', bestScore.toFixed(2), best && best.artistName, '-', best && best.trackName);
+          log('iTunes best:', bestScore.toFixed(2));
           if (!best || bestScore < MIN_SCORE || !best.artworkUrl100) return null;
           return best.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
         })
-        .catch(function (e) { log('iTunes error:', e && e.message); return null; });
+        .catch(function () { return null; });
     }
 
-    /* ---- MusicBrainz: тоже только строгий запрос ---- */
+    /* ---- TheAudioDB (без ключа, тестовый ключ "2") ---- */
+    function fetchCoverAudioDB(artist, title) {
+      var url = 'https://www.theaudiodb.com/api/v1/json/2/search.php?s=' + encodeURIComponent(artist);
+      return fetchWithTimeout(url, 4000)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data || !data.artists || !data.artists.length) {
+            log('TheAudioDB: пусто');
+            return null;
+          }
+          // Ищем лучшего артиста по схожести
+          var bestA = null, bestScore = 0;
+          data.artists.forEach(function (a) {
+            var s = similarity(a.strArtist, artist);
+            if (s > bestScore) { bestScore = s; bestA = a; }
+          });
+          log('TheAudioDB artist score:', bestScore.toFixed(2), bestA && bestA.strArtist);
+          if (!bestA || bestScore < MIN_ARTIST_SCORE) return null;
+
+          // TheAudioDB отдаёт обложку артиста (strArtistThumb / strArtistFanart)
+          // Это не обложка конкретного трека, но лучше чем ничего для классики
+          var art = bestA.strArtistThumb || bestA.strArtistFanart || bestA.strArtistLogo;
+          if (art) {
+            log('TheAudioDB: thumb для артиста');
+            return art;
+          }
+          return null;
+        })
+        .catch(function (e) { log('TheAudioDB error:', e && e.message); return null; });
+    }
+
+    /* ---- MusicBrainz ---- */
     var mbQueue = Promise.resolve();
     function mbThrottle(fn) {
       var p = mbQueue.then(function () {
@@ -723,25 +764,21 @@
             return r.json();
           })
           .then(function (data) {
-            if (!data || !data.recordings || !data.recordings.length) {
-              log('MusicBrainz: пусто');
-              return null;
-            }
+            if (!data || !data.recordings || !data.recordings.length) return null;
             for (var i = 0; i < data.recordings.length; i++) {
               var rec = data.recordings[i];
               if (rec.releases && rec.releases.length) {
                 var mb = rec.releases[0].id;
-                log('MusicBrainz match:', rec.artistCredit && rec.artistCredit[0] && rec.artistCredit[0].name, '-', rec.title);
                 return 'https://coverartarchive.org/release/' + mb + '/front-500';
               }
             }
-            log('MusicBrainz: releases пусто');
             return null;
           })
-          .catch(function (e) { log('MusicBrainz error:', e && e.message); return null; });
+          .catch(function () { return null; });
       });
     }
 
+    /* ---- ОСНОВНОЙ ПОИСК ---- */
     function fetchCover(artist, title, cacheKey) {
       var key = cacheKey;
       if (coverCache[key]) {
@@ -749,15 +786,33 @@
         return Promise.resolve(coverCache[key]);
       }
 
+      // 1) Ручной справочник — наивысший приоритет
+      var manualKey = normalize(artist + ' - ' + title);
+      // ищем по нормализованному ключу
+      for (var mk in MANUAL_COVERS) {
+        if (normalize(mk) === manualKey) {
+          log('cover from MANUAL:', mk);
+          var art0 = MANUAL_COVERS[mk];
+          coverCache[key] = art0;
+          saveCache();
+          return Promise.resolve(art0);
+        }
+      }
+
       log('cover lookup:', artist, '-', title);
 
+      // 2) iTunes → 3) TheAudioDB → 4) MusicBrainz → 5) логотип
       return fetchCoverITunes(artist, title).then(function (art) {
         if (art) { log('→ источник: iTunes'); return art; }
-        log('iTunes miss, пробую MusicBrainz');
-        return fetchCoverMusicBrainz(artist, title).then(function (art2) {
-          if (art2) { log('→ источник: MusicBrainz'); return art2; }
-          log('→ источник: логотип');
-          return STATION_LOGO;
+        log('iTunes miss, пробую TheAudioDB');
+        return fetchCoverAudioDB(artist, title).then(function (art2) {
+          if (art2) { log('→ источник: TheAudioDB'); return art2; }
+          log('TheAudioDB miss, пробую MusicBrainz');
+          return fetchCoverMusicBrainz(artist, title).then(function (art3) {
+            if (art3) { log('→ источник: MusicBrainz'); return art3; }
+            log('→ источник: логотип');
+            return STATION_LOGO;
+          });
         });
       }).then(function (art) {
         coverCache[key] = art;
@@ -808,7 +863,6 @@
       currentArtwork = url;
       coverImg.setAttribute('data-want', url);
       coverImg.classList.remove('loaded');
-      // Если это логотип — не грузим вовсе, фон и так показывает его
       if (url === STATION_LOGO) {
         coverImg.removeAttribute('src');
         applyMediaSessionMetadata();
