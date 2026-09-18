@@ -507,7 +507,8 @@
     var STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
     var STREAM_URL   = 'https://stream.laut.fm/retrodance';
     var LAUT_API     = 'https://api.laut.fm/station/retrodance';
-    var CACHE_KEY    = 'rd_cover_cache_v10';
+    var LASTFM_KEY   = '0cd72dd2343a7827721881b5fe407abe';
+    var CACHE_KEY    = 'rd_cover_cache_v11';
     var CACHE_TTL    = 7 * 24 * 60 * 60 * 1000;
     var DEBUG        = true;
 
@@ -515,16 +516,12 @@
     var MIN_ARTIST_SCORE = 0.5;
     var MAX_POLL_DELAY   = 12000;
 
-    /* ============================================================
-       РУЧНОЙ СПРАВОЧНИК ОБЛОЖЕК
-       Формат: 'артист - название' (в нижнем регистре) → URL картинки
-       Такие треки берутся МГНОВЕННО, минуя все API.
-       Сюда можно заносить классику, которую iTunes/MusicBrainz не знают.
+    /* Last.fm отдаёт эту картинку-заглушку, когда настоящей обложки нет.
+       Её нужно игнорировать, иначе на всех неопознанных треках
+       будет серая звёздочка. */
+    var LASTFM_PLACEHOLDER_HASH = '2a96cbd8b46e442fc41c2b86b821562f';
 
-       Примеры:
-         'веселые ребята - мы бродячие артисты': 'https://example.com/cover.jpg',
-         'виктор салтыков - островок': 'https://example.com/cover2.jpg',
-    ============================================================ */
+    /* ---- Ручной справочник обложек ---- */
     var MANUAL_COVERS = {
       // 'веселые ребята - мы бродячие артисты': 'https://...',
     };
@@ -713,7 +710,61 @@
         .catch(function () { return null; });
     }
 
-    /* ---- TheAudioDB (без ключа, тестовый ключ "2") ---- */
+    /* ---- Last.fm (главный источник для русской музыки) ---- */
+    var lastFmQueue = Promise.resolve();
+    function lastFmThrottle(fn) {
+      var p = lastFmQueue.then(function () {
+        return new Promise(function (res) { setTimeout(res, 300); });
+      }).then(fn);
+      lastFmQueue = p.catch(function () {});
+      return p;
+    }
+
+    function fetchCoverLastFm(artist, title) {
+      return lastFmThrottle(function () {
+        var url = 'https://ws.audioscrobbler.com/2.0/?method=track.getinfo'
+          + '&api_key=' + LASTFM_KEY
+          + '&artist=' + encodeURIComponent(artist)
+          + '&track=' + encodeURIComponent(title)
+          + '&autocorrect=1&format=json';
+
+        return fetchWithTimeout(url, 4500)
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data || !data.track) {
+              log('Last.fm: пусто');
+              return null;
+            }
+            var track = data.track;
+            if (!track.album || !track.album.image || !track.album.image.length) {
+              log('Last.fm: нет обложки');
+              return null;
+            }
+            var order = ['extralarge', 'large', 'medium', 'small'];
+            var url2 = null;
+            for (var i = 0; i < order.length && !url2; i++) {
+              for (var j = 0; j < track.album.image.length; j++) {
+                var im = track.album.image[j];
+                if (im.size === order[i] && im['#text']) { url2 = im['#text']; break; }
+              }
+            }
+            if (!url2) {
+              log('Last.fm: url пусто');
+              return null;
+            }
+            /* Отсекаем placeholder-звёздочку */
+            if (url2.indexOf(LASTFM_PLACEHOLDER_HASH) !== -1) {
+              log('Last.fm: placeholder');
+              return null;
+            }
+            log('Last.fm cover →', url2.slice(0, 80));
+            return url2;
+          })
+          .catch(function (e) { log('Last.fm error:', e && e.message); return null; });
+      });
+    }
+
+    /* ---- TheAudioDB ---- */
     function fetchCoverAudioDB(artist, title) {
       var url = 'https://www.theaudiodb.com/api/v1/json/2/search.php?s=' + encodeURIComponent(artist);
       return fetchWithTimeout(url, 4000)
@@ -723,7 +774,6 @@
             log('TheAudioDB: пусто');
             return null;
           }
-          // Ищем лучшего артиста по схожести
           var bestA = null, bestScore = 0;
           data.artists.forEach(function (a) {
             var s = similarity(a.strArtist, artist);
@@ -731,9 +781,6 @@
           });
           log('TheAudioDB artist score:', bestScore.toFixed(2), bestA && bestA.strArtist);
           if (!bestA || bestScore < MIN_ARTIST_SCORE) return null;
-
-          // TheAudioDB отдаёт обложку артиста (strArtistThumb / strArtistFanart)
-          // Это не обложка конкретного трека, но лучше чем ничего для классики
           var art = bestA.strArtistThumb || bestA.strArtistFanart || bestA.strArtistLogo;
           if (art) {
             log('TheAudioDB: thumb для артиста');
@@ -788,7 +835,6 @@
 
       // 1) Ручной справочник — наивысший приоритет
       var manualKey = normalize(artist + ' - ' + title);
-      // ищем по нормализованному ключу
       for (var mk in MANUAL_COVERS) {
         if (normalize(mk) === manualKey) {
           log('cover from MANUAL:', mk);
@@ -801,17 +847,21 @@
 
       log('cover lookup:', artist, '-', title);
 
-      // 2) iTunes → 3) TheAudioDB → 4) MusicBrainz → 5) логотип
+      // 2) iTunes → 3) Last.fm → 4) TheAudioDB → 5) MusicBrainz → 6) логотип
       return fetchCoverITunes(artist, title).then(function (art) {
         if (art) { log('→ источник: iTunes'); return art; }
-        log('iTunes miss, пробую TheAudioDB');
-        return fetchCoverAudioDB(artist, title).then(function (art2) {
-          if (art2) { log('→ источник: TheAudioDB'); return art2; }
-          log('TheAudioDB miss, пробую MusicBrainz');
-          return fetchCoverMusicBrainz(artist, title).then(function (art3) {
-            if (art3) { log('→ источник: MusicBrainz'); return art3; }
-            log('→ источник: логотип');
-            return STATION_LOGO;
+        log('iTunes miss, пробую Last.fm');
+        return fetchCoverLastFm(artist, title).then(function (art2) {
+          if (art2) { log('→ источник: Last.fm'); return art2; }
+          log('Last.fm miss, пробую TheAudioDB');
+          return fetchCoverAudioDB(artist, title).then(function (art3) {
+            if (art3) { log('→ источник: TheAudioDB'); return art3; }
+            log('TheAudioDB miss, пробую MusicBrainz');
+            return fetchCoverMusicBrainz(artist, title).then(function (art4) {
+              if (art4) { log('→ источник: MusicBrainz'); return art4; }
+              log('→ источник: логотип');
+              return STATION_LOGO;
+            });
           });
         });
       }).then(function (art) {
