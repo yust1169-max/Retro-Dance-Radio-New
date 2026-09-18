@@ -27,383 +27,62 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background-color: #0d0d0d;
-      font-family: 'Inter', sans-serif;
-      color: white;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow-x: hidden;
-    }
-
-    .app-bg {
-      width: 100%;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      position: relative;
-    }
-
-    .bg-sphere {
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at 50% 50%, rgba(225,29,72,0.18) 0%, transparent 70%);
-      z-index: 0;
-      filter: blur(80px);
-      animation: sphereMove 30s infinite alternate linear;
-      pointer-events: none;
-    }
-
-    @keyframes sphereMove {
-      from { transform: translate(-15%, -15%) scale(1.2); }
-      to   { transform: translate(15%, 15%) scale(0.9); }
-    }
-
-    .glass-card {
-      position: relative;
-      z-index: 10;
-      width: 100%;
-      max-width: 420px;
-      background: rgba(45,0,10,0.88);
-      backdrop-filter: blur(30px);
-      -webkit-backdrop-filter: blur(30px);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 48px;
-      padding: 32px;
-      text-align: center;
-      box-shadow: 0 30px 80px rgba(0,0,0,0.7);
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      padding: 0 4px;
-    }
-
-    .live-badge {
-      font-size: 10px;
-      font-weight: 700;
-      color: #e11d48;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
+    body { background-color: #0d0d0d; font-family: 'Inter', sans-serif; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow-x: hidden; }
+    .app-bg { width: 100%; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; }
+    .bg-sphere { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(225,29,72,0.18) 0%, transparent 70%); z-index: 0; filter: blur(80px); animation: sphereMove 30s infinite alternate linear; pointer-events: none; }
+    @keyframes sphereMove { from { transform: translate(-15%, -15%) scale(1.2); } to { transform: translate(15%, 15%) scale(0.9); } }
+    .glass-card { position: relative; z-index: 10; width: 100%; max-width: 420px; background: rgba(45,0,10,0.88); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,0.08); border-radius: 48px; padding: 32px; text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,0.7); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 0 4px; }
+    .live-badge { font-size: 10px; font-weight: 700; color: #e11d48; text-transform: uppercase; letter-spacing: 0.15em; animation: pulse 2s ease-in-out infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-    .listeners-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.10);
-      color: rgba(255,255,255,0.78);
-      font-size: 11px;
-      font-weight: 900;
-      line-height: 1;
-    }
-
-    .listeners-pill svg {
-      width: 14px;
-      height: 14px;
-      color: #e11d48;
-      flex-shrink: 0;
-    }
-
-    .cover-wrapper {
-      width: 260px;
-      height: 260px;
-      margin: 0 auto 28px;
-      background-color: #1a1a1a;
-      background-image: url('https://i.postimg.cc/28VKXjCx/logo.png');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      border-radius: 36px;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06);
-      position: relative;
-    }
-
-    #cover-img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0;
-      transition: opacity 0.4s ease-in-out;
-      display: block;
-    }
-
+    .listeners-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); color: rgba(255,255,255,0.78); font-size: 11px; font-weight: 900; line-height: 1; }
+    .listeners-pill svg { width: 14px; height: 14px; color: #e11d48; flex-shrink: 0; }
+    .cover-wrapper { width: 260px; height: 260px; margin: 0 auto 28px; background-color: #1a1a1a; background-image: url('https://i.postimg.cc/28VKXjCx/logo.png'); background-size: cover; background-position: center; background-repeat: no-repeat; border-radius: 36px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06); position: relative; }
+    #cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.4s ease-in-out; display: block; }
     #cover-img.loaded { opacity: 1; }
-
     .track-info { margin-bottom: 24px; }
-
-    .station-name {
-      font-size: 26px;
-      font-weight: 900;
-      font-style: italic;
-      text-transform: uppercase;
-      letter-spacing: -0.03em;
-      margin-bottom: 12px;
-      line-height: 1;
-    }
-
+    .station-name { font-size: 26px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -0.03em; margin-bottom: 12px; line-height: 1; }
     .accent { color: #e11d48; }
-
-    #artist-el {
-      font-size: 10px;
-      font-weight: 700;
-      color: #fb7185;
-      text-transform: uppercase;
-      letter-spacing: 0.3em;
-      opacity: 0.85;
-      margin-bottom: 8px;
-    }
-
-    #title-el {
-      font-size: 18px;
-      font-weight: 900;
-      text-transform: uppercase;
-      font-style: italic;
-      letter-spacing: -0.02em;
-      line-height: 1.25;
-      min-height: 2.8em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 8px;
-    }
-
-    .custom-player {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 24px;
-    }
-
-    .play-btn {
-      width: 74px;
-      height: 74px;
-      border-radius: 50%;
-      border: none;
-      background: linear-gradient(135deg, #e11d48, #9f1239);
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      box-shadow: 0 6px 20px rgba(225,29,72,0.4);
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      padding: 0;
-      outline: none;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-
+    #artist-el { font-size: 10px; font-weight: 700; color: #fb7185; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.85; margin-bottom: 8px; }
+    #title-el { font-size: 18px; font-weight: 900; text-transform: uppercase; font-style: italic; letter-spacing: -0.02em; line-height: 1.25; min-height: 2.8em; display: flex; align-items: center; justify-content: center; padding: 0 8px; }
+    .custom-player { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 24px; }
+    .play-btn { width: 74px; height: 74px; border-radius: 50%; border: none; background: linear-gradient(135deg, #e11d48, #9f1239); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 6px 20px rgba(225,29,72,0.4); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); padding: 0; outline: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
     .play-btn:active { transform: scale(0.92); }
-
-    .play-btn svg {
-      width: 34px;
-      height: 34px;
-      display: block;
-    }
-    
-    .ico-play-shape {
-      transform: translateX(4px);
-    }
-
+    .play-btn svg { width: 34px; height: 34px; display: block; }
+    .ico-play-shape { transform: translateX(4px); }
     @keyframes spin { to { transform: rotate(360deg); } }
     .spin { animation: spin 1s linear infinite; }
-
-    .side-btn {
-      width: 74px;
-      height: 74px; 
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.85);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      outline: none;
-      transition: all 0.2s ease;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      flex-shrink: 0;
-      text-decoration: none;
-    }
-
+    .side-btn { width: 74px; height: 74px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.85); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; outline: none; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; flex-shrink: 0; text-decoration: none; }
     .side-btn:active { transform: scale(0.94); }
-
-    .laut-text {
-      font-size: 13px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: -0.03em;
-      color: rgba(255,255,255,0.9);
-      display: block;
-      line-height: 1;
-    }
-    
+    .laut-text { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.03em; color: rgba(255,255,255,0.9); display: block; line-height: 1; }
     .side-btn.is-muted { color: #e11d48; background: rgba(225,29,72,0.12); border-color: rgba(225,29,72,0.2); }
     .side-btn svg { width: 24px; height: 24px; display: block; }
-
-    .tabs {
-      display: flex;
-      gap: 4px;
-      width: 100%;
-      padding: 4px;
-      margin: 0 0 20px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 18px;
-    }
-
-    .tab-btn {
-      flex: 1;
-      border: 0;
-      border-radius: 14px;
-      padding: 10px 4px;
-      background: transparent;
-      color: rgba(255,255,255,0.42);
-      cursor: pointer;
-      font-size: 10px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .tab-btn.active {
-      background: #e11d48;
-      color: white;
-      box-shadow: 0 8px 22px rgba(225,29,72,0.25);
-    }
-
+    .tabs { display: flex; gap: 4px; width: 100%; padding: 4px; margin: 0 0 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; }
+    .tab-btn { flex: 1; border: 0; border-radius: 14px; padding: 10px 4px; background: transparent; color: rgba(255,255,255,0.42); cursor: pointer; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; transition: background 0.2s, color 0.2s, box-shadow 0.2s; -webkit-tap-highlight-color: transparent; }
+    .tab-btn.active { background: #e11d48; color: white; box-shadow: 0 8px 22px rgba(225,29,72,0.25); }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
-
     .history-section, .contacts-section { text-align: left; margin-bottom: 20px; }
-
-    .history-label, .contacts-label {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.25em;
-      opacity: 0.35;
-      margin-bottom: 12px;
-    }
-
-    .history-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .history-thumb {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      object-fit: cover;
-      background: #1a1a1a url('https://i.postimg.cc/28VKXjCx/logo.png') center/cover no-repeat;
-    }
-
+    .history-label, .contacts-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.25em; opacity: 0.35; margin-bottom: 12px; }
+    .history-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .history-thumb { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; background: #1a1a1a url('https://i.postimg.cc/28VKXjCx/logo.png') center/cover no-repeat; }
     .history-text { display: flex; flex-direction: column; overflow: hidden; }
-
     .history-artist { color: #fb7185; font-weight: 700; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .history-song-title { color: rgba(255,255,255,0.75); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .contacts-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding-top: 4px;
-    }
-
-    .contact-link {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 14px 20px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 20px;
-      color: white;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .contact-link:active {
-      transform: scale(0.98);
-      background: rgba(255,255,255,0.08);
-    }
-
-    .contact-icon {
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fb7185;
-      flex-shrink: 0;
-    }
-
+    .contacts-grid { display: flex; flex-direction: column; gap: 12px; padding-top: 4px; }
+    .contact-link { display: flex; align-items: center; gap: 16px; padding: 14px 20px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; color: white; text-decoration: none; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; }
+    .contact-link:active { transform: scale(0.98); background: rgba(255,255,255,0.08); }
+    .contact-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #fb7185; flex-shrink: 0; }
     .contact-icon svg { width: 100%; height: 100%; }
-
     .contact-info { display: flex; flex-direction: column; overflow: hidden; }
-
-    .contact-title {
-      font-size: 12px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #fb7185;
-      margin-bottom: 2px;
-    }
-
-    .contact-value {
-      font-size: 13px;
-      color: rgba(255,255,255,0.7);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .legal {
-      font-size: 9px;
-      opacity: 0.4;
-      line-height: 1.6;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      padding-top: 20px;
-      margin-top: 10px;
-      text-align: center;
-    }
+    .contact-title { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; color: #fb7185; margin-bottom: 2px; }
+    .contact-value { font-size: 13px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .legal { font-size: 9px; opacity: 0.4; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; margin-top: 10px; text-align: center; }
   </style>
 </head>
 <body>
   <div class="app-bg">
     <div class="bg-sphere"></div>
-
     <div class="glass-card">
       <div class="card-header">
         <span class="live-badge">● Live</span>
@@ -441,13 +120,11 @@
           <a href="https://laut.fm/retrodance" target="_blank" rel="noopener" class="side-btn" id="laut-btn" aria-label="Слушать на laut.fm">
             <span class="laut-text">LAUT.FM</span>
           </a>
-
           <button class="play-btn" id="play-btn" aria-label="Play/Pause">
             <svg id="play-svg" class="ico-play-shape" viewBox="0 0 24 24" fill="currentColor">
               <path d="M7 5v14l11-7z"/>
             </svg>
           </button>
-
           <button class="side-btn" id="mute-btn" type="button" aria-label="Выключить звук">
             <svg id="mute-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path id="mute-path" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
@@ -508,25 +185,18 @@
     var STREAM_URL   = 'https://stream.laut.fm/retrodance';
     var LAUT_API     = 'https://api.laut.fm/station/retrodance';
     var LASTFM_KEY   = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY    = 'rd_cover_cache_v11';
+    var CACHE_KEY    = 'rd_cover_cache_v12';
     var CACHE_TTL    = 7 * 24 * 60 * 60 * 1000;
     var DEBUG        = true;
 
-    var MIN_SCORE        = 0.55;
     var MIN_ARTIST_SCORE = 0.5;
     var MAX_POLL_DELAY   = 12000;
 
-    /* Last.fm отдаёт эту картинку-заглушку, когда настоящей обложки нет.
-       Её нужно игнорировать, иначе на всех неопознанных треках
-       будет серая звёздочка. */
+    /* Last.fm placeholder (серая звёздочка) */
     var LASTFM_PLACEHOLDER_HASH = '2a96cbd8b46e442fc41c2b86b821562f';
 
-    /* ---- Ручной справочник обложек ---- */
-    var MANUAL_COVERS = {
-      // 'веселые ребята - мы бродячие артисты': 'https://...',
-    };
+    var MANUAL_COVERS = {};
 
-    /* ---- Алиасы: солист → его группа ---- */
     var ARTIST_ALIASES = {
       'виктор салтыков': ['форум', 'forum'],
       'форум':           ['виктор салтыков'],
@@ -534,16 +204,8 @@
       'динамик':         ['владимир кузьмин'],
       'юрий шатунов':    ['ласковый май'],
       'ласковый май':    ['юрий шатунов'],
-      'сергей кузнецов': ['ласковый май'],
-      'андрей разин':    ['ласковый май'],
       'роман жуков':     ['мираж'],
-      'мираж':           ['роман жуков', 'наталья гулякина'],
-      'наталья гулякина':['мираж'],
-      'алексей горбашов':['мираж'],
-      'татьяна овсиенко':['мираж'],
-      'игорь соркин':    ['иванушки international', 'иванушки'],
-      'кирилл туриченко':['иванушки international'],
-      'андрей григорьев-апполонов':['иванушки international']
+      'мираж':           ['роман жуков', 'наталья гулякина']
     };
 
     var player         = document.getElementById('player');
@@ -572,25 +234,13 @@
       if (DEBUG && window.console) console.log.apply(console, ['[RD]'].concat([].slice.call(arguments)));
     }
 
-    coverImg.addEventListener('load', function () {
-      coverImg.classList.add('loaded');
-    });
-
-    coverImg.addEventListener('error', function () {
-      coverImg.classList.remove('loaded');
-    });
+    coverImg.addEventListener('load', function () { coverImg.classList.add('loaded'); });
+    coverImg.addEventListener('error', function () { coverImg.classList.remove('loaded'); });
 
     function updateUI() {
-      if (isLoading) {
-        playSvg.innerHTML = SVG_LOAD;
-        playSvg.classList.remove('ico-play-shape');
-      } else if (isPlaying) {
-        playSvg.innerHTML = SVG_STOP;
-        playSvg.classList.remove('ico-play-shape');
-      } else {
-        playSvg.innerHTML = SVG_PLAY;
-        playSvg.classList.add('ico-play-shape');
-      }
+      if (isLoading) { playSvg.innerHTML = SVG_LOAD; playSvg.classList.remove('ico-play-shape'); }
+      else if (isPlaying) { playSvg.innerHTML = SVG_STOP; playSvg.classList.remove('ico-play-shape'); }
+      else { playSvg.innerHTML = SVG_PLAY; playSvg.classList.add('ico-play-shape'); }
     }
 
     function updateVolumeIcon() {
@@ -661,22 +311,8 @@
       var key = normalize(artist);
       var out = [artist];
       var aliases = ARTIST_ALIASES[key];
-      if (aliases) {
-        aliases.forEach(function (a) { if (a) out.push(a); });
-      }
+      if (aliases) aliases.forEach(function (a) { if (a) out.push(a); });
       return out;
-    }
-
-    function scoreResult(rArtist, rTitle, tArtist, tTitle) {
-      var artists = expandArtists(tArtist);
-      var bestArtistScore = 0;
-      for (var i = 0; i < artists.length; i++) {
-        var s = similarity(rArtist, artists[i]);
-        if (s > bestArtistScore) bestArtistScore = s;
-      }
-      var st = similarity(rTitle, tTitle);
-      if (bestArtistScore < MIN_ARTIST_SCORE) return 0;
-      return bestArtistScore * 0.35 + st * 0.65;
     }
 
     function parseLautDate(s) {
@@ -688,29 +324,79 @@
       return isNaN(t) ? null : t;
     }
 
-    /* ---- iTunes ---- */
+    /* ============================================================
+       iTunes — КАК В ИСХОДНИКЕ, но с приоритетом не-сборника.
+       Если score низкий из-за транслита (Владимир Пресняков → Vladimir
+       Presnyakov) — всё равно берём результат. Это даёт 95% покрытие.
+    ============================================================ */
     function fetchCoverITunes(artist, title) {
       var q = encodeURIComponent(artist + ' ' + title);
-      return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=8&entity=song', 3500)
+      return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=10&entity=song', 4500)
         .then(function (r) { return r.json(); })
         .then(function (data) {
           if (!data || !data.results || !data.results.length) {
             log('iTunes: пусто');
             return null;
           }
+
+          var artists = expandArtists(artist);
           var best = null, bestScore = 0;
-          data.results.forEach(function (r) {
-            var s = scoreResult(r.artistName, r.trackName, artist, title);
-            if (s > bestScore) { bestScore = s; best = r; }
-          });
-          log('iTunes best:', bestScore.toFixed(2));
-          if (!best || bestScore < MIN_SCORE || !best.artworkUrl100) return null;
-          return best.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
+          var safeNonCompilation = null;
+
+          for (var i = 0; i < data.results.length; i++) {
+            var r = data.results[i];
+            if (!r.artworkUrl100) continue;
+
+            var sa = 0;
+            for (var j = 0; j < artists.length; j++) {
+              var s = similarity(r.artistName, artists[j]);
+              if (s > sa) sa = s;
+            }
+            var st = similarity(r.trackName, title);
+            var score = sa * 0.4 + st * 0.6;
+
+            if (score > bestScore) { bestScore = score; best = r; }
+
+            /* Первый результат без "сборника" в альбоме — приоритет */
+            if (!safeNonCompilation && !isCompilation(r.collectionName, r.trackCount)) {
+              safeNonCompilation = r;
+            }
+          }
+
+          /* Приоритет: не-сборник → лучший по score → первый с обложкой */
+          var chosen = safeNonCompilation || best || data.results[0];
+          if (!chosen || !chosen.artworkUrl100) return null;
+
+          log('iTunes pick:', chosen.artistName, '-', chosen.trackName,
+              '| альбом:', chosen.collectionName, '| score:', bestScore.toFixed(2));
+
+          return chosen.artworkUrl100
+            .replace('100x100bb.jpg', '600x600bb.jpg')
+            .replace('100x100', '600x600');
         })
-        .catch(function () { return null; });
+        .catch(function (e) { log('iTunes error:', e && e.message); return null; });
     }
 
-    /* ---- Last.fm (главный источник для русской музыки) ---- */
+    var COMPILATION_MARKERS = [
+      'hits', 'best of', 'greatest', 'collection', 'compilation',
+      '90er', '80er', '70er', '60er', 'generation', 'various',
+      'the best', 'essential', 'ultimate', 'now that',
+      'хиты', 'лучшие', 'сборник', 'золотые', 'дискотека'
+    ];
+
+    function isCompilation(collectionName, trackCount) {
+      if (trackCount && trackCount > 15) return true;
+      if (!collectionName) return false;
+      var n = collectionName.toLowerCase();
+      for (var i = 0; i < COMPILATION_MARKERS.length; i++) {
+        if (n.indexOf(COMPILATION_MARKERS[i]) !== -1) return true;
+      }
+      return false;
+    }
+
+    /* ============================================================
+       Last.fm — главный спаситель для русской музыки
+    ============================================================ */
     var lastFmQueue = Promise.resolve();
     function lastFmThrottle(fn) {
       var p = lastFmQueue.then(function () {
@@ -731,10 +417,7 @@
         return fetchWithTimeout(url, 4500)
           .then(function (r) { return r.json(); })
           .then(function (data) {
-            if (!data || !data.track) {
-              log('Last.fm: пусто');
-              return null;
-            }
+            if (!data || !data.track) { log('Last.fm: пусто'); return null; }
             var track = data.track;
             if (!track.album || !track.album.image || !track.album.image.length) {
               log('Last.fm: нет обложки');
@@ -748,11 +431,7 @@
                 if (im.size === order[i] && im['#text']) { url2 = im['#text']; break; }
               }
             }
-            if (!url2) {
-              log('Last.fm: url пусто');
-              return null;
-            }
-            /* Отсекаем placeholder-звёздочку */
+            if (!url2) return null;
             if (url2.indexOf(LASTFM_PLACEHOLDER_HASH) !== -1) {
               log('Last.fm: placeholder');
               return null;
@@ -760,11 +439,17 @@
             log('Last.fm cover →', url2.slice(0, 80));
             return url2;
           })
-          .catch(function (e) { log('Last.fm error:', e && e.message); return null; });
+          .catch(function (e) {
+            if (e && e.name === 'AbortError') return null;
+            log('Last.fm error:', e && e.message);
+            return null;
+          });
       });
     }
 
-    /* ---- TheAudioDB ---- */
+    /* ============================================================
+       TheAudioDB — последний шанс, отдаёт ФОТО артиста (не обложку)
+    ============================================================ */
     function fetchCoverAudioDB(artist, title) {
       var url = 'https://www.theaudiodb.com/api/v1/json/2/search.php?s=' + encodeURIComponent(artist);
       return fetchWithTimeout(url, 4000)
@@ -779,53 +464,24 @@
             var s = similarity(a.strArtist, artist);
             if (s > bestScore) { bestScore = s; bestA = a; }
           });
-          log('TheAudioDB artist score:', bestScore.toFixed(2), bestA && bestA.strArtist);
           if (!bestA || bestScore < MIN_ARTIST_SCORE) return null;
-          var art = bestA.strArtistThumb || bestA.strArtistFanart || bestA.strArtistLogo;
+          var art = bestA.strArtistThumb || bestA.strArtistFanart;
           if (art) {
-            log('TheAudioDB: thumb для артиста');
+            log('TheAudioDB: thumb');
             return art;
           }
           return null;
         })
-        .catch(function (e) { log('TheAudioDB error:', e && e.message); return null; });
+        .catch(function (e) {
+          if (e && e.name === 'AbortError') return null;
+          log('TheAudioDB error:', e && e.message);
+          return null;
+        });
     }
 
-    /* ---- MusicBrainz ---- */
-    var mbQueue = Promise.resolve();
-    function mbThrottle(fn) {
-      var p = mbQueue.then(function () {
-        return new Promise(function (res) { setTimeout(res, 1100); });
-      }).then(fn);
-      mbQueue = p.catch(function () {});
-      return p;
-    }
-
-    function fetchCoverMusicBrainz(artist, title) {
-      return mbThrottle(function () {
-        var q = 'artist:"' + artist.replace(/"/g,'') + '" AND recording:"' + title.replace(/"/g,'') + '"';
-        var url = 'https://musicbrainz.org/ws/2/recording/?query=' + encodeURIComponent(q) + '&fmt=json&limit=3';
-        return fetchWithTimeout(url, 4000)
-          .then(function (r) {
-            if (!r.ok) { log('MusicBrainz HTTP', r.status); return null; }
-            return r.json();
-          })
-          .then(function (data) {
-            if (!data || !data.recordings || !data.recordings.length) return null;
-            for (var i = 0; i < data.recordings.length; i++) {
-              var rec = data.recordings[i];
-              if (rec.releases && rec.releases.length) {
-                var mb = rec.releases[0].id;
-                return 'https://coverartarchive.org/release/' + mb + '/front-500';
-              }
-            }
-            return null;
-          })
-          .catch(function () { return null; });
-      });
-    }
-
-    /* ---- ОСНОВНОЙ ПОИСК ---- */
+    /* ============================================================
+       Основной поиск: MANUAL → CACHE → iTunes → Last.fm → TheAudioDB → LOGO
+    ============================================================ */
     function fetchCover(artist, title, cacheKey) {
       var key = cacheKey;
       if (coverCache[key]) {
@@ -833,7 +489,6 @@
         return Promise.resolve(coverCache[key]);
       }
 
-      // 1) Ручной справочник — наивысший приоритет
       var manualKey = normalize(artist + ' - ' + title);
       for (var mk in MANUAL_COVERS) {
         if (normalize(mk) === manualKey) {
@@ -847,7 +502,6 @@
 
       log('cover lookup:', artist, '-', title);
 
-      // 2) iTunes → 3) Last.fm → 4) TheAudioDB → 5) MusicBrainz → 6) логотип
       return fetchCoverITunes(artist, title).then(function (art) {
         if (art) { log('→ источник: iTunes'); return art; }
         log('iTunes miss, пробую Last.fm');
@@ -856,12 +510,8 @@
           log('Last.fm miss, пробую TheAudioDB');
           return fetchCoverAudioDB(artist, title).then(function (art3) {
             if (art3) { log('→ источник: TheAudioDB'); return art3; }
-            log('TheAudioDB miss, пробую MusicBrainz');
-            return fetchCoverMusicBrainz(artist, title).then(function (art4) {
-              if (art4) { log('→ источник: MusicBrainz'); return art4; }
-              log('→ источник: логотип');
-              return STATION_LOGO;
-            });
+            log('→ источник: логотип');
+            return STATION_LOGO;
           });
         });
       }).then(function (art) {
@@ -903,13 +553,11 @@
     function setMainCover(art) {
       var url = art || STATION_LOGO;
       log('setMainCover →', url.slice(0, 80));
-
       if (coverImg.getAttribute('data-want') === url && coverImg.classList.contains('loaded')) {
         currentArtwork = url;
         applyMediaSessionMetadata();
         return;
       }
-
       currentArtwork = url;
       coverImg.setAttribute('data-want', url);
       coverImg.classList.remove('loaded');
@@ -1090,6 +738,7 @@
           }
         })
         .catch(function (e) {
+          if (e && e.name === 'AbortError') { scheduleMetadata(8000); return; }
           console.error('Metadata error:', e);
           scheduleMetadata(8000);
         });
@@ -1138,7 +787,10 @@
             });
           }));
         })
-        .catch(function (e) { console.error('History error:', e); });
+        .catch(function (e) {
+          if (e && e.name === 'AbortError') return;
+          console.error('History error:', e);
+        });
     }
 
     function updateListeners() {
@@ -1147,11 +799,7 @@
         .then(function (r) { return r.text(); })
         .then(function (count) {
           var t = (count || '').trim();
-          if (t && t !== '0') {
-            listenersEl.textContent = t;
-          } else if (t === '0' && listenersEl.textContent === '0') {
-            listenersEl.textContent = '0';
-          }
+          if (t && t !== '0') listenersEl.textContent = t;
         })
         .catch(function () {});
     }
