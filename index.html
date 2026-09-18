@@ -9,7 +9,6 @@
   <link rel="icon" type="image/png" href="https://i.postimg.cc/28VKXjCx/logo.png">
   <link rel="apple-touch-icon" href="https://i.postimg.cc/28VKXjCx/logo.png">
   <title>RetroDance Radio</title>
-
   <meta name="description" content="RetroDance Radio — энергичное ретро и клубные хиты 90-х и 2000-х онлайн 24/7.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="RetroDance Radio">
@@ -21,7 +20,6 @@
   <meta name="twitter:title" content="RetroDance Radio">
   <meta name="twitter:description" content="Энергичное ретро и клубные хиты онлайн 24/7.">
   <meta name="twitter:image" content="https://i.postimg.cc/28VKXjCx/logo.png">
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -96,34 +94,23 @@
           <span id="listeners-el">0</span>
         </span>
       </div>
-
-      <div class="cover-wrapper">
-        <img id="cover-img" alt="">
-      </div>
-
+      <div class="cover-wrapper"><img id="cover-img" alt=""></div>
       <div class="track-info">
         <h1 class="station-name">Retro<span class="accent">Dance</span></h1>
         <p id="artist-el">Retro Radio</p>
         <p id="title-el">Нажмите Play</p>
       </div>
-
       <audio id="player" preload="none" playsinline webkit-playsinline></audio>
-
       <div class="tabs" role="tablist" aria-label="Разделы radio">
         <button class="tab-btn active" id="tab-player" type="button" data-tab="player" role="tab" aria-selected="true">Плеер</button>
         <button class="tab-btn" id="tab-history" type="button" data-tab="history" role="tab" aria-selected="false">История</button>
         <button class="tab-btn" id="tab-contacts" type="button" data-tab="contacts" role="tab" aria-selected="false">Контакты</button>
       </div>
-
       <div class="tab-panel active" id="panel-player" role="tabpanel" aria-labelledby="tab-player">
         <div class="custom-player">
-          <a href="https://laut.fm/retrodance" target="_blank" rel="noopener" class="side-btn" id="laut-btn" aria-label="Слушать на laut.fm">
-            <span class="laut-text">LAUT.FM</span>
-          </a>
+          <a href="https://laut.fm/retrodance" target="_blank" rel="noopener" class="side-btn" id="laut-btn" aria-label="Слушать на laut.fm"><span class="laut-text">LAUT.FM</span></a>
           <button class="play-btn" id="play-btn" aria-label="Play/Pause">
-            <svg id="play-svg" class="ico-play-shape" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M7 5v14l11-7z"/>
-            </svg>
+            <svg id="play-svg" class="ico-play-shape" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l11-7z"/></svg>
           </button>
           <button class="side-btn" id="mute-btn" type="button" aria-label="Выключить звук">
             <svg id="mute-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -132,51 +119,33 @@
           </button>
         </div>
       </div>
-
       <div class="tab-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history">
         <div class="history-section" id="history-section">
           <h3 class="history-label">История эфира</h3>
           <div id="history-list"></div>
         </div>
       </div>
-
       <div class="tab-panel" id="panel-contacts" role="tabpanel" aria-labelledby="tab-contacts">
         <div class="contacts-section">
           <h3 class="contacts-label">Мы на связи</h3>
           <div class="contacts-grid">
             <a href="https://t.me/retrodance_radio" target="_blank" rel="noopener" class="contact-link">
-              <div class="contact-icon">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-1-.65-.35-1 .22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.24-5.54 3.65-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.35-.49.97-.74 3.79-1.65 6.32-2.74 7.57-3.27 3.61-1.53 4.36-1.8 4.85-1.8.11 0 .35.03.5.15.13.1.17.25.18.35-.01.07-.01.19-.02.29z"/>
-                </svg>
-              </div>
-              <div class="contact-info">
-                <span class="contact-title">Telegram</span>
-                <span class="contact-value">Канал RetroDance</span>
-              </div>
+              <div class="contact-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-1-.65-.35-1 .22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.24-5.54 3.65-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.35-.49.97-.74 3.79-1.65 6.32-2.74 7.57-3.27 3.61-1.53 4.36-1.8 4.85-1.8.11 0 .35.03.5.15.13.1.17.25.18.35-.01.07-.01.19-.02.29z"/></svg></div>
+              <div class="contact-info"><span class="contact-title">Telegram</span><span class="contact-value">Канал RetroDance</span></div>
             </a>
             <a href="mailto:retrodanceradiomusic.com" class="contact-link">
-              <div class="contact-icon">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                </svg>
-              </div>
-              <div class="contact-info">
-                <span class="contact-title">Gmail</span>
-                <span class="contact-value">retrodanceradiomusic.com</span>
-              </div>
+              <div class="contact-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div>
+              <div class="contact-info"><span class="contact-title">Gmail</span><span class="contact-value">retrodanceradiomusic.com</span></div>
             </a>
           </div>
         </div>
       </div>
-
       <div class="legal">
         <p>Radio-Hosting powered by <b>laut.fm</b> | Verantwortlich für die Inhalte: <b>laut.ag</b></p>
         <p style="margin-top: 8px;">Some content on this site is created with AI assistance. / Einige Inhalte dieser Website wurden mit Hilfe von KI erstellt.</p>
       </div>
     </div>
   </div>
-
   <script>
   (function () {
     'use strict';
@@ -185,14 +154,12 @@
     var STREAM_URL   = 'https://stream.laut.fm/retrodance';
     var LAUT_API     = 'https://api.laut.fm/station/retrodance';
     var LASTFM_KEY   = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY    = 'rd_cover_cache_v12';
+    var CACHE_KEY    = 'rd_cover_cache_v13';
     var CACHE_TTL    = 7 * 24 * 60 * 60 * 1000;
     var DEBUG        = true;
 
     var MIN_ARTIST_SCORE = 0.5;
     var MAX_POLL_DELAY   = 12000;
-
-    /* Last.fm placeholder (серая звёздочка) */
     var LASTFM_PLACEHOLDER_HASH = '2a96cbd8b46e442fc41c2b86b821562f';
 
     var MANUAL_COVERS = {};
@@ -207,6 +174,13 @@
       'роман жуков':     ['мираж'],
       'мираж':           ['роман жуков', 'наталья гулякина']
     };
+
+    var COMPILATION_MARKERS = [
+      'hits', 'best of', 'greatest', 'collection', 'compilation',
+      '90er', '80er', '70er', '60er', 'generation', 'various',
+      'the best', 'essential', 'ultimate', 'now that',
+      'хиты', 'лучшие', 'сборник', 'золотые', 'дискотека'
+    ];
 
     var player         = document.getElementById('player');
     var playBtn        = document.getElementById('play-btn');
@@ -315,6 +289,32 @@
       return out;
     }
 
+    /* ============================================================
+       Детектор "разных артистов".
+       Ловит случаи типа "Aaron Luster, Anthony Arasi, Joey Casanova &
+       Patrick Avard" — это сборная солянка, обложка от неё не подойдёт.
+    ============================================================ */
+    function looksLikeVariousArtists(name) {
+      if (!name) return false;
+      var s = String(name);
+      var commaCount = (s.match(/,/g) || []).length;
+      if (commaCount >= 2) return true;
+      var ampCount = (s.match(/&/g) || []).length;
+      if (ampCount >= 3) return true;
+      if (s.length > 80) return true;
+      return false;
+    }
+
+    function isCompilation(collectionName, trackCount) {
+      if (trackCount && trackCount > 15) return true;
+      if (!collectionName) return false;
+      var n = collectionName.toLowerCase();
+      for (var i = 0; i < COMPILATION_MARKERS.length; i++) {
+        if (n.indexOf(COMPILATION_MARKERS[i]) !== -1) return true;
+      }
+      return false;
+    }
+
     function parseLautDate(s) {
       if (!s) return null;
       var m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s*([+-])(\d{2})(\d{2})$/);
@@ -325,9 +325,7 @@
     }
 
     /* ============================================================
-       iTunes — КАК В ИСХОДНИКЕ, но с приоритетом не-сборника.
-       Если score низкий из-за транслита (Владимир Пресняков → Vladimir
-       Presnyakov) — всё равно берём результат. Это даёт 95% покрытие.
+       iTunes — фильтруем various-artists, приоритет не-сборникам.
     ============================================================ */
     function fetchCoverITunes(artist, title) {
       var q = encodeURIComponent(artist + ' ' + title);
@@ -347,6 +345,12 @@
             var r = data.results[i];
             if (!r.artworkUrl100) continue;
 
+            /* Отсекаем сборные солянки типа "X, Y, Z & W" */
+            if (looksLikeVariousArtists(r.artistName)) {
+              log('iTunes skip (various):', r.artistName);
+              continue;
+            }
+
             var sa = 0;
             for (var j = 0; j < artists.length; j++) {
               var s = similarity(r.artistName, artists[j]);
@@ -357,15 +361,16 @@
 
             if (score > bestScore) { bestScore = score; best = r; }
 
-            /* Первый результат без "сборника" в альбоме — приоритет */
             if (!safeNonCompilation && !isCompilation(r.collectionName, r.trackCount)) {
               safeNonCompilation = r;
             }
           }
 
-          /* Приоритет: не-сборник → лучший по score → первый с обложкой */
-          var chosen = safeNonCompilation || best || data.results[0];
-          if (!chosen || !chosen.artworkUrl100) return null;
+          var chosen = safeNonCompilation || best;
+          if (!chosen || !chosen.artworkUrl100) {
+            log('iTunes: нечего выбрать');
+            return null;
+          }
 
           log('iTunes pick:', chosen.artistName, '-', chosen.trackName,
               '| альбом:', chosen.collectionName, '| score:', bestScore.toFixed(2));
@@ -377,25 +382,8 @@
         .catch(function (e) { log('iTunes error:', e && e.message); return null; });
     }
 
-    var COMPILATION_MARKERS = [
-      'hits', 'best of', 'greatest', 'collection', 'compilation',
-      '90er', '80er', '70er', '60er', 'generation', 'various',
-      'the best', 'essential', 'ultimate', 'now that',
-      'хиты', 'лучшие', 'сборник', 'золотые', 'дискотека'
-    ];
-
-    function isCompilation(collectionName, trackCount) {
-      if (trackCount && trackCount > 15) return true;
-      if (!collectionName) return false;
-      var n = collectionName.toLowerCase();
-      for (var i = 0; i < COMPILATION_MARKERS.length; i++) {
-        if (n.indexOf(COMPILATION_MARKERS[i]) !== -1) return true;
-      }
-      return false;
-    }
-
     /* ============================================================
-       Last.fm — главный спаситель для русской музыки
+       Last.fm
     ============================================================ */
     var lastFmQueue = Promise.resolve();
     function lastFmThrottle(fn) {
@@ -419,6 +407,13 @@
           .then(function (data) {
             if (!data || !data.track) { log('Last.fm: пусто'); return null; }
             var track = data.track;
+
+            /* Тоже отсекаем various-artists */
+            if (track.artist && looksLikeVariousArtists(track.artist.name)) {
+              log('Last.fm skip (various):', track.artist.name);
+              return null;
+            }
+
             if (!track.album || !track.album.image || !track.album.image.length) {
               log('Last.fm: нет обложки');
               return null;
@@ -448,7 +443,7 @@
     }
 
     /* ============================================================
-       TheAudioDB — последний шанс, отдаёт ФОТО артиста (не обложку)
+       TheAudioDB
     ============================================================ */
     function fetchCoverAudioDB(artist, title) {
       var url = 'https://www.theaudiodb.com/api/v1/json/2/search.php?s=' + encodeURIComponent(artist);
@@ -479,9 +474,6 @@
         });
     }
 
-    /* ============================================================
-       Основной поиск: MANUAL → CACHE → iTunes → Last.fm → TheAudioDB → LOGO
-    ============================================================ */
     function fetchCover(artist, title, cacheKey) {
       var key = cacheKey;
       if (coverCache[key]) {
