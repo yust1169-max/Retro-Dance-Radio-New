@@ -1,1 +1,1367 @@
-<!DOCTYPE html> <html lang="ru"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"> <meta name="mobile-web-app-capable" content="yes"> <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> <meta name="theme-color" content="#0d0d0d"> <link rel="icon" type="image/png" href="https://i.postimg.cc/28VKXjCx/logo.png"> <link rel="apple-touch-icon" href="https://i.postimg.cc/28VKXjCx/logo.png"> <title>RetroDance Radio</title> <meta name="description" content="RetroDance Radio — энергичное ретро и клубные хиты 90-х и 2000-х онлайн 24/7."> <meta property="og:type" content="website"> <meta property="og:site_name" content="RetroDance Radio"> <meta property="og:title" content="RetroDance Radio — включай энергию прошлого!"> <meta property="og:description" content="Энергичное ретро и клубные хиты онлайн 24/7."> <meta property="og:image" content="https://i.postimg.cc/28VKXjCx/logo.png"> <meta property="og:url" content="https://retrodanceradio.com/"> <meta name="twitter:card" content="summary_large_image"> <meta name="twitter:title" content="RetroDance Radio"> <meta name="twitter:description" content="Энергичное ретро и клубные хиты онлайн 24/7."> <meta name="twitter:image" content="https://i.postimg.cc/28VKXjCx/logo.png"> <link rel="preconnect" href="https://fonts.googleapis.com"> <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet"> <style> *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; } body { background-color: #0d0d0d; font-family: 'Inter', sans-serif; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow-x: hidden; } .app-bg { width: 100%; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; } .bg-sphere { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(225,29,72,0.18) 0%, transparent 70%); z-index: 0; filter: blur(80px); animation: sphereMove 30s infinite alternate linear; pointer-events: none; } @keyframes sphereMove { from { transform: translate(-15%, -15%) scale(1.2); } to { transform: translate(15%, 15%) scale(0.9); } } .glass-card { position: relative; z-index: 10; width: 100%; max-width: 420px; background: rgba(45,0,10,0.88); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,0.08); border-radius: 48px; padding: 32px; text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,0.7); } .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 0 4px; } .live-badge { font-size: 10px; font-weight: 700; color: #e11d48; text-transform: uppercase; letter-spacing: 0.15em; animation: pulse 2s ease-in-out infinite; } @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } } .listeners-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); color: rgba(255,255,255,0.78); font-size: 11px; font-weight: 900; line-height: 1; } .listeners-pill svg { width: 14px; height: 14px; color: #e11d48; flex-shrink: 0; } .cover-wrapper { width: 260px; height: 260px; margin: 0 auto 28px; background-color: #1a1a1a; background-image: url('https://i.postimg.cc/28VKXjCx/logo.png'); background-size: cover; background-position: center; background-repeat: no-repeat; border-radius: 36px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06); position: relative; } #cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.4s ease-in-out; display: block; } #cover-img.loaded { opacity: 1; } .track-info { margin-bottom: 24px; } .station-name { font-size: 26px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -0.03em; margin-bottom: 12px; line-height: 1; } .accent { color: #e11d48; } #artist-el { font-size: 10px; font-weight: 700; color: #fb7185; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.85; margin-bottom: 8px; } #title-el { font-size: 18px; font-weight: 900; text-transform: uppercase; font-style: italic; letter-spacing: -0.02em; line-height: 1.25; min-height: 2.8em; display: flex; align-items: center; justify-content: center; padding: 0 8px; } .custom-player { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 24px; } .play-btn { width: 74px; height: 74px; border-radius: 50%; border: none; background: linear-gradient(135deg, #e11d48, #9f1239); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 6px 20px rgba(225,29,72,0.4); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); padding: 0; outline: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; } .play-btn:active { transform: scale(0.92); } .play-btn svg { width: 34px; height: 34px; display: block; } .ico-play-shape { transform: translateX(4px); } @keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 1s linear infinite; } .side-btn { width: 74px; height: 74px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.85); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; outline: none; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; flex-shrink: 0; text-decoration: none; } .side-btn:active { transform: scale(0.94); } .laut-text { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.03em; color: rgba(255,255,255,0.9); display: block; line-height: 1; } .side-btn.is-muted { color: #e11d48; background: rgba(225,29,72,0.12); border-color: rgba(225,29,72,0.2); } .side-btn svg { width: 24px; height: 24px; display: block; } .tabs { display: flex; gap: 4px; width: 100%; padding: 4px; margin: 0 0 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; } .tab-btn { flex: 1; border: 0; border-radius: 14px; padding: 10px 4px; background: transparent; color: rgba(255,255,255,0.42); cursor: pointer; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; transition: background 0.2s, color 0.2s, box-shadow 0.2s; -webkit-tap-highlight-color: transparent; } .tab-btn.active { background: #e11d48; color: white; box-shadow: 0 8px 22px rgba(225,29,72,0.25); } .tab-panel { display: none; } .tab-panel.active { display: block; } .history-section, .contacts-section { text-align: left; margin-bottom: 20px; } .history-label, .contacts-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.25em; opacity: 0.35; margin-bottom: 12px; } .history-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); } .history-thumb { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; background: #1a1a1a url('https://i.postimg.cc/28VKXjCx/logo.png') center/cover no-repeat; } .history-text { display: flex; flex-direction: column; overflow: hidden; } .history-artist { color: #fb7185; font-weight: 700; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .history-song-title { color: rgba(255,255,255,0.75); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .contacts-grid { display: flex; flex-direction: column; gap: 12px; padding-top: 4px; } .contact-link { display: flex; align-items: center; gap: 16px; padding: 14px 20px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; color: white; text-decoration: none; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; } .contact-link:active { transform: scale(0.98); background: rgba(255,255,255,0.08); } .contact-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #fb7185; flex-shrink: 0; } .contact-icon svg { width: 100%; height: 100%; } .contact-info { display: flex; flex-direction: column; overflow: hidden; } .contact-title { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; color: #fb7185; margin-bottom: 2px; } .contact-value { font-size: 13px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .legal { font-size: 9px; opacity: 0.4; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; margin-top: 10px; text-align: center; } </style> </head> <body> <div class="app-bg"> <div class="bg-sphere"></div> <div class="glass-card"> <div class="card-header"> <span class="live-badge">● Live</span> <span class="listeners-pill" aria-label="Количество слушателей"> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"> <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/> <circle cx="9" cy="7" r="4"/> <path d="M22 21v-2a4 4 0 0 0-3-3.87"/> <path d="M16 3.13a4 4 0 0 1 0 7.75"/> </svg> <span id="listeners-el">0</span> </span> </div> <div class="cover-wrapper"> <img id="cover-img" alt=""> </div> <div class="track-info"> <h1 class="station-name">Retro<span class="accent">Dance</span></h1> <p id="artist-el">Retro Radio</p> <p id="title-el">Нажмите Play</p> </div> <audio id="player" preload="none" playsinline webkit-playsinline></audio> <div class="tabs" role="tablist" aria-label="Разделы radio"> <button class="tab-btn active" id="tab-player" type="button" data-tab="player" role="tab" aria-selected="true">Плеер</button> <button class="tab-btn" id="tab-history" type="button" data-tab="history" role="tab" aria-selected="false">История</button> <button class="tab-btn" id="tab-contacts" type="button" data-tab="contacts" role="tab" aria-selected="false">Контакты</button> </div> <div class="tab-panel active" id="panel-player" role="tabpanel" aria-labelledby="tab-player"> <div class="custom-player"> <a href="https://laut.fm/retrodance" target="_blank" rel="noopener" class="side-btn" id="laut-btn" aria-label="Слушать на laut.fm"> <span class="laut-text">LAUT.FM</span> </a> <button class="play-btn" id="play-btn" aria-label="Play/Pause"> <svg id="play-svg" class="ico-play-shape" viewBox="0 0 24 24" fill="currentColor"> <path d="M7 5v14l11-7z"/> </svg> </button> <button class="side-btn" id="mute-btn" type="button" aria-label="Выключить звук"> <svg id="mute-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"> <path id="mute-path" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/> </svg> </button> </div> </div> <div class="tab-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history"> <div class="history-section" id="history-section"> <h3 class="history-label">История эфира</h3> <div id="history-list"></div> </div> </div> <div class="tab-panel" id="panel-contacts" role="tabpanel" aria-labelledby="tab-contacts"> <div class="contacts-section"> <h3 class="contacts-label">Мы на связи</h3> <div class="contacts-grid"> <a href="https://t.me/retrodance_radio" target="_blank" rel="noopener" class="contact-link"> <div class="contact-icon"> <svg viewBox="0 0 24 24" fill="currentColor"> <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-1-.65-.35-1 .22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.24-5.54 3.65-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.35-.49.97-.74 3.79-1.65 6.32-2.74 7.57-3.27 3.61-1.53 4.36-1.8 4.85-1.8.11 0 .35.03.5.15.13.1.17.25.18.35-.01.07-.01.19-.02.29z"/> </svg> </div> <div class="contact-info"> <span class="contact-title">Telegram</span> <span class="contact-value">Канал RetroDance</span> </div> </a> <a href="mailto:retrodanceradiomusic@gmail.com" class="contact-link"> <div class="contact-icon"> <svg viewBox="0 0 24 24" fill="currentColor"> <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/> </svg> </div> <div class="contact-info"> <span class="contact-title">Gmail</span> <span class="contact-value">retrodanceradiomusic@gmail.com</span> </div> </a> </div> </div> </div> <div class="legal"> <p>Radio-Hosting powered by <b>laut.fm</b> | Verantwortlich für die Inhalte: <b>laut.ag</b></p> <p style="margin-top: 8px;">Some content on this site is created with AI assistance. / Einige Inhalte dieser Website wurden mit Hilfe von KI erstellt.</p> </div> </div> </div> <script> (function () { 'use strict'; var STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png'; var STREAM_URL = 'https://stream.laut.fm/retrodance'; var LAUT_API = 'https://api.laut.fm/station/retrodance'; var LASTFM_KEY = '0cd72dd2343a7827721881b5fe407abe'; var CACHE_KEY = 'rd_cover_cache_v15'; var CACHE_TTL = 7 * 24 * 60 * 60 * 1000; var DEBUG = true; var MAX_POLL_DELAY = 12000; /* ---- Пороги "быстрой проверки" ---- */ var ARTIST_OK = 0.30; var TITLE_STRONG = 0.80; var MANUAL_COVERS = { // 'masterboy - feel the heat of the night': 'https://.../original.jpg', }; var COMPILATION_MARKERS = [ 'hits', 'best of', 'greatest', 'collection', 'compilation', '90er', '80er', '70er', '60er', 'generation', 'various', 'the best', 'essential', 'ultimate', 'now that', 'хиты', 'лучшие', 'сборник', 'золотые', 'дискотека' ]; var ARTIST_ALIASES = { 'виктор салтыков': ['форум', 'forum'], 'форум': ['виктор салтыков'], 'владимир кузьмин':['динамик', 'dinamik'], 'динамик': ['владимир кузьмин'], 'юрий шатунов': ['ласковый май'], 'ласковый май': ['юрий шатунов'], 'роман жуков': ['мираж'], 'мираж': ['роман жуков'] }; var LASTFM_PLACEHOLDER_HASH = '2a96cbd8b46e442fc41c2b86b821562f'; var player = document.getElementById('player'); var playBtn = document.getElementById('play-btn'); var playSvg = document.getElementById('play-svg'); var muteBtn = document.getElementById('mute-btn'); var mutePath = document.getElementById('mute-path'); var coverImg = document.getElementById('cover-img'); var artistEl = document.getElementById('artist-el'); var titleEl = document.getElementById('title-el'); var listenersEl = document.getElementById('listeners-el'); var historyList = document.getElementById('history-list'); var userIntent = false, isPlaying = false, isLoading = false, isMuted = false; var currentTrackKey = '', currentTrackTitle = 'Нажмите Play', currentTrackArtist = 'Retro Radio'; var currentArtwork = STATION_LOGO; var reconnectTimer = null, reconnectAttempts = 0, metadataTimer = null, playToken = 0; var SVG_PLAY = '<path d="M7 5v14l11-7z"/>'; var SVG_STOP = '<path d="M6 6h12v12H6z"/>'; var SVG_LOAD = '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="40 20" fill="none" class="spin"/>'; var VOL_HIGH = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z'; var VOL_MUTE = 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-3-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z'; function log() { if (DEBUG && window.console) console.log.apply(console, ['[RD]'].concat([].slice.call(arguments))); } coverImg.addEventListener('load', function () { coverImg.classList.add('loaded'); }); coverImg.addEventListener('error', function () { coverImg.classList.remove('loaded'); }); function updateUI() { if (isLoading) { playSvg.innerHTML = SVG_LOAD; playSvg.classList.remove('ico-play-shape'); } else if (isPlaying) { playSvg.innerHTML = SVG_STOP; playSvg.classList.remove('ico-play-shape'); } else { playSvg.innerHTML = SVG_PLAY; playSvg.classList.add('ico-play-shape'); } } function updateVolumeIcon() { if (isMuted) { mutePath.setAttribute('d', VOL_MUTE); muteBtn.classList.add('is-muted'); muteBtn.setAttribute('aria-label', 'Включить звук'); } else { mutePath.setAttribute('d', VOL_HIGH); muteBtn.classList.remove('is-muted'); muteBtn.setAttribute('aria-label', 'Выключить звук'); } } /* ============================================================ КЭШ ОБЛОЖЕК v15 Формат записи: { url: "https://...", source: "itunes" | "lastfm" | "manual" | "logo" | "legacy", t: 1699999999999, artist: "Masterboy", title: "Feel The Heat..." } ============================================================ */ var coverCache = (function loadCache() { try { var raw = localStorage.getItem(CACHE_KEY); if (!raw) return {}; var data = JSON.parse(raw); var now = Date.now(); var out = {}; for (var k in data) { var e = data[k]; if (!e || typeof e !== 'object') continue; // Новый формат if (e.url && e.t && (now - e.t) < CACHE_TTL) { out[k] = { url: e.url, source: e.source || 'unknown', t: e.t, artist: e.artist || '', title: e.title || '' }; continue; } // Миграция со старого формата { v, t } if (e.v && e.t && (now - e.t) < CACHE_TTL) { out[k] = { url: e.v, source: 'legacy', t: e.t, artist: '', title: '' }; } } return out; } catch (e) { return {}; } })(); function saveCache() { try { var out = {}, i = 0; for (var k in coverCache) { if (i++ >= 500) break; out[k] = coverCache[k]; } localStorage.setItem(CACHE_KEY, JSON.stringify(out)); } catch (e) {} } function cacheGet(key) { var e = coverCache[key]; if (!e || !e.url) return null; if ((Date.now() - e.t) >= CACHE_TTL) { delete coverCache[key]; return null; } return e; } function cacheSet(key, url, source, artist, title) { coverCache[key] = { url: url, source: source, t: Date.now(), artist: artist || '', title: title || '' }; saveCache(); } /* ---- Утилиты для отладки из консоли ---- */ window.RD_CACHE_STATS = function () { var stats = { total: 0, bySource: {}, oldestDays: 0, newestDays: 0 }; var now = Date.now(); var first = true; for (var k in coverCache) { stats.total++; var s = coverCache[k].source || 'unknown'; stats.bySource[s] = (stats.bySource[s] || 0) + 1; var ageDays = (now - coverCache[k].t) / 86400000; if (ageDays > stats.oldestDays) stats.oldestDays = Math.round(ageDays * 10) / 10; if (first || ageDays < stats.newestDays) { stats.newestDays = Math.round(ageDays * 10) / 10; first = false; } } return stats; }; window.RD_CACHE_DUMP = function () { var out = []; var now = Date.now(); for (var k in coverCache) { out.push({ track: k, source: coverCache[k].source || 'unknown', ageDays: Math.round((now - coverCache[k].t) / 86400000 * 10) / 10, url: (coverCache[k].url || '').slice(0, 70) }); } out.sort(function (a, b) { return a.source.localeCompare(b.source) || b.ageDays - a.ageDays; }); return out; }; window.RD_CACHE_CLEAR = function () { for (var k in coverCache) delete coverCache[k]; try { localStorage.removeItem(CACHE_KEY); } catch (e) {} log('cache cleared'); }; function fetchWithTimeout(url, ms) { var controller = new AbortController(); var timer = setTimeout(function () { controller.abort(); }, ms || 5000); return fetch(url, { signal: controller.signal }).finally(function () { clearTimeout(timer); }); } function normalize(s) { return String(s || '') .toLowerCase() .replace(/\(.*?\)/g, ' ') .replace(/\[.*?\]/g, ' ') .replace(/\bfeat\.?\b.*$/i, ' ') .replace(/\bft\.?\b.*$/i, ' ') .replace(/[^a-zа-яё0-9]+/gi, ' ') .trim(); } function similarity(a, b) { a = normalize(a); b = normalize(b); if (!a || !b) return 0; if (a === b) return 1; var as = a.split(/\s+/), bs = b.split(/\s+/); var setB = {}; for (var i = 0; i < bs.length; i++) setB[bs[i]] = 1; var hit = 0; for (var j = 0; j < as.length; j++) if (setB[as[j]]) hit++; return (2 * hit) / (as.length + bs.length); } function expandArtists(artist) { var key = normalize(artist); var out = [artist]; var aliases = ARTIST_ALIASES[key]; if (aliases) aliases.forEach(function (a) { if (a) out.push(a); }); return out; } function isCompilation(collectionName, trackCount) { if (trackCount && trackCount > 15) return true; if (!collectionName) return false; var n = collectionName.toLowerCase(); for (var i = 0; i < COMPILATION_MARKERS.length; i++) { if (n.indexOf(COMPILATION_MARKERS[i]) !== -1) return true; } return false; } function parseLautDate(s) { if (!s) return null; var m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s*([+-])(\d{2})(\d{2})$/); if (!m) return null; var iso = m[1]+'-'+m[2]+'-'+m[3]+'T'+m[4]+':'+m[5]+':'+m[6]+m[7]+m[8]+':'+m[9]; var t = new Date(iso).getTime(); return isNaN(t) ? null : t; } function pickITunesResult(results, artist, title) { if (!results || !results.length) return null; var artists = expandArtists(artist); var safeFirst = null; var anyFirst = null; for (var i = 0; i < results.length; i++) { var r = results[i]; if (!r.artworkUrl100) continue; var sa = 0; for (var j = 0; j < artists.length; j++) { var s = similarity(r.artistName, artists[j]); if (s > sa) sa = s; } var st = similarity(r.trackName, title); var ok = (sa >= ARTIST_OK) || (st >= TITLE_STRONG); if (!ok) continue; if (!anyFirst) anyFirst = r; if (!safeFirst && !isCompilation(r.collectionName, r.trackCount)) safeFirst = r; } var chosen = safeFirst || anyFirst; if (!chosen) { log('iTunes: ни один результат не прошёл проверку'); return null; } log('iTunes pick:', chosen.artistName, '-', chosen.trackName, '| альбом:', chosen.collectionName, '| сборник:', isCompilation(chosen.collectionName, chosen.trackCount)); return chosen.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600'); } function fetchCoverITunes(artist, title) { var q = encodeURIComponent(artist + ' ' + title); return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=10&entity=song', 4500) .then(function (r) { return r.json(); }) .then(function (data) { if (!data || !data.results || !data.results.length) { log('iTunes: пусто'); return null; } return pickITunesResult(data.results, artist, title); }) .catch(function (e) { log('iTunes error:', e && e.message); return null; }); } var lastFmQueue = Promise.resolve(); function lastFmThrottle(fn) { var p = lastFmQueue.then(function () { return new Promise(function (res) { setTimeout(res, 300); }); }).then(fn); lastFmQueue = p.catch(function () {}); return p; } function fetchCoverLastFm(artist, title) { return lastFmThrottle(function () { var url = 'https://ws.audioscrobbler.com/2.0/?method=track.getinfo' + '&api_key=' + LASTFM_KEY + '&artist=' + encodeURIComponent(artist) + '&track=' + encodeURIComponent(title) + '&autocorrect=1&format=json'; return fetchWithTimeout(url, 4500) .then(function (r) { return r.json(); }) .then(function (data) { if (!data || !data.track) { log('Last.fm: пусто'); return null; } var track = data.track; if (!track.album || !track.album.image || !track.album.image.length) { log('Last.fm: нет обложки'); return null; } var order = ['extralarge', 'large', 'medium', 'small']; var url2 = null; for (var i = 0; i < order.length && !url2; i++) { for (var j = 0; j < track.album.image.length; j++) { var im = track.album.image[j]; if (im.size === order[i] && im['#text']) { url2 = im['#text']; break; } } } if (!url2) return null; if (url2.indexOf(LASTFM_PLACEHOLDER_HASH) !== -1) { log('Last.fm: placeholder'); return null; } log('Last.fm cover →', url2.slice(0, 80)); return url2; }) .catch(function (e) { log('Last.fm error:', e && e.message); return null; }); }); } /* ============================================================ MANUAL → CACHE → iTunes → Last.fm → LOGO ============================================================ */ function fetchCover(artist, title, cacheKey) { var key = cacheKey; // 1) CACHE var hit = cacheGet(key); if (hit) { log('cover from cache:', key, '| source:', hit.source); return Promise.resolve(hit.url); } // 2) MANUAL var manualKey = normalize(artist + ' - ' + title); for (var mk in MANUAL_COVERS) { if (normalize(mk) === manualKey) { log('cover from MANUAL:', mk); var art0 = MANUAL_COVERS[mk]; cacheSet(key, art0, 'manual', artist, title); return Promise.resolve(art0); } } log('cover lookup:', artist, '-', title); // 3) iTunes → 4) Last.fm → 5) логотип return fetchCoverITunes(artist, title).then(function (art) { if (art) { log('→ источник: iTunes'); cacheSet(key, art, 'itunes', artist, title); return art; } log('iTunes miss, пробую Last.fm'); return fetchCoverLastFm(artist, title).then(function (art2) { if (art2) { log('→ источник: Last.fm'); cacheSet(key, art2, 'lastfm', artist, title); return art2; } log('→ источник: логотип'); cacheSet(key, STATION_LOGO, 'logo', artist, title); return STATION_LOGO; }); }).catch(function () { cacheSet(key, STATION_LOGO, 'logo', artist, title); return STATION_LOGO; }); } function applyMediaSessionMetadata() { document.title = currentTrackArtist + ' - ' + currentTrackTitle + ' | RetroDance Radio'; if (!('mediaSession' in navigator)) return; try { navigator.mediaSession.metadata = new MediaMetadata({ title: currentTrackTitle || 'RetroDance Radio', artist: currentTrackArtist || 'Retro Radio', album: 'RetroDance Radio', artwork: [ { src: currentArtwork, sizes: '96x96', type: 'image/jpeg' }, { src: currentArtwork, sizes: '128x128', type: 'image/jpeg' }, { src: currentArtwork, sizes: '192x192', type: 'image/jpeg' }, { src: currentArtwork, sizes: '256x256', type: 'image/jpeg' }, { src: currentArtwork, sizes: '512x512', type: 'image/jpeg' } ] }); } catch (e) {} } function applyMediaSessionState() { if (!('mediaSession' in navigator)) return; try { navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'; } catch (e) {} } function setMainCover(art) { var url = art || STATION_LOGO; log('setMainCover →', url.slice(0, 80)); if (coverImg.getAttribute('data-want') === url && coverImg.classList.contains('loaded')) { currentArtwork = url; applyMediaSessionMetadata(); return; } currentArtwork = url; coverImg.setAttribute('data-want', url); coverImg.classList.remove('loaded'); if (url === STATION_LOGO) { coverImg.removeAttribute('src'); applyMediaSessionMetadata(); return; } coverImg.src = url; applyMediaSessionMetadata(); } function startRadio() { if (isLoading) return; isLoading = true; updateUI(); var myToken = ++playToken; try { player.src = STREAM_URL + '?t=' + Date.now(); player.load(); player.volume = isMuted ? 0 : 1; player.muted = isMuted; } catch (e) {} var p = player.play(); if (p && p.catch) { p.catch(function (err) { if (myToken !== playToken) return; if (err && err.name === 'AbortError') return; console.error('Playback error:', err); isLoading = false; isPlaying = false; updateUI(); if (userIntent) scheduleReconnect(); }); } } function stopRadio() { playToken++; player.pause(); try { player.removeAttribute('src'); player.load(); } catch (e) {} isPlaying = false; isLoading = false; updateUI(); applyMediaSessionState(); } function toggleRadio(e) { if (e) e.preventDefault(); if (userIntent) { userIntent = false; if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; } reconnectAttempts = 0; stopRadio(); } else { userIntent = true; reconnectAttempts = 0; startRadio(); } } function scheduleReconnect() { if (!userIntent) return; if (reconnectTimer) return; if (reconnectAttempts >= 6) { isLoading = false; updateUI(); return; } reconnectAttempts++; var delay = Math.min(15000, 1500 * Math.pow(1.6, reconnectAttempts - 1)); isLoading = true; updateUI(); log('reconnect attempt', reconnectAttempts, 'in', delay, 'ms'); reconnectTimer = setTimeout(function () { reconnectTimer = null; if (!userIntent) { isLoading = false; updateUI(); return; } tryReconnect(); }, delay); } function tryReconnect() { var myToken = ++playToken; try { player.src = STREAM_URL + '?t=' + Date.now(); player.load(); } catch (e) {} var p = player.play(); if (p && p.catch) { p.catch(function (err) { if (myToken !== playToken) return; if (err && err.name === 'AbortError') return; scheduleReconnect(); }); } } player.addEventListener('playing', function () { isPlaying = true; isLoading = false; reconnectAttempts = 0; updateUI(); applyMediaSessionState(); applyMediaSessionMetadata(); log('stream playing'); }); player.addEventListener('pause', function () { if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); applyMediaSessionState(); } }); player.addEventListener('stalled', function () { log('stream stalled'); if (userIntent && !reconnectTimer) scheduleReconnect(); }); player.addEventListener('ended', function () { log('stream ended'); if (userIntent) scheduleReconnect(); }); player.addEventListener('error', function () { var code = player.error && player.error.code; if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); return; } if (code === 1) return; console.error('Audio error:', player.error); isPlaying = false; isLoading = true; updateUI(); scheduleReconnect(); }); window.addEventListener('online', function () { log('browser online'); if (!userIntent) return; if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; } reconnectAttempts = 0; isLoading = true; updateUI(); setTimeout(function () { if (userIntent) tryReconnect(); }, 800); }); window.addEventListener('offline', function () { log('browser offline'); if (!userIntent) return; isLoading = true; updateUI(); }); muteBtn.addEventListener('click', function () { isMuted = !isMuted; player.muted = isMuted; player.volume = isMuted ? 0 : 1; updateVolumeIcon(); }); playBtn.addEventListener('click', toggleRadio); if ('mediaSession' in navigator) { try { navigator.mediaSession.setActionHandler('play', function () { userIntent = true; reconnectAttempts = 0; startRadio(); }); navigator.mediaSession.setActionHandler('pause', function () { userIntent = false; stopRadio(); }); } catch (e) {} } function scheduleMetadata(delay) { if (metadataTimer) clearTimeout(metadataTimer); metadataTimer = setTimeout(updateMetadata, delay); } function updateMetadata() { if (!navigator.onLine) { scheduleMetadata(8000); return; } fetchWithTimeout(LAUT_API + '/current_song?t=' + Date.now(), 5000) .then(function (r) { return r.json(); }) .then(function (data) { if (!data || !data.title) { scheduleMetadata(8000); return; } var artist = (data.artist && data.artist.name) ? data.artist.name : (typeof data.artist === 'string' ? data.artist : 'Retro Radio'); var title = data.title; var trackKey = (artist + ' - ' + title).toLowerCase(); var nextDelay = 8000; if (data.ends_at) { var endTime = parseLautDate(data.ends_at); if (endTime) { var diff = endTime - Date.now(); if (diff > 2000 && diff < 30 * 60 * 1000) { nextDelay = Math.min(diff + 1200, MAX_POLL_DELAY); } } } scheduleMetadata(nextDelay); log('track:', trackKey, '| same:', trackKey === currentTrackKey, '| next in', nextDelay, 'ms'); if (trackKey !== currentTrackKey) { currentTrackKey = trackKey; currentTrackTitle = title; currentTrackArtist = artist; titleEl.textContent = title; artistEl.textContent = artist; applyMediaSessionMetadata(); fetchCover(artist, title, trackKey).then(setMainCover); } }) .catch(function (e) { console.error('Metadata error:', e); scheduleMetadata(8000); }); } function updateHistory() { if (!navigator.onLine) return; updateMetadata(); fetchWithTimeout(LAUT_API + '/last_songs', 5000) .then(function (r) { return r.json(); }) .then(function (data) { if (!Array.isArray(data)) return; historyList.innerHTML = ''; var items = data.slice(0, 5); var rows = items.map(function (song) { var artistName = (song.artist && song.artist.name) ? song.artist.name : (typeof song.artist === 'string' ? song.artist : 'Retro Radio'); var item = document.createElement('div'); item.className = 'history-item'; var img = document.createElement('img'); img.className = 'history-thumb'; img.alt = ''; var textDiv = document.createElement('div'); textDiv.className = 'history-text'; var aSpan = document.createElement('span'); aSpan.className = 'history-artist'; aSpan.textContent = artistName; var tSpan = document.createElement('span'); tSpan.className = 'history-song-title'; tSpan.textContent = song.title || ''; textDiv.appendChild(aSpan); textDiv.appendChild(tSpan); item.appendChild(img); item.appendChild(textDiv); historyList.appendChild(item); return { img: img, artist: artistName, title: song.title, key: (artistName + ' - ' + (song.title || '')).toLowerCase() }; }); return Promise.all(rows.map(function (row) { return fetchCover(row.artist, row.title, row.key).then(function (art) { if (art && art !== STATION_LOGO) { var test = new Image(); test.onload = function () { row.img.src = art; }; test.src = art; } }); })); }) .catch(function (e) { console.error('History error:', e); }); } function updateListeners() { if (!navigator.onLine) return; fetchWithTimeout(LAUT_API + '/listeners', 5000) .then(function (r) { return r.text(); }) .then(function (count) { var t = (count || '').trim(); if (t && t !== '0') listenersEl.textContent = t; }) .catch(function () {}); } document.querySelectorAll('.tab-btn').forEach(function (btn) { btn.addEventListener('click', function () { var tab = btn.dataset.tab; document.querySelectorAll('.tab-btn').forEach(function (b) { var active = b.dataset.tab === tab; b.classList.toggle('active', active); b.setAttribute('aria-selected', active ? 'true' : 'false'); }); document.querySelectorAll('.tab-panel').forEach(function (panel) { panel.classList.toggle('active', panel.id === 'panel-' + tab); }); if (tab === 'history') updateHistory(); }); }); updateVolumeIcon(); applyMediaSessionMetadata(); updateMetadata(); updateListeners(); setInterval(updateListeners, 45000); log('cache loaded:', Object.keys(coverCache).length, 'entries'); log('утилиты: RD_CACHE_STATS(), RD_CACHE_DUMP(), RD_CACHE_CLEAR()'); })(); </script> </body> </html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d0d0d">
+  <link rel="icon" type="image/png" href="https://i.postimg.cc/28VKXjCx/logo.png">
+  <link rel="apple-touch-icon" href="https://i.postimg.cc/28VKXjCx/logo.png">
+  <title>RetroDance Radio</title>
+
+  <meta name="description" content="RetroDance Radio — энергичное ретро и клубные хиты 90-х и 2000-х онлайн 24/7.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="RetroDance Radio">
+  <meta property="og:title" content="RetroDance Radio — включай энергию прошлого!">
+  <meta property="og:description" content="Энергичное ретро и клубные хиты онлайн 24/7.">
+  <meta property="og:image" content="https://i.postimg.cc/28VKXjCx/logo.png">
+  <meta property="og:url" content="https://retrodanceradio.com/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="RetroDance Radio">
+  <meta name="twitter:description" content="Энергичное ретро и клубные хиты онлайн 24/7.">
+  <meta name="twitter:image" content="https://i.postimg.cc/28VKXjCx/logo.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: #0d0d0d;
+      font-family: 'Inter', sans-serif;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    .app-bg {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+    }
+
+    .bg-sphere {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(225,29,72,0.18) 0%, transparent 70%);
+      z-index: 0;
+      filter: blur(80px);
+      animation: sphereMove 30s infinite alternate linear;
+      pointer-events: none;
+    }
+
+    @keyframes sphereMove {
+      from { transform: translate(-15%, -15%) scale(1.2); }
+      to   { transform: translate(15%, 15%) scale(0.9); }
+    }
+
+    .glass-card {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 420px;
+      background: rgba(45,0,10,0.88);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 48px;
+      padding: 32px;
+      text-align: center;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 0 4px;
+    }
+
+    .live-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: #e11d48;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .listeners-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.78);
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .listeners-pill svg {
+      width: 14px;
+      height: 14px;
+      color: #e11d48;
+      flex-shrink: 0;
+    }
+
+    .cover-wrapper {
+      width: 260px;
+      height: 260px;
+      margin: 0 auto 28px;
+      background-color: #1a1a1a;
+      background-image: url('https://i.postimg.cc/28VKXjCx/logo.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      border-radius: 36px;
+      overflow: hidden;
+      box-shadow:
+        0 20px 60px rgba(0,0,0,0.8),
+        0 0 0 1px rgba(255,255,255,0.06);
+      position: relative;
+    }
+
+    #cover-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.4s ease-in-out;
+      display: block;
+    }
+
+    #cover-img.loaded { opacity: 1; }
+
+    .track-info { margin-bottom: 24px; }
+
+    .station-name {
+      font-size: 26px;
+      font-weight: 900;
+      font-style: italic;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+      line-height: 1;
+    }
+
+    .accent { color: #e11d48; }
+
+    #artist-el {
+      font-size: 10px;
+      font-weight: 700;
+      color: #fb7185;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      opacity: 0.85;
+      margin-bottom: 8px;
+    }
+
+    #title-el {
+      font-size: 18px;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-style: italic;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      min-height: 2.8em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 8px;
+    }
+
+    .custom-player {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .play-btn {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #e11d48, #9f1239);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 6px 20px rgba(225,29,72,0.4);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 0;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .play-btn:active { transform: scale(0.92); }
+
+    .play-btn svg {
+      width: 34px;
+      height: 34px;
+      display: block;
+    }
+
+    .ico-play-shape { transform: translateX(4px); }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spin { animation: spin 1s linear infinite; }
+
+    .side-btn {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.85);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      outline: none;
+      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      flex-shrink: 0;
+      text-decoration: none;
+    }
+
+    .side-btn:active { transform: scale(0.94); }
+
+    .laut-text {
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      color: rgba(255,255,255,0.9);
+      display: block;
+      line-height: 1;
+    }
+
+    .side-btn.is-muted {
+      color: #e11d48;
+      background: rgba(225,29,72,0.12);
+      border-color: rgba(225,29,72,0.2);
+    }
+
+    .side-btn svg {
+      width: 24px;
+      height: 24px;
+      display: block;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      width: 100%;
+      padding: 4px;
+      margin: 0 0 20px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      border: 0;
+      border-radius: 14px;
+      padding: 10px 4px;
+      background: transparent;
+      color: rgba(255,255,255,0.42);
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .tab-btn.active {
+      background: #e11d48;
+      color: white;
+      box-shadow: 0 8px 22px rgba(225,29,72,0.25);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .history-section,
+    .contacts-section {
+      text-align: left;
+      margin-bottom: 20px;
+    }
+
+    .history-label,
+    .contacts-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      opacity: 0.35;
+      margin-bottom: 12px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .history-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: #1a1a1a url('https://i.postimg.cc/28VKXjCx/logo.png') center/cover no-repeat;
+    }
+
+    .history-text {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .history-artist {
+      color: #fb7185;
+      font-weight: 700;
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-song-title {
+      color: rgba(255,255,255,0.75);
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .contacts-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 4px;
+    }
+
+    .contact-link {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      color: white;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .contact-link:active {
+      transform: scale(0.98);
+      background: rgba(255,255,255,0.08);
+    }
+
+    .contact-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fb7185;
+      flex-shrink: 0;
+    }
+
+    .contact-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .contact-info {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .contact-title {
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #fb7185;
+      margin-bottom: 2px;
+    }
+
+    .contact-value {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .legal {
+      font-size: 9px;
+      opacity: 0.4;
+      line-height: 1.6;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 20px;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-bg">
+    <div class="bg-sphere"></div>
+
+    <div class="glass-card">
+
+      <div class="card-header">
+        <span class="live-badge">● Live</span>
+
+        <span class="listeners-pill" aria-label="Количество слушателей">
+          <svg viewBox="0 0 24 24"
+               fill="none"
+               stroke="currentColor"
+               stroke-width="2"
+               stroke-linecap="round"
+               stroke-linejoin="round"
+               aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span id="listeners-el">0</span>
+        </span>
+      </div>
+
+      <div class="cover-wrapper">
+        <img id="cover-img" alt="">
+      </div>
+
+      <div class="track-info">
+        <h1 class="station-name">Retro<span class="accent">Dance</span></h1>
+        <p id="artist-el">Retro Radio</p>
+        <p id="title-el">Нажмите Play</p>
+      </div>
+
+      <audio id="player" preload="none" playsinline webkit-playsinline></audio>
+
+      <div class="tabs" role="tablist" aria-label="Разделы radio">
+        <button class="tab-btn active" id="tab-player" type="button" data-tab="player" role="tab" aria-selected="true">Плеер</button>
+        <button class="tab-btn" id="tab-history" type="button" data-tab="history" role="tab" aria-selected="false">История</button>
+        <button class="tab-btn" id="tab-contacts" type="button" data-tab="contacts" role="tab" aria-selected="false">Контакты</button>
+      </div>
+
+      <div class="tab-panel active" id="panel-player" role="tabpanel" aria-labelledby="tab-player">
+        <div class="custom-player">
+          <a href="https://laut.fm/retrodance" target="_blank" rel="noopener" class="side-btn" id="laut-btn" aria-label="Слушать на laut.fm">
+            <span class="laut-text">LAUT.FM</span>
+          </a>
+
+          <button class="play-btn" id="play-btn" type="button" aria-label="Play/Pause">
+            <svg id="play-svg" class="ico-play-shape" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7 5v14l11-7z"/>
+            </svg>
+          </button>
+
+          <button class="side-btn" id="mute-btn" type="button" aria-label="Выключить звук">
+            <svg id="mute-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path id="mute-path" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history">
+        <div class="history-section" id="history-section">
+          <h3 class="history-label">История эфира</h3>
+          <div id="history-list"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-contacts" role="tabpanel" aria-labelledby="tab-contacts">
+        <div class="contacts-section">
+          <h3 class="contacts-label">Мы на связи</h3>
+          <div class="contacts-grid">
+
+            <a href="https://t.me/retrodance_radio" target="_blank" rel="noopener" class="contact-link">
+              <div class="contact-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-1-.65-.35-1 .22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.24-5.54 3.65-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.35-.49.97-.74 3.79-1.65 6.32-2.74 7.57-3.27 3.61-1.53 4.36-1.8 4.85-1.8.11 0 .35.03.5.15.13.1.17.25.18.35-.01.07-.01.19-.02.29z"/>
+                </svg>
+              </div>
+              <div class="contact-info">
+                <span class="contact-title">Telegram</span>
+                <span class="contact-value">Канал RetroDance</span>
+              </div>
+            </a>
+
+            <a href="mailto:retrodanceradiomusic.com" class="contact-link">
+              <div class="contact-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                </svg>
+              </div>
+              <div class="contact-info">
+                <span class="contact-title">Gmail</span>
+                <span class="contact-value">retrodanceradiomusic.com</span>
+              </div>
+            </a>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="legal">
+        <p>Radio-Hosting powered by <b>laut.fm</b> | Verantwortlich für die Inhalte: <b>laut.ag</b></p>
+        <p style="margin-top: 8px;">Some content on this site is created with AI assistance. / Einige Inhalte dieser Website wurden mit Hilfe von KI erstellt.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var STATION_LOGO   = 'https://i.postimg.cc/28VKXjCx/logo.png';
+    var STREAM_URL     = 'https://stream.laut.fm/retrodance';
+    var LAUT_API       = 'https://api.laut.fm/station/retrodance';
+    var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
+
+    var CACHE_KEY      = 'rd_cover_cache_v15';
+    var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
+
+    var DEBUG          = true;
+    var MAX_POLL_DELAY = 12000;
+    var LOAD_WATCHDOG  = 12000;
+
+    var ARTIST_OK    = 0.30;
+    var TITLE_STRONG = 0.80;
+
+    var MANUAL_COVERS = {
+      // 'masterboy - feel the heat of the night': 'https://.../original.jpg',
+    };
+
+    var COMPILATION_MARKERS = [
+      'hits', 'best of', 'greatest', 'collection', 'compilation',
+      '90er', '80er', '70er', '60er', 'generation', 'various',
+      'the best', 'essential', 'ultimate', 'now that',
+      'хиты', 'лучшие', 'сборник', 'золотые', 'дискотека'
+    ];
+
+    var ARTIST_ALIASES = {
+      'виктор салтыков': ['форум', 'forum'],
+      'форум':           ['виктор салтыков'],
+      'владимир кузьмин':['динамик', 'dinamik'],
+      'динамик':         ['владимир кузьмин'],
+      'юрий шатунов':    ['ласковый май'],
+      'ласковый май':    ['юрий шатунов'],
+      'роман жуков':     ['мираж'],
+      'мираж':           ['роман жуков']
+    };
+
+    var LASTFM_PLACEHOLDER_HASH =
+      '2a96cbd8b46e442fc41c2b86b821562f';
+
+    var player      = document.getElementById('player');
+    var playBtn     = document.getElementById('play-btn');
+    var playSvg     = document.getElementById('play-svg');
+    var muteBtn     = document.getElementById('mute-btn');
+    var mutePath    = document.getElementById('mute-path');
+    var coverImg    = document.getElementById('cover-img');
+    var artistEl    = document.getElementById('artist-el');
+    var titleEl     = document.getElementById('title-el');
+    var listenersEl = document.getElementById('listeners-el');
+    var historyList = document.getElementById('history-list');
+
+    var userIntent = false;
+    var isPlaying  = false;
+    var isLoading  = false;
+    var isMuted    = false;
+
+    var currentTrackKey   = '';
+    var currentTrackTitle = 'Нажмите Play';
+    var currentTrackArtist = 'Retro Radio';
+    var currentArtwork    = STATION_LOGO;
+
+    var reconnectTimer = null;
+    var reconnectAttempts = 0;
+    var metadataTimer = null;
+    var playToken = 0;
+    var loadWatchdog = null;
+
+    var SVG_PLAY = '<path d="M7 5v14l11-7z"/>';
+    var SVG_STOP = '<path d="M6 6h12v12H6z"/>';
+    var SVG_LOAD = '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="40 20" fill="none" class="spin"/>';
+    var VOL_HIGH = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
+    var VOL_MUTE = 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-3-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z';
+
+    function log() {
+      if (DEBUG && window.console) {
+        console.log.apply(console, ['[RD]'].concat([].slice.call(arguments)));
+      }
+    }
+
+    function armLoadWatchdog() {
+      if (loadWatchdog) clearTimeout(loadWatchdog);
+      loadWatchdog = setTimeout(function () {
+        if (isLoading) {
+          log('watchdog: isLoading завис — сбрасываю');
+          isLoading = false;
+          isPlaying = false;
+          updateUI();
+          applyMediaSessionState();
+        }
+      }, LOAD_WATCHDOG);
+    }
+
+    function disarmLoadWatchdog() {
+      if (loadWatchdog) { clearTimeout(loadWatchdog); loadWatchdog = null; }
+    }
+
+    coverImg.addEventListener('load', function () { coverImg.classList.add('loaded'); });
+    coverImg.addEventListener('error', function () { coverImg.classList.remove('loaded'); });
+
+    function updateUI() {
+      if (isLoading) {
+        playSvg.innerHTML = SVG_LOAD;
+        playSvg.classList.remove('ico-play-shape');
+      } else if (isPlaying) {
+        playSvg.innerHTML = SVG_STOP;
+        playSvg.classList.remove('ico-play-shape');
+      } else {
+        playSvg.innerHTML = SVG_PLAY;
+        playSvg.classList.add('ico-play-shape');
+      }
+    }
+
+    function updateVolumeIcon() {
+      if (isMuted) {
+        mutePath.setAttribute('d', VOL_MUTE);
+        muteBtn.classList.add('is-muted');
+        muteBtn.setAttribute('aria-label', 'Включить звук');
+      } else {
+        mutePath.setAttribute('d', VOL_HIGH);
+        muteBtn.classList.remove('is-muted');
+        muteBtn.setAttribute('aria-label', 'Выключить звук');
+      }
+    }
+
+    var coverCache = (function () {
+      try {
+        var raw = localStorage.getItem(CACHE_KEY);
+        if (!raw) return {};
+        var data = JSON.parse(raw);
+        var now = Date.now();
+        var out = {};
+        for (var k in data) {
+          var e = data[k];
+          if (!e || typeof e !== 'object') continue;
+          if (e.url && e.t && (now - e.t) < CACHE_TTL) {
+            out[k] = {
+              url: e.url,
+              source: e.source || 'unknown',
+              t: e.t,
+              artist: e.artist || '',
+              title: e.title || ''
+            };
+            continue;
+          }
+          if (e.v && e.t && (now - e.t) < CACHE_TTL) {
+            out[k] = { url: e.v, source: 'legacy', t: e.t, artist: '', title: '' };
+          }
+        }
+        return out;
+      } catch (e) { return {}; }
+    })();
+
+    function saveCache() {
+      try {
+        var out = {}, i = 0;
+        for (var k in coverCache) {
+          if (i++ >= 500) break;
+          out[k] = coverCache[k];
+        }
+        localStorage.setItem(CACHE_KEY, JSON.stringify(out));
+      } catch (e) {}
+    }
+
+    function cacheGet(key) {
+      var e = coverCache[key];
+      if (!e || !e.url) return null;
+      if ((Date.now() - e.t) >= CACHE_TTL) { delete coverCache[key]; return null; }
+      return e;
+    }
+
+    function cacheSet(key, url, source, artist, title) {
+      coverCache[key] = {
+        url: url, source: source, t: Date.now(),
+        artist: artist || '', title: title || ''
+      };
+      saveCache();
+    }
+
+    window.RD_CACHE_STATS = function () {
+      var stats = { total: 0, bySource: {}, oldestDays: 0, newestDays: 0 };
+      var now = Date.now(); var first = true;
+      for (var k in coverCache) {
+        stats.total++;
+        var s = coverCache[k].source || 'unknown';
+        stats.bySource[s] = (stats.bySource[s] || 0) + 1;
+        var ageDays = (now - coverCache[k].t) / 86400000;
+        if (ageDays > stats.oldestDays) stats.oldestDays = Math.round(ageDays * 10) / 10;
+        if (first || ageDays < stats.newestDays) { stats.newestDays = Math.round(ageDays * 10) / 10; first = false; }
+      }
+      return stats;
+    };
+
+    window.RD_CACHE_DUMP = function () {
+      var out = []; var now = Date.now();
+      for (var k in coverCache) {
+        out.push({
+          track: k,
+          source: coverCache[k].source || 'unknown',
+          ageDays: Math.round((now - coverCache[k].t) / 86400000 * 10) / 10,
+          url: (coverCache[k].url || '').slice(0, 70)
+        });
+      }
+      out.sort(function (a, b) { return a.source.localeCompare(b.source) || b.ageDays - a.ageDays; });
+      return out;
+    };
+
+    window.RD_CACHE_CLEAR = function () {
+      for (var k in coverCache) delete coverCache[k];
+      try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
+      log('cache cleared');
+    };
+
+    function fetchWithTimeout(url, ms) {
+      var controller = new AbortController();
+      var timer = setTimeout(function () { controller.abort(); }, ms || 5000);
+      return fetch(url, { signal: controller.signal }).finally(function () { clearTimeout(timer); });
+    }
+
+    function normalize(s) {
+      return String(s || '')
+        .toLowerCase()
+        .replace(/\(.*?\)/g, ' ')
+        .replace(/\[.*?\]/g, ' ')
+        .replace(/\bfeat\.?\b.*$/i, ' ')
+        .replace(/\bft\.?\b.*$/i, ' ')
+        .replace(/[^a-zа-яё0-9]+/gi, ' ')
+        .trim();
+    }
+
+    function similarity(a, b) {
+      a = normalize(a); b = normalize(b);
+      if (!a || !b) return 0;
+      if (a === b) return 1;
+      var as = a.split(/\s+/); var bs = b.split(/\s+/);
+      var setB = {};
+      for (var i = 0; i < bs.length; i++) setB[bs[i]] = 1;
+      var hit = 0;
+      for (var j = 0; j < as.length; j++) if (setB[as[j]]) hit++;
+      return (2 * hit) / (as.length + bs.length);
+    }
+
+    function expandArtists(artist) {
+      var key = normalize(artist);
+      var out = [artist];
+      var aliases = ARTIST_ALIASES[key];
+      if (aliases) aliases.forEach(function (a) { if (a) out.push(a); });
+      return out;
+    }
+
+    function isCompilation(collectionName, trackCount) {
+      if (trackCount && trackCount > 15) return true;
+      if (!collectionName) return false;
+      var n = collectionName.toLowerCase();
+      for (var i = 0; i < COMPILATION_MARKERS.length; i++) {
+        if (n.indexOf(COMPILATION_MARKERS[i]) !== -1) return true;
+      }
+      return false;
+    }
+
+    function parseLautDate(s) {
+      if (!s) return null;
+      var m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s*([+-])(\d{2})(\d{2})$/);
+      if (!m) return null;
+      var iso = m[1]+'-'+m[2]+'-'+m[3]+'T'+m[4]+':'+m[5]+':'+m[6]+m[7]+m[8]+':'+m[9];
+      var t = new Date(iso).getTime();
+      return isNaN(t) ? null : t;
+    }
+
+    function pickITunesResult(results, artist, title) {
+      if (!results || !results.length) return null;
+      var artists = expandArtists(artist);
+      var safeFirst = null;
+      var anyFirst = null;
+      for (var i = 0; i < results.length; i++) {
+        var r = results[i];
+        if (!r.artworkUrl100) continue;
+        var sa = 0;
+        for (var j = 0; j < artists.length; j++) {
+          var s = similarity(r.artistName, artists[j]);
+          if (s > sa) sa = s;
+        }
+        var st = similarity(r.trackName, title);
+        var ok = (sa >= ARTIST_OK) || (st >= TITLE_STRONG);
+        if (!ok) continue;
+        if (!anyFirst) anyFirst = r;
+        if (!safeFirst && !isCompilation(r.collectionName, r.trackCount)) safeFirst = r;
+      }
+      var chosen = safeFirst || anyFirst;
+      if (!chosen) { log('iTunes: ни один результат не прошёл проверку'); return null; }
+      log('iTunes pick:', chosen.artistName, '-', chosen.trackName,
+          '| альбом:', chosen.collectionName,
+          '| сборник:', isCompilation(chosen.collectionName, chosen.trackCount));
+      return chosen.artworkUrl100
+        .replace('100x100bb.jpg', '600x600bb.jpg')
+        .replace('100x100', '600x600');
+    }
+
+    function fetchCoverITunes(artist, title) {
+      var q = encodeURIComponent(artist + ' ' + title);
+      return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=10&entity=song', 4500)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data || !data.results || !data.results.length) {
+            log('iTunes: пусто');
+            return null;
+          }
+          return pickITunesResult(data.results, artist, title);
+        })
+        .catch(function (e) { log('iTunes error:', e && e.message); return null; });
+    }
+
+    var lastFmQueue = Promise.resolve();
+    function lastFmThrottle(fn) {
+      var p = lastFmQueue.then(function () {
+        return new Promise(function (res) { setTimeout(res, 300); });
+      }).then(fn);
+      lastFmQueue = p.catch(function () {});
+      return p;
+    }
+
+    function fetchCoverLastFm(artist, title) {
+      return lastFmThrottle(function () {
+        var url = 'https://ws.audioscrobbler.com/2.0/?method=track.getinfo' +
+          '&api_key=' + LASTFM_KEY +
+          '&artist=' + encodeURIComponent(artist) +
+          '&track=' + encodeURIComponent(title) +
+          '&autocorrect=1&format=json';
+        return fetchWithTimeout(url, 4500)
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data || !data.track) { log('Last.fm: пусто'); return null; }
+            var track = data.track;
+            if (!track.album || !track.album.image || !track.album.image.length) {
+              log('Last.fm: нет обложки');
+              return null;
+            }
+            var order = ['extralarge', 'large', 'medium', 'small'];
+            var url2 = null;
+            for (var i = 0; i < order.length && !url2; i++) {
+              for (var j = 0; j < track.album.image.length; j++) {
+                var im = track.album.image[j];
+                if (im.size === order[i] && im['#text']) { url2 = im['#text']; break; }
+              }
+            }
+            if (!url2) return null;
+            if (url2.indexOf(LASTFM_PLACEHOLDER_HASH) !== -1) {
+              log('Last.fm: placeholder');
+              return null;
+            }
+            log('Last.fm cover →', url2.slice(0, 80));
+            return url2;
+          })
+          .catch(function (e) { log('Last.fm error:', e && e.message); return null; });
+      });
+    }
+
+    function fetchCover(artist, title, cacheKey) {
+      var key = cacheKey;
+      var hit = cacheGet(key);
+      if (hit) {
+        log('cover from cache:', key, '| source:', hit.source);
+        return Promise.resolve(hit.url);
+      }
+      var manualKey = normalize(artist + ' - ' + title);
+      for (var mk in MANUAL_COVERS) {
+        if (normalize(mk) === manualKey) {
+          log('cover from MANUAL:', mk);
+          var art0 = MANUAL_COVERS[mk];
+          cacheSet(key, art0, 'manual', artist, title);
+          return Promise.resolve(art0);
+        }
+      }
+      log('cover lookup:', artist, '-', title);
+      return fetchCoverITunes(artist, title).then(function (art) {
+        if (art) {
+          log('→ источник: iTunes');
+          cacheSet(key, art, 'itunes', artist, title);
+          return art;
+        }
+        log('iTunes miss, пробую Last.fm');
+        return fetchCoverLastFm(artist, title).then(function (art2) {
+          if (art2) {
+            log('→ источник: Last.fm');
+            cacheSet(key, art2, 'lastfm', artist, title);
+            return art2;
+          }
+          log('→ источник: логотип');
+          cacheSet(key, STATION_LOGO, 'logo', artist, title);
+          return STATION_LOGO;
+        });
+      }).catch(function () {
+        cacheSet(key, STATION_LOGO, 'logo', artist, title);
+        return STATION_LOGO;
+      });
+    }
+
+    function getArtworkType(url) {
+      if (!url) return 'image/jpeg';
+      var clean = String(url).split('?')[0].toLowerCase();
+      if (clean.indexOf('.png') !== -1) return 'image/png';
+      if (clean.indexOf('.webp') !== -1) return 'image/webp';
+      if (clean.indexOf('.gif') !== -1) return 'image/gif';
+      return 'image/jpeg';
+    }
+
+    function applyMediaSessionMetadata() {
+      document.title = currentTrackArtist + ' - ' + currentTrackTitle + ' | RetroDance Radio';
+      if (!('mediaSession' in navigator)) return;
+      try {
+        var artworkType = getArtworkType(currentArtwork);
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: currentTrackTitle || 'RetroDance Radio',
+          artist: currentTrackArtist || 'Retro Radio',
+          album: 'RetroDance Radio',
+          artwork: [
+            { src: currentArtwork, sizes: '96x96',   type: artworkType },
+            { src: currentArtwork, sizes: '128x128', type: artworkType },
+            { src: currentArtwork, sizes: '192x192', type: artworkType },
+            { src: currentArtwork, sizes: '256x256', type: artworkType },
+            { src: currentArtwork, sizes: '512x512', type: artworkType }
+          ]
+        });
+      } catch (e) {}
+    }
+
+    function applyMediaSessionState() {
+      if (!('mediaSession' in navigator)) return;
+      try { navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'; }
+      catch (e) {}
+    }
+
+    function setMainCover(art) {
+      var url = art || STATION_LOGO;
+      log('setMainCover →', url.slice(0, 80));
+      if (coverImg.getAttribute('data-want') === url && coverImg.classList.contains('loaded')) {
+        currentArtwork = url;
+        applyMediaSessionMetadata();
+        return;
+      }
+      currentArtwork = url;
+      coverImg.setAttribute('data-want', url);
+      coverImg.classList.remove('loaded');
+      if (url === STATION_LOGO) {
+        coverImg.removeAttribute('src');
+        applyMediaSessionMetadata();
+        return;
+      }
+      coverImg.src = url;
+      applyMediaSessionMetadata();
+    }
+
+    function startRadio() {
+      if (isLoading) { log('startRadio: уже isLoading — игнор'); return; }
+      isLoading = true;
+      updateUI();
+      armLoadWatchdog();
+
+      var myToken = ++playToken;
+      try {
+        player.src = STREAM_URL + '?t=' + Date.now();
+        player.volume = isMuted ? 0 : 1;
+        player.muted = isMuted;
+      } catch (e) {}
+
+      var p = player.play();
+      if (p && p.catch) {
+        p.catch(function (err) {
+          if (myToken !== playToken) return;
+          if (err && err.name === 'AbortError') {
+            log('play() AbortError — сброс');
+            isLoading = false;
+            updateUI();
+            disarmLoadWatchdog();
+            return;
+          }
+          console.error('Playback error:', err);
+          isLoading = false;
+          isPlaying = false;
+          updateUI();
+          disarmLoadWatchdog();
+          if (userIntent) scheduleReconnect();
+        });
+      }
+    }
+
+    function stopRadio() {
+      playToken++;
+      disarmLoadWatchdog();
+      player.pause();
+      try {
+        player.removeAttribute('src');
+        player.load();
+      } catch (e) {}
+      isPlaying = false;
+      isLoading = false;
+      updateUI();
+      applyMediaSessionState();
+    }
+
+    function toggleRadio(e) {
+      if (e) e.preventDefault();
+      if (userIntent) {
+        userIntent = false;
+        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+        reconnectAttempts = 0;
+        stopRadio();
+      } else {
+        userIntent = true;
+        reconnectAttempts = 0;
+        startRadio();
+      }
+    }
+
+    function scheduleReconnect() {
+      if (!userIntent) return;
+      if (reconnectTimer) return;
+      if (reconnectAttempts >= 6) {
+        log('reconnect: максимум попыток');
+        reconnectAttempts = 0;
+        userIntent = false;
+        isLoading = false;
+        isPlaying = false;
+        updateUI();
+        applyMediaSessionState();
+        return;
+      }
+      reconnectAttempts++;
+      var delay = Math.min(15000, 1500 * Math.pow(1.6, reconnectAttempts - 1));
+      isLoading = true;
+      updateUI();
+      log('reconnect attempt', reconnectAttempts, 'in', delay, 'ms');
+      reconnectTimer = setTimeout(function () {
+        reconnectTimer = null;
+        if (!userIntent) { isLoading = false; updateUI(); return; }
+        tryReconnect();
+      }, delay);
+    }
+
+    function tryReconnect() {
+      var myToken = ++playToken;
+      try {
+        player.src = STREAM_URL + '?t=' + Date.now();
+        player.load();
+      } catch (e) {}
+      var p = player.play();
+      if (p && p.catch) {
+        p.catch(function (err) {
+          if (myToken !== playToken) return;
+          if (err && err.name === 'AbortError') {
+            log('tryReconnect AbortError');
+            return;
+          }
+          scheduleReconnect();
+        });
+      }
+    }
+
+    player.addEventListener('playing', function () {
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      isPlaying = true;
+      isLoading = false;
+      reconnectAttempts = 0;
+      disarmLoadWatchdog();
+      updateUI();
+      applyMediaSessionState();
+      applyMediaSessionMetadata();
+      log('stream playing');
+    });
+
+    player.addEventListener('pause', function () {
+      if (!userIntent) {
+        isPlaying = false;
+        isLoading = false;
+        updateUI();
+        applyMediaSessionState();
+      }
+    });
+
+    player.addEventListener('stalled', function () {
+      log('stream stalled');
+      if (userIntent && !reconnectTimer) scheduleReconnect();
+    });
+
+    player.addEventListener('ended', function () {
+      log('stream ended');
+      if (userIntent) scheduleReconnect();
+    });
+
+    player.addEventListener('error', function () {
+      var code = player.error && player.error.code;
+      if (!userIntent) {
+        isPlaying = false;
+        isLoading = false;
+        updateUI();
+        disarmLoadWatchdog();
+        return;
+      }
+      if (code === 1) return;
+      console.error('Audio error:', player.error);
+      isPlaying = false;
+      isLoading = true;
+      updateUI();
+      scheduleReconnect();
+    });
+
+    window.addEventListener('online', function () {
+      log('browser online');
+      if (!userIntent) return;
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      reconnectAttempts = 0;
+      isLoading = true;
+      updateUI();
+      setTimeout(function () {
+        if (userIntent && !isPlaying) tryReconnect();
+      }, 800);
+    });
+
+    window.addEventListener('offline', function () {
+      log('browser offline');
+      if (!userIntent) return;
+      isLoading = true;
+      updateUI();
+    });
+
+    muteBtn.addEventListener('click', function () {
+      isMuted = !isMuted;
+      player.muted = isMuted;
+      player.volume = isMuted ? 0 : 1;
+      updateVolumeIcon();
+    });
+
+    playBtn.addEventListener('click', toggleRadio);
+
+    if ('mediaSession' in navigator) {
+      try {
+        navigator.mediaSession.setActionHandler('play', function () {
+          if (userIntent && isPlaying) return;
+          userIntent = true;
+          reconnectAttempts = 0;
+          startRadio();
+        });
+        navigator.mediaSession.setActionHandler('pause', function () {
+          userIntent = false;
+          if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+          stopRadio();
+        });
+      } catch (e) {}
+    }
+
+    function scheduleMetadata(delay) {
+      if (metadataTimer) clearTimeout(metadataTimer);
+      metadataTimer = setTimeout(updateMetadata, delay);
+    }
+
+    function updateMetadata() {
+      if (!navigator.onLine) { scheduleMetadata(8000); return; }
+      fetchWithTimeout(LAUT_API + '/current_song?t=' + Date.now(), 5000)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data || !data.title) { scheduleMetadata(8000); return; }
+          var artist = (data.artist && data.artist.name)
+            ? data.artist.name
+            : (typeof data.artist === 'string' ? data.artist : 'Retro Radio');
+          var title = data.title;
+          var trackKey = (artist + ' - ' + title).toLowerCase();
+
+          var nextDelay = 8000;
+          if (data.ends_at) {
+            var endTime = parseLautDate(data.ends_at);
+            if (endTime) {
+              var diff = endTime - Date.now();
+              if (diff > 2000 && diff < 30 * 60 * 1000) {
+                nextDelay = Math.min(diff + 1200, MAX_POLL_DELAY);
+              }
+            }
+          }
+          scheduleMetadata(nextDelay);
+
+          log('track:', trackKey, '| same:', trackKey === currentTrackKey, '| next in', nextDelay, 'ms');
+
+          if (trackKey !== currentTrackKey) {
+            currentTrackKey = trackKey;
+            currentTrackTitle = title;
+            currentTrackArtist = artist;
+            titleEl.textContent = title;
+            artistEl.textContent = artist;
+            applyMediaSessionMetadata();
+
+            (function (expectedKey) {
+              fetchCover(artist, title, expectedKey).then(function (art) {
+                if (currentTrackKey !== expectedKey) {
+                  log('stale cover ignored:', expectedKey);
+                  return;
+                }
+                setMainCover(art);
+              });
+            })(trackKey);
+          }
+        })
+        .catch(function (e) {
+          console.error('Metadata error:', e);
+          scheduleMetadata(8000);
+        });
+    }
+
+    function updateHistory() {
+      if (!navigator.onLine) return;
+      fetchWithTimeout(LAUT_API + '/last_songs', 5000)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!Array.isArray(data)) return;
+          historyList.innerHTML = '';
+          var items = data.slice(0, 5);
+          var rows = items.map(function (song) {
+            var artistName = (song.artist && song.artist.name)
+              ? song.artist.name
+              : (typeof song.artist === 'string' ? song.artist : 'Retro Radio');
+
+            var item = document.createElement('div');
+            item.className = 'history-item';
+
+            var img = document.createElement('img');
+            img.className = 'history-thumb';
+            img.alt = '';
+
+            var textDiv = document.createElement('div');
+            textDiv.className = 'history-text';
+
+            var aSpan = document.createElement('span');
+            aSpan.className = 'history-artist';
+            aSpan.textContent = artistName;
+
+            var tSpan = document.createElement('span');
+            tSpan.className = 'history-song-title';
+            tSpan.textContent = song.title || '';
+
+            textDiv.appendChild(aSpan);
+            textDiv.appendChild(tSpan);
+            item.appendChild(img);
+            item.appendChild(textDiv);
+            historyList.appendChild(item);
+
+            return {
+              img: img,
+              artist: artistName,
+              title: song.title,
+              key: (artistName + ' - ' + (song.title || '')).toLowerCase()
+            };
+          });
+
+          return Promise.all(rows.map(function (row) {
+            return fetchCover(row.artist, row.title, row.key).then(function (art) {
+              if (art && art !== STATION_LOGO) {
+                var test = new Image();
+                test.onload = function () { row.img.src = art; };
+                test.src = art;
+              }
+            });
+          }));
+        })
+        .catch(function (e) { console.error('History error:', e); });
+    }
+
+    function updateListeners() {
+      if (!navigator.onLine) return;
+      fetchWithTimeout(LAUT_API + '/listeners', 5000)
+        .then(function (r) { return r.text(); })
+        .then(function (count) {
+          var t = (count || '').trim();
+          if (t && t !== '0') listenersEl.textContent = t;
+        })
+        .catch(function () {});
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(function (b) {
+          var active = b.dataset.tab === tab;
+          b.classList.toggle('active', active);
+          b.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        document.querySelectorAll('.tab-panel').forEach(function (panel) {
+          panel.classList.toggle('active', panel.id === 'panel-' + tab);
+        });
+        if (tab === 'history') updateHistory();
+      });
+    });
+
+    updateVolumeIcon();
+    applyMediaSessionMetadata();
+    updateMetadata();
+    updateListeners();
+    setInterval(updateListeners, 45000);
+
+    log('cache loaded:', Object.keys(coverCache).length, 'entries');
+    log('утилиты: RD_CACHE_STATS(), RD_CACHE_DUMP(), RD_CACHE_CLEAR()');
+  })();
+  </script>
+
+</body>
+</html>
