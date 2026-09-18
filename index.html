@@ -154,13 +154,17 @@
     var STREAM_URL   = 'https://stream.laut.fm/retrodance';
     var LAUT_API     = 'https://api.laut.fm/station/retrodance';
     var LASTFM_KEY   = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY    = 'rd_cover_cache_v13';
+    var CACHE_KEY    = 'rd_cover_cache_v14';
     var CACHE_TTL    = 7 * 24 * 60 * 60 * 1000;
     var DEBUG        = true;
 
     var MIN_ARTIST_SCORE = 0.5;
     var MAX_POLL_DELAY   = 12000;
+    var MIN_TITLE_SCORE  = 0.35; /* ниже — это явно другой трек */
     var LASTFM_PLACEHOLDER_HASH = '2a96cbd8b46e442fc41c2b86b821562f';
+
+    /* Маркеры "не та версия" — за них небольшой штраф к score */
+    var VERSION_MARKERS = /(english version|spanish version|russian version|instrumental|минус|minus|karaoke|караоке|extended mix|extended version|rework|dub version|acoustic version)/i;
 
     var MANUAL_COVERS = {};
 
@@ -172,7 +176,9 @@
       'юрий шатунов':    ['ласковый май'],
       'ласковый май':    ['юрий шатунов'],
       'роман жуков':     ['мираж'],
-      'мираж':           ['роман жуков', 'наталья гулякина']
+      'мираж':           ['роман жуков', 'наталья гулякина'],
+      'кар-мэн':         ['car-man', 'carman'],
+      'car-man':         ['кар-мэн']
     };
 
     var COMPILATION_MARKERS = [
@@ -289,11 +295,6 @@
       return out;
     }
 
-    /* ============================================================
-       Детектор "разных артистов".
-       Ловит случаи типа "Aaron Luster, Anthony Arasi, Joey Casanova &
-       Patrick Avard" — это сборная солянка, обложка от неё не подойдёт.
-    ============================================================ */
     function looksLikeVariousArtists(name) {
       if (!name) return false;
       var s = String(name);
@@ -325,7 +326,11 @@
     }
 
     /* ============================================================
-       iTunes — фильтруем various-artists, приоритет не-сборникам.
+       iTunes
+       - Отсекает various artists
+       - Отсекает чужой трек (title_sim < 0.35)
+       - Штраф за version-маркеры
+       - Приоритет не-сборников
     ============================================================ */
     function fetchCoverITunes(artist, title) {
       var q = encodeURIComponent(artist + ' ' + title);
@@ -345,7 +350,6 @@
             var r = data.results[i];
             if (!r.artworkUrl100) continue;
 
-            /* Отсекаем сборные солянки типа "X, Y, Z & W" */
             if (looksLikeVariousArtists(r.artistName)) {
               log('iTunes skip (various):', r.artistName);
               continue;
@@ -357,7 +361,17 @@
               if (s > sa) sa = s;
             }
             var st = similarity(r.trackName, title);
+
+            /* ГЛАВНОЕ: чужой трек — не наш */
+            if (st < MIN_TITLE_SCORE) {
+              log('iTunes skip (wrong title):', r.artistName, '-', r.trackName);
+              continue;
+            }
+
             var score = sa * 0.4 + st * 0.6;
+
+            /* Небольшой штраф за версии типа English Version, Минус, Extended Mix */
+            if (VERSION_MARKERS.test(r.trackName)) score -= 0.10;
 
             if (score > bestScore) { bestScore = score; best = r; }
 
@@ -408,7 +422,6 @@
             if (!data || !data.track) { log('Last.fm: пусто'); return null; }
             var track = data.track;
 
-            /* Тоже отсекаем various-artists */
             if (track.artist && looksLikeVariousArtists(track.artist.name)) {
               log('Last.fm skip (various):', track.artist.name);
               return null;
@@ -461,10 +474,7 @@
           });
           if (!bestA || bestScore < MIN_ARTIST_SCORE) return null;
           var art = bestA.strArtistThumb || bestA.strArtistFanart;
-          if (art) {
-            log('TheAudioDB: thumb');
-            return art;
-          }
+          if (art) { log('TheAudioDB: thumb'); return art; }
           return null;
         })
         .catch(function (e) {
@@ -480,7 +490,6 @@
         log('cover from cache:', key);
         return Promise.resolve(coverCache[key]);
       }
-
       var manualKey = normalize(artist + ' - ' + title);
       for (var mk in MANUAL_COVERS) {
         if (normalize(mk) === manualKey) {
@@ -491,9 +500,7 @@
           return Promise.resolve(art0);
         }
       }
-
       log('cover lookup:', artist, '-', title);
-
       return fetchCoverITunes(artist, title).then(function (art) {
         if (art) { log('→ источник: iTunes'); return art; }
         log('iTunes miss, пробую Last.fm');
@@ -739,7 +746,6 @@
     function updateHistory() {
       if (!navigator.onLine) return;
       updateMetadata();
-
       fetchWithTimeout(LAUT_API + '/last_songs', 5000)
         .then(function (r) { return r.json(); })
         .then(function (data) {
