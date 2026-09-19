@@ -592,15 +592,30 @@
       return score;
     }
 
-    /* ==== iTunes: берём лучший по совпадению результат, БЕЗ порога ==== */
+    /* Единственный источник обложек — iTunes.
+       AzuraCast art не используется (на сервере обложек нет).
+       Если iTunes пусто — вернём null, вызывающий код подставит логотип. */
     async function fetchCover(artist, title) {
       if (!artist || !title) return null;
       const key = `${artist}|${title}`.toLowerCase();
       if (coverCache[key] !== undefined) return coverCache[key];
 
+      // Убираем служебные хвосты типа "Remix By ...", "DJ ... Remix", "Version 2019" и т.п.
+      // из названия — они мешают поиску.
+      const cleanTitle = String(title)
+        .replace(/\s*[-–—]\s*(dj\s+[^-]+remix|remix.*|version.*|.*remix.*)$/i, '')
+        .replace(/\s*\(\s*(remix|version|feat\..*)\s*\)/i, '')
+        .trim() || title;
+
+      const cleanArtist = String(artist)
+        .replace(/\s+feat\..*$/i, '')
+        .replace(/\s+vs\..*$/i, '')
+        .trim() || artist;
+
       const queries = [
+        `${cleanArtist} ${cleanTitle}`,
         `${artist} ${title}`,
-        title
+        cleanTitle
       ];
 
       let found = null;
@@ -617,7 +632,6 @@
 
           if (!data.results || !data.results.length) continue;
 
-          // Выбираем лучший по совпадению, но принимаем ЛЮБОЙ результат
           let best = null, bestScore = -1;
           for (const r of data.results) {
             const sc = scoreMatch(artist, title, r);
@@ -834,7 +848,6 @@
         const s = shown.song;
         const artist  = s.artist || 'Retro Radio';
         const title   = s.title  || '';
-        const azuraArt = s.art || '';
         const trackKey = `${artist} - ${title}`;
 
         if (trackKey !== currentTrackId) {
@@ -847,24 +860,17 @@
 
           applyMediaSession();
 
-          console.log('[RD] === new track ===', artist, '—', title, '| azuraArt:', azuraArt ? 'has URL' : 'empty');
+          console.log('[RD] === new track ===', artist, '—', title);
 
-          preloadImage(azuraArt).then(async (okArt) => {
-            let art = okArt;
-
-            if (!art) {
-              console.log('[RD] AzuraCast art missing/broken, going to iTunes');
-              art = await fetchCover(artist, title);
-            } else {
-              console.log('[RD] AzuraCast art OK');
-            }
-
+          // Всегда идём в iTunes. AzuraCast art игнорируем.
+          (async () => {
+            const art = await fetchCover(artist, title);
             await setMainCover(art || STATION_LOGO);
             keepMediaSessionAlive();
 
             const currentTab = document.querySelector('.tab-btn.active').dataset.tab;
             if (currentTab === 'history') updateHistory();
-          });
+          })();
 
         } else {
           applyMediaSession();
@@ -898,8 +904,8 @@
           const artistName = s.artist || 'Retro Radio';
           const songTitle  = s.title  || '';
 
-          let art = await preloadImage(s.art);
-          if (!art) art = await fetchCover(artistName, songTitle);
+          // Также игнорируем art из AzuraCast — только iTunes.
+          let art = await fetchCover(artistName, songTitle);
           if (!art) art = STATION_LOGO;
 
           const item = document.createElement('div');
