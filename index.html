@@ -565,31 +565,36 @@
         .trim();
     }
 
+    /* Раздельные оценки по артисту и названию.
+       Совпадение по артисту — ОБЯЗАТЕЛЬНО. */
     function scoreMatch(queryArtist, queryTitle, r) {
       const qArt = normalize(queryArtist);
       const qTit = normalize(queryTitle);
       const rArt = normalize(r.artistName);
       const rTit = normalize(r.trackName);
 
-      let score = 0;
+      let artistScore = 0;
+      let titleScore = 0;
 
-      if (rTit === qTit) score += 4;
-      else if (rTit.includes(qTit) || qTit.includes(rTit)) score += 2;
-      else {
-        const qw = qTit.split(' ').filter(w => w.length > 2);
-        const rw = rTit.split(' ');
-        if (qw.some(w => rw.includes(w))) score += 1;
-      }
-
-      if (rArt === qArt) score += 4;
-      else if (rArt.includes(qArt) || qArt.includes(rArt)) score += 2;
+      // --- Артист (высокий вес) ---
+      if (rArt === qArt) artistScore = 6;
+      else if (rArt.includes(qArt) || qArt.includes(rArt)) artistScore = 4;
       else {
         const qw = qArt.split(' ').filter(w => w.length > 2);
         const rw = rArt.split(' ');
-        if (qw.some(w => rw.includes(w))) score += 1;
+        if (qw.some(w => rw.includes(w))) artistScore = 2;
       }
 
-      return score;
+      // --- Название ---
+      if (rTit === qTit) titleScore = 5;
+      else if (rTit.includes(qTit) || qTit.includes(rTit)) titleScore = 3;
+      else {
+        const qw = qTit.split(' ').filter(w => w.length > 2);
+        const rw = rTit.split(' ');
+        if (qw.some(w => rw.includes(w))) titleScore = 1;
+      }
+
+      return { artist: artistScore, title: titleScore, total: artistScore + titleScore };
     }
 
     async function fetchCover(artist, title) {
@@ -618,7 +623,7 @@
       for (const q of queries) {
         if (found) break;
         try {
-          const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&limit=10&entity=song&_=${Date.now()}`;
+          const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&limit=25&entity=song&_=${Date.now()}`;
           console.log('[RD] iTunes query:', q);
 
           const res = await fetch(url);
@@ -627,10 +632,22 @@
 
           if (!data.results || !data.results.length) continue;
 
+          // Оцениваем все результаты, логируем топ-3
+          const scored = data.results.map(r => ({ r, sc: scoreMatch(artist, title, r) }))
+            .sort((a, b) => b.sc.total - a.sc.total);
+
+          console.log('[RD] iTunes top:', scored.slice(0, 3).map(x =>
+            `${x.sc.total} (a${x.sc.artist}/t${x.sc.title}) | ${x.r.artistName} — ${x.r.trackName}`
+          ));
+
+          // Принимаем только результаты с совпадением по артисту
           let best = null, bestScore = -1;
-          for (const r of data.results) {
-            const sc = scoreMatch(artist, title, r);
-            if (sc > bestScore) { bestScore = sc; best = r; }
+          for (const item of scored) {
+            if (item.sc.artist === 0) continue;
+            if (item.sc.total > bestScore) {
+              best = item.r;
+              bestScore = item.sc.total;
+            }
           }
 
           if (best && best.artworkUrl100) {
@@ -639,6 +656,8 @@
               .replace('100x100bb.png', '600x600bb.png')
               .replace('100x100', '600x600');
             console.log('[RD] iTunes pick:', best.artistName, '—', best.trackName, '| score:', bestScore);
+          } else {
+            console.log('[RD] iTunes: no result with matching artist in this query');
           }
         } catch (e) {
           console.warn('[RD] iTunes error:', e.message || e);
