@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="https://i.postimg.cc/28VKXjCx/logo.png">
@@ -487,12 +488,9 @@
     const STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
     const STREAM_URL   = 'https://stream.laut.fm/retrodance';
 
-    /* ==== AzuraCast ==== */
     const AZURA_API      = 'https://radio.retrodanceradio.com/api/nowplaying_static/retro_dance_radio.json';
     const AZURA_FALLBACK = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
 
-    /* Задержка отображения метаданных, сек.
-       Если название опережает звук — увеличь (12, 15). Если отстаёт — уменьши (8, 5). */
     const DISPLAY_DELAY = 10;
 
     const player    = document.getElementById('player');
@@ -559,7 +557,6 @@
       });
     }
 
-    /* ==== Нормализация строки для сравнения ==== */
     function normalize(s) {
       return String(s || '')
         .toLowerCase()
@@ -568,7 +565,6 @@
         .trim();
     }
 
-    /* ==== Оценка совпадения результата iTunes с запросом ==== */
     function scoreMatch(queryArtist, queryTitle, r) {
       const qArt = normalize(queryArtist);
       const qTit = normalize(queryTitle);
@@ -577,72 +573,73 @@
 
       let score = 0;
 
-      // Название
       if (rTit === qTit) score += 4;
       else if (rTit.includes(qTit) || qTit.includes(rTit)) score += 2;
       else {
         const qw = qTit.split(' ').filter(w => w.length > 2);
         const rw = rTit.split(' ');
-        const overlap = qw.filter(w => rw.includes(w)).length;
-        if (overlap > 0) score += 1;
+        if (qw.some(w => rw.includes(w))) score += 1;
       }
 
-      // Артист
       if (rArt === qArt) score += 4;
       else if (rArt.includes(qArt) || qArt.includes(rArt)) score += 2;
       else {
         const qw = qArt.split(' ').filter(w => w.length > 2);
         const rw = rArt.split(' ');
-        const overlap = qw.filter(w => rw.includes(w)).length;
-        if (overlap > 0) score += 1;
+        if (qw.some(w => rw.includes(w))) score += 1;
       }
 
       return score;
     }
 
-    /* ==== iTunes: берём 25 результатов, выбираем лучший по совпадению ==== */
-    async function searchItunes(artist, title, country) {
-      const q = `${artist} ${title}`.trim();
-      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&limit=25&entity=song${country ? '&country=' + country : ''}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (!data.results || !data.results.length) return null;
-
-      let best = null, bestScore = 0;
-      for (const r of data.results) {
-        const sc = scoreMatch(artist, title, r);
-        if (sc > bestScore) { bestScore = sc; best = r; }
-      }
-      // Минимальный порог: 3 (точный артист + частичное название, или наоборот)
-      if (!best || bestScore < 3) return null;
-
-      return best.artworkUrl100
-        .replace('100x100bb.jpg', '600x600bb.jpg')
-        .replace('100x100', '600x600');
-    }
-
-    /* ==== Главная функция: AzuraCast → iTunes (несколько стран) ==== */
+    /* ==== iTunes: берём лучший по совпадению результат, БЕЗ порога ==== */
     async function fetchCover(artist, title) {
       if (!artist || !title) return null;
       const key = `${artist}|${title}`.toLowerCase();
       if (coverCache[key] !== undefined) return coverCache[key];
 
-      let art = null;
+      const queries = [
+        `${artist} ${title}`,
+        title
+      ];
 
-      for (const country of ['', 'DE', 'IT', 'RU', 'GB']) {
+      let found = null;
+
+      for (const q of queries) {
+        if (found) break;
         try {
-          art = await searchItunes(artist, title, country);
-          if (art) {
-            console.log(`[RD] iTunes (${country || 'US'}) → ${art}`);
-            break;
+          const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&limit=10&entity=song&_=${Date.now()}`;
+          console.log('[RD] iTunes query:', q);
+
+          const res = await fetch(url);
+          const data = await res.json();
+          console.log('[RD] iTunes resultCount:', data.resultCount);
+
+          if (!data.results || !data.results.length) continue;
+
+          // Выбираем лучший по совпадению, но принимаем ЛЮБОЙ результат
+          let best = null, bestScore = -1;
+          for (const r of data.results) {
+            const sc = scoreMatch(artist, title, r);
+            if (sc > bestScore) { bestScore = sc; best = r; }
           }
-        } catch (e) {}
+
+          if (best && best.artworkUrl100) {
+            found = best.artworkUrl100
+              .replace('100x100bb.jpg', '600x600bb.jpg')
+              .replace('100x100bb.png', '600x600bb.png')
+              .replace('100x100', '600x600');
+            console.log('[RD] iTunes pick:', best.artistName, '—', best.trackName, '| score:', bestScore);
+          }
+        } catch (e) {
+          console.warn('[RD] iTunes error:', e.message || e);
+        }
       }
 
-      if (!art) console.warn('[RD] cover not found in iTunes:', artist, '—', title);
+      if (!found) console.warn('[RD] cover NOT FOUND:', artist, '—', title);
 
-      coverCache[key] = art;
-      return art;
+      coverCache[key] = found;
+      return found;
     }
 
     function applyMediaSession() {
@@ -850,11 +847,13 @@
 
           applyMediaSession();
 
+          console.log('[RD] === new track ===', artist, '—', title, '| azuraArt:', azuraArt ? 'has URL' : 'empty');
+
           preloadImage(azuraArt).then(async (okArt) => {
             let art = okArt;
 
             if (!art) {
-              console.log('[RD] AzuraCast art missing, searching iTunes:', artist, '—', title);
+              console.log('[RD] AzuraCast art missing/broken, going to iTunes');
               art = await fetchCover(artist, title);
             } else {
               console.log('[RD] AzuraCast art OK');
