@@ -1,464 +1,818 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Retro Dance Radio</title>
-<meta name="description" content="Retro Dance Radio — лучшее танцевальное радио">
-<style>
-  :root{
-    --bg:        #0b0d17;
-    --bg-2:      #141826;
-    --card:      #1a1f33;
-    --accent:    #ff2e93;
-    --accent-2:  #7c3aed;
-    --text:      #eef0f7;
-    --muted:     #8892b0;
-    --line:      #232a44;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:
-      radial-gradient(1200px 600px at 20% -10%, rgba(124,58,237,.18), transparent 60%),
-      radial-gradient(1000px 500px at 90% 10%, rgba(255,46,147,.14), transparent 55%),
-      var(--bg);
-    color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Ubuntu,sans-serif;
-    min-height:100vh;
-    padding:24px 16px 64px;
-  }
-  .wrap{max-width:960px;margin:0 auto;}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://i.postimg.cc/28VKXjCx/logo.png">
+  <title>RetroDance Radio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* HEADER */
-  header{
-    display:flex;align-items:center;justify-content:space-between;
-    gap:16px;margin-bottom:28px;flex-wrap:wrap;
-  }
-  .brand{display:flex;align-items:center;gap:12px;}
-  .brand-logo{
-    width:44px;height:44px;border-radius:12px;
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));
-    display:grid;place-items:center;font-size:22px;
-    box-shadow:0 8px 24px rgba(255,46,147,.35);
-  }
-  .brand h1{
-    font-size:20px;margin:0;letter-spacing:.3px;
-    background:linear-gradient(90deg,#fff,#c7b8ff);
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-  }
-  .brand small{display:block;color:var(--muted);font-size:12px;margin-top:2px;}
+    body {
+      background-color: #0d0d0d;
+      font-family: 'Inter', sans-serif;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
 
-  .listeners{
-    display:inline-flex;align-items:center;gap:8px;
-    background:var(--bg-2);border:1px solid var(--line);
-    padding:8px 14px;border-radius:100px;font-size:13px;color:var(--muted);
-  }
-  .dot{
-    width:8px;height:8px;border-radius:50%;background:#22c55e;
-    box-shadow:0 0 0 0 rgba(34,197,94,.6);
-    animation:pulse 2s infinite;
-  }
-  @keyframes pulse{
-    0%{box-shadow:0 0 0 0 rgba(34,197,94,.6);}
-    70%{box-shadow:0 0 0 10px rgba(34,197,94,0);}
-    100%{box-shadow:0 0 0 0 rgba(34,197,94,0);}
-  }
+    .app-bg {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+    }
 
-  /* NOW PLAYING */
-  .now{
-    background:linear-gradient(180deg,var(--card),var(--bg-2));
-    border:1px solid var(--line);
-    border-radius:24px;padding:24px;
-    display:grid;grid-template-columns:220px 1fr;gap:24px;
-    box-shadow:0 30px 60px -30px rgba(0,0,0,.7);
-  }
-  @media (max-width:640px){
-    .now{grid-template-columns:1fr;padding:18px;gap:18px;}
-  }
-  .cover-wrap{
-    position:relative;aspect-ratio:1/1;border-radius:18px;overflow:hidden;
-    background:var(--bg);border:1px solid var(--line);
-  }
-  .cover-wrap img{
-    width:100%;height:100%;object-fit:cover;display:block;
-    transition:opacity .4s ease;
-  }
-  .cover-wrap img[src=""]{opacity:0;}
-  .cover-badge{
-    position:absolute;left:12px;bottom:12px;
-    background:rgba(0,0,0,.6);backdrop-filter:blur(8px);
-    padding:6px 12px;border-radius:100px;font-size:11px;
-    letter-spacing:.5px;text-transform:uppercase;color:#fff;
-  }
+    .bg-sphere {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(225,29,72,0.18) 0%, transparent 70%);
+      z-index: 0;
+      filter: blur(80px);
+      animation: sphereMove 30s infinite alternate linear;
+      pointer-events: none;
+    }
 
-  .meta{display:flex;flex-direction:column;justify-content:center;min-width:0;}
-  .meta .label{
-    font-size:11px;text-transform:uppercase;letter-spacing:2px;
-    color:var(--accent);font-weight:600;margin-bottom:8px;
-  }
-  .meta #artist{
-    font-size:24px;font-weight:700;margin:0 0 4px;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  }
-  .meta #title{
-    font-size:18px;font-weight:500;color:#cfd6ee;margin:0 0 4px;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  }
-  .meta #album{
-    font-size:13px;color:var(--muted);margin:0 0 16px;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  }
+    @keyframes sphereMove {
+      from { transform: translate(-15%, -15%) scale(1.2); }
+      to   { transform: translate(15%, 15%) scale(0.9); }
+    }
 
-  /* CONTROLS */
-  .controls{display:flex;align-items:center;gap:14px;margin-top:auto;}
-  .play-btn{
-    width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));
-    color:#fff;font-size:20px;display:grid;place-items:center;
-    box-shadow:0 10px 30px -8px rgba(255,46,147,.6);
-    transition:transform .15s ease, box-shadow .15s ease;
-  }
-  .play-btn:hover{transform:scale(1.05);}
-  .play-btn:active{transform:scale(.97);}
-  .play-btn.playing{box-shadow:0 10px 30px -8px rgba(124,58,237,.7);}
+    .glass-card {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 420px;
+      background: rgba(45,0,10,0.88);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 48px;
+      padding: 32px;
+      text-align: center;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+    }
 
-  .progress{
-    flex:1;min-width:0;
-    display:flex;flex-direction:column;gap:6px;
-  }
-  .bar{
-    height:6px;border-radius:100px;background:var(--line);overflow:hidden;position:relative;
-  }
-  .bar > i{
-    display:block;height:100%;width:0%;
-    background:linear-gradient(90deg,var(--accent),var(--accent-2));
-    border-radius:100px;transition:width .9s linear;
-  }
-  .times{
-    display:flex;justify-content:space-between;
-    font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;
-  }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 0 4px;
+    }
 
-  /* VOLUME */
-  .volume{display:flex;align-items:center;gap:8px;}
-  .volume input[type=range]{
-    -webkit-appearance:none;appearance:none;height:4px;border-radius:4px;
-    background:var(--line);outline:none;width:90px;cursor:pointer;
-  }
-  .volume input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
-    background:#fff;box-shadow:0 0 0 4px rgba(255,46,147,.25);cursor:pointer;
-  }
-  .volume input[type=range]::-moz-range-thumb{
-    width:14px;height:14px;border-radius:50%;border:none;
-    background:#fff;box-shadow:0 0 0 4px rgba(255,46,147,.25);cursor:pointer;
-  }
-  .vol-icon{color:var(--muted);font-size:16px;}
+    .live-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: #e11d48;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      animation: pulse 2s ease-in-out infinite;
+    }
 
-  /* NEXT */
-  .next{
-    margin-top:20px;background:var(--bg-2);border:1px solid var(--line);
-    border-radius:16px;padding:14px 18px;
-    display:flex;align-items:center;gap:14px;
-  }
-  .next .k{
-    font-size:11px;text-transform:uppercase;letter-spacing:1.5px;
-    color:var(--muted);flex-shrink:0;
-  }
-  .next .v{
-    font-size:14px;color:#cfd6ee;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-  /* HISTORY */
-  .history-sec{margin-top:36px;}
-  .history-sec h2{
-    font-size:14px;text-transform:uppercase;letter-spacing:2px;
-    color:var(--muted);font-weight:600;margin:0 0 14px;
-  }
-  #history{display:flex;flex-direction:column;gap:8px;}
-  .history-item{
-    display:flex;align-items:center;gap:12px;
-    background:var(--bg-2);border:1px solid var(--line);
-    border-radius:12px;padding:8px 12px;
-    transition:background .15s ease, transform .15s ease;
-  }
-  .history-item:hover{background:#1d2338;transform:translateX(2px);}
-  .history-item img{
-    width:42px;height:42px;border-radius:8px;object-fit:cover;
-    background:var(--bg);flex-shrink:0;
-  }
-  .history-text{min-width:0;flex:1;}
-  .history-artist{
-    font-size:13px;font-weight:600;color:#e6e9f7;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  }
-  .history-title{
-    font-size:12px;color:var(--muted);margin-top:2px;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  }
+    .listeners-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.78);
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1;
+    }
 
-  /* Джинглы — приглушённые. Удалите эти правила, если хотите видеть их как обычные треки. */
-  .history-item--jingle{opacity:.6;}
-  .history-item--jingle .history-artist{font-style:italic;color:#a8b0d0;}
+    .listeners-pill svg {
+      width: 14px;
+      height: 14px;
+      color: #e11d48;
+      flex-shrink: 0;
+    }
 
-  footer{
-    text-align:center;color:var(--muted);font-size:12px;
-    margin-top:48px;padding-top:24px;border-top:1px solid var(--line);
-  }
-  footer a{color:var(--accent);text-decoration:none;}
-</style>
+    .cover-wrapper {
+      width: 260px;
+      height: 260px;
+      margin: 0 auto 28px;
+      background: #1a1a1a;
+      border-radius: 36px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #cover-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 0.4s ease-in-out;
+    }
+
+    .track-info { margin-bottom: 24px; }
+
+    .station-name {
+      font-size: 26px;
+      font-weight: 900;
+      font-style: italic;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+      line-height: 1;
+    }
+
+    .accent { color: #e11d48; }
+
+    #artist-el {
+      font-size: 10px;
+      font-weight: 700;
+      color: #fb7185;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      opacity: 0.85;
+      margin-bottom: 8px;
+    }
+
+    #title-el {
+      font-size: 18px;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-style: italic;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      min-height: 2.8em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 8px;
+    }
+
+    .custom-player {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .play-btn {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #e11d48, #9f1239);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 6px 20px rgba(225,29,72,0.4);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 0;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .play-btn:active { transform: scale(0.92); }
+
+    .play-btn svg {
+      width: 34px;
+      height: 34px;
+      display: block;
+    }
+    
+    .ico-play-shape {
+      transform: translateX(4px);
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 1s linear infinite; }
+
+    .side-btn {
+      width: 74px;
+      height: 74px; 
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.85);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      outline: none;
+      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      flex-shrink: 0;
+      text-decoration: none;
+    }
+
+    .side-btn:active { transform: scale(0.94); }
+
+    /* Крупный текст LAUT.FM внутри круглой кнопки */
+    .laut-text {
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      color: rgba(255,255,255,0.9);
+      display: block;
+      line-height: 1;
+    }
+    
+    .side-btn.is-muted { color: #e11d48; background: rgba(225,29,72,0.12); border-color: rgba(225,29,72,0.2); }
+    .side-btn svg { width: 24px; height: 24px; display: block; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      width: 100%;
+      padding: 4px;
+      margin: 0 0 20px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      border: 0;
+      border-radius: 14px;
+      padding: 10px 4px;
+      background: transparent;
+      color: rgba(255,255,255,0.42);
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .tab-btn.active {
+      background: #e11d48;
+      color: white;
+      box-shadow: 0 8px 22px rgba(225,29,72,0.25);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .history-section, .contacts-section { text-align: left; margin-bottom: 20px; }
+
+    .history-label, .contacts-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      opacity: 0.35;
+      margin-bottom: 12px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .history-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: #1a1a1a;
+    }
+
+    .history-text { display: flex; flex-direction: column; overflow: hidden; }
+
+    .history-artist { color: #fb7185; font-weight: 700; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-song-title { color: rgba(255,255,255,0.75); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .contacts-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 4px;
+    }
+
+    .contact-link {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      color: white;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .contact-link:active {
+      transform: scale(0.98);
+      background: rgba(255,255,255,0.08);
+    }
+
+    .contact-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fb7185;
+      flex-shrink: 0;
+    }
+
+    .contact-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .contact-info {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .contact-title {
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #fb7185;
+      margin-bottom: 2px;
+    }
+
+    .contact-value {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .legal {
+      font-size: 9px;
+      opacity: 0.4;
+      line-height: 1.6;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 20px;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-<div class="wrap">
+  <div class="app-bg">
+    <div class="bg-sphere"></div>
 
-  <header>
-    <div class="brand">
-      <div class="brand-logo">🎧</div>
-      <div>
-        <h1>Retro Dance Radio</h1>
-        <small>лучшее танцевальное радио</small>
+    <div class="glass-card">
+      <div class="card-header">
+        <span class="live-badge">● Live</span>
+        <span class="listeners-pill" aria-label="Количество слушателей">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span id="listeners-el">0</span>
+        </span>
       </div>
-    </div>
-    <div class="listeners">
-      <span class="dot"></span>
-      <span><b id="listeners">0</b> слушают</span>
-    </div>
-  </header>
 
-  <section class="now">
-    <div class="cover-wrap">
-      <img id="cover" src="" alt="Обложка" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22><rect fill=%22%23141826%22 width=%22200%22 height=%22200%22/><text x=%22100%22 y=%22110%22 font-size=%2260%22 text-anchor=%22middle%22>🎵</text></svg>'">
-      <div class="cover-badge">в эфире</div>
-    </div>
+      <div class="cover-wrapper">
+        <img id="cover-img" src="https://i.postimg.cc/28VKXjCx/logo.png" alt="Обложка">
+      </div>
 
-    <div class="meta">
-      <div class="label">сейчас играет</div>
-      <h2 id="artist">—</h2>
-      <p id="title">Загрузка…</p>
-      <p id="album"></p>
+      <div class="track-info">
+        <h1 class="station-name">Retro<span class="accent">Dance</span></h1>
+        <p id="artist-el">Retro Radio</p>
+        <p id="title-el">Нажмите Play</p>
+      </div>
 
-      <div class="controls">
-        <button id="playBtn" class="play-btn" aria-label="Play">▶</button>
+      <audio id="player" preload="none" playsinline webkit-playsinline></audio>
 
-        <div class="progress">
-          <div class="bar"><i id="progressBar"></i></div>
-          <div class="times">
-            <span id="elapsed">0:00</span>
-            <span id="remaining">0:00</span>
+      <div class="tabs" role="tablist" aria-label="Разделы radio">
+        <button class="tab-btn active" id="tab-player" type="button" data-tab="player" role="tab" aria-selected="true">Плеер</button>
+        <button class="tab-btn" id="tab-history" type="button" data-tab="history" role="tab" aria-selected="false">История</button>
+        <button class="tab-btn" id="tab-contacts" type="button" data-tab="contacts" role="tab" aria-selected="false">Контакты</button>
+      </div>
+
+      <div class="tab-panel active" id="panel-player" role="tabpanel" aria-labelledby="tab-player">
+        <div class="custom-player">
+          <a href="https://laut.fm/retrodance" target="_blank" rel="noopener" class="side-btn" id="laut-btn" aria-label="Слушать на laut.fm">
+            <span class="laut-text">LAUT.FM</span>
+          </a>
+
+          <button class="play-btn" id="play-btn" aria-label="Play/Pause">
+            <svg id="play-svg" class="ico-play-shape" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7 5v14l11-7z"/>
+            </svg>
+          </button>
+
+          <button class="side-btn" id="mute-btn" type="button" aria-label="Выключить звук">
+            <svg id="mute-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path id="mute-path" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history">
+        <div class="history-section" id="history-section">
+          <h3 class="history-label">История эфира</h3>
+          <div id="history-list"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-contacts" role="tabpanel" aria-labelledby="tab-contacts">
+        <div class="contacts-section">
+          <h3 class="contacts-label">Мы на связи</h3>
+          <div class="contacts-grid">
+            <a href="https://t.me/retrodance_radio" target="_blank" rel="noopener" class="contact-link">
+              <div class="contact-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-1-.65-.35-1 .22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.24-5.54 3.65-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.35-.49.97-.74 3.79-1.65 6.32-2.74 7.57-3.27 3.61-1.53 4.36-1.8 4.85-1.8.11 0 .35.03.5.15.13.1.17.25.18.35-.01.07-.01.19-.02.29z"/>
+                </svg>
+              </div>
+              <div class="contact-info">
+                <span class="contact-title">Telegram</span>
+                <span class="contact-value">Канал RetroDance</span>
+              </div>
+            </a>
+            <a href="mailto:retrodanceradiomusic.com" class="contact-link">
+              <div class="contact-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                </svg>
+              </div>
+              <div class="contact-info">
+                <span class="contact-title">Gmail</span>
+                <span class="contact-value">retrodanceradiomusic.com</span>
+              </div>
+            </a>
           </div>
         </div>
+      </div>
 
-        <div class="volume">
-          <span class="vol-icon">🔊</span>
-          <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8">
-        </div>
+      <div class="legal">
+        <p>Radio-Hosting powered by <b>laut.fm</b> | Verantwortlich für die Inhalte: <b>laut.ag</b></p>
+        <p style="margin-top: 8px;">Some content on this site is created with AI assistance. / Einige Inhalte dieser Website wurden mit Hilfe von KI erstellt.</p>
       </div>
     </div>
-  </section>
-
-  <div class="next">
-    <span class="k">далее</span>
-    <span class="v" id="nextTitle">—</span>
   </div>
 
-  <section class="history-sec">
-    <h2>История эфира</h2>
-    <div id="history"></div>
-  </section>
+  <script>
+    const STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
+    const STREAM_URL   = 'https://stream.laut.fm/retrodance';
 
-  <footer>
-    © Retro Dance Radio · <a href="https://t.me/retrodance_radio" target="_blank" rel="noopener">Telegram</a>
-  </footer>
+    /* ==== AzuraCast: метаданные, обложки, история, слушатели ==== */
+    const AZURA_API      = 'https://radio.retrodanceradio.com/api/nowplaying_static/retro_dance_radio.json';
+    const AZURA_FALLBACK = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
 
-</div>
+    const player    = document.getElementById('player');
+    const playBtn   = document.getElementById('play-btn');
+    const playSvg   = document.getElementById('play-svg');
+    const muteBtn   = document.getElementById('mute-btn');
+    const mutePath  = document.getElementById('mute-path');
+    const coverImg  = document.getElementById('cover-img');
+    const artistEl  = document.getElementById('artist-el');
+    const titleEl   = document.getElementById('title-el');
+    const listenersEl = document.getElementById('listeners-el');
+    const historySection = document.getElementById('history-section');
+    const historyList    = document.getElementById('history-list');
 
-<audio id="player" preload="none" crossorigin="anonymous"></audio>
+    let isPlaying = false;
+    let isLoading = false;
+    let isMuted = false;
+    let currentTrackId = "";
+    let currentTrackTitle = "Нажмите Play";
+    let currentTrackArtist = "Retro Radio";
+    let currentArtwork = STATION_LOGO;
+    let mediaSessionTimer = null;
 
-<script>
-(function(){
-  'use strict';
+    const SVG_PLAY = '<path d="M7 5v14l11-7z"/>';
+    const SVG_STOP = '<path d="M6 6h12v12H6z"/>';
+    const SVG_LOAD = '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="40 20" fill="none" class="spin"/>';
+    const VOL_HIGH = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
+    const VOL_MUTE = 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-3-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z';
 
-  // ============ CONFIG ============
-  var STREAM_URL     = 'https://stream.laut.fm/retrodance'; // аудио — laut.fm, НЕ трогаем
-  var AZURA_API      = 'https://radio.retrodanceradio.com/api/nowplaying_static/retro_dance_radio.json';
-  var AZURA_FALLBACK = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
-  var POLL_MS        = 10000;   // опрос API (мс)
-  var PROGRESS_MS    = 1000;    // локальный тик прогресс-бара
-  var META_OFFSET    = 0;       // сдвиг метаданных, сек. Поставьте 5..15, если метаданные опережают звук
-  var HISTORY_LIMIT  = 12;      // сколько треков показывать в истории
-
-  // ============ HELPERS ============
-  function $(id){ return document.getElementById(id); }
-  function esc(s){
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
-    });
-  }
-  function fmt(sec){
-    sec = Math.max(0, Math.floor(sec));
-    var m = Math.floor(sec/60), s = sec % 60;
-    return m + ':' + (s < 10 ? '0' : '') + s;
-  }
-
-  // ============ STATE ============
-  var current = null;
-  var audio   = $('player');
-
-  // ============ AUDIO PLAYER ============
-  function setupAudio(){
-    audio.src = STREAM_URL;
-    audio.volume = parseFloat($('volume').value) || 0.8;
-
-    $('playBtn').addEventListener('click', function(){
-      if(audio.paused){
-        audio.play().catch(function(e){ console.error('[RD] play failed:', e); });
+    function updateUI() {
+      if (isLoading) {
+        playSvg.innerHTML = SVG_LOAD;
+        playSvg.classList.remove('ico-play-shape');
+      } else if (isPlaying) {
+        playSvg.innerHTML = SVG_STOP;
+        playSvg.classList.remove('ico-play-shape');
       } else {
-        audio.pause();
+        playSvg.innerHTML = SVG_PLAY;
+        playSvg.classList.add('ico-play-shape');
+      }
+    }
+
+    function updateVolumeIcon() {
+      if (isMuted) {
+        mutePath.setAttribute('d', VOL_MUTE);
+        muteBtn.classList.add('is-muted');
+        muteBtn.setAttribute('aria-label', 'Включить звук');
+      } else {
+        mutePath.setAttribute('d', VOL_HIGH);
+        muteBtn.classList.remove('is-muted');
+        muteBtn.setAttribute('aria-label', 'Выключить звук');
+      }
+    }
+
+    function preloadImage(url) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(url);
+        img.onerror = () => resolve(STATION_LOGO);
+        img.src = url;
+      });
+    }
+
+    function applyMediaSession() {
+      document.title = `${currentTrackArtist} - ${currentTrackTitle} | RetroDance Radio`;
+      player.title = `${currentTrackArtist} - ${currentTrackTitle}`;
+
+      if (!('mediaSession' in navigator)) return;
+
+      const artwork = currentArtwork || STATION_LOGO;
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentTrackTitle || 'RetroDance Radio',
+        artist: currentTrackArtist || 'Retro Radio',
+        album: 'RetroDance Radio',
+        artwork: [
+          { src: artwork, sizes: '96x96', type: 'image/jpeg' },
+          { src: artwork, sizes: '128x128', type: 'image/jpeg' },
+          { src: artwork, sizes: '192x192', type: 'image/jpeg' },
+          { src: artwork, sizes: '256x256', type: 'image/jpeg' },
+          { src: artwork, sizes: '512x512', type: 'image/jpeg' }
+        ]
+      });
+
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+
+      try {
+        navigator.mediaSession.setActionHandler('play', startRadio);
+        navigator.mediaSession.setActionHandler('pause', stopRadio);
+      } catch (e) {}
+    }
+
+    function keepMediaSessionAlive() {
+      applyMediaSession();
+      if (mediaSessionTimer) clearInterval(mediaSessionTimer);
+      mediaSessionTimer = setInterval(() => {
+        if (isPlaying) applyMediaSession();
+      }, 3000);
+    }
+
+    async function setMainCover(art) {
+      const safeArt = await preloadImage(art || STATION_LOGO);
+      currentArtwork = safeArt;
+
+      return new Promise((resolve) => {
+        if (coverImg.src !== safeArt) {
+          coverImg.style.opacity = 0;
+          setTimeout(() => {
+            coverImg.src = safeArt;
+            coverImg.style.opacity = 1;
+            applyMediaSession();
+            resolve();
+          }, 180);
+        } else {
+          coverImg.style.opacity = 1;
+          applyMediaSession();
+          resolve();
+        }
+      });
+    }
+
+    async function startRadio() {
+      if (isLoading) return;
+      isLoading = true;
+      updateUI();
+
+      try {
+        if (!player.getAttribute('src')) {
+          player.src = STREAM_URL;
+        }
+        player.volume = isMuted ? 0 : 1;
+        await player.play();
+        isPlaying = true;
+        isLoading = false;
+        updateUI();
+        keepMediaSessionAlive();
+      } catch (err) {
+        console.error('Playback Error:', err);
+        try {
+          player.src = STREAM_URL + '?t=' + Date.now();
+          await player.play();
+          isPlaying = true;
+          isLoading = false;
+          updateUI();
+          keepMediaSessionAlive();
+        } catch (err2) {
+          console.error('Playback Fallback Error:', err2);
+          isPlaying = false;
+          isLoading = false;
+          titleEl.textContent = 'Не удалось запустить радио';
+          updateUI();
+        }
+      }
+    }
+
+    function stopRadio() {
+      player.pause();
+      isPlaying = false;
+      isLoading = false;
+      updateUI();
+      applyMediaSession();
+    }
+
+    function toggleRadio(e) {
+      if (e) e.preventDefault();
+      if (isPlaying || isLoading) {
+        stopRadio();
+      } else {
+        startRadio();
+      }
+    }
+
+    playBtn.addEventListener('click', toggleRadio);
+
+    player.addEventListener('playing', () => {
+      isPlaying = true;
+      isLoading = false;
+      updateUI();
+      keepMediaSessionAlive();
+    });
+
+    player.addEventListener('pause', () => {
+      isPlaying = false;
+      isLoading = false;
+      updateUI();
+      applyMediaSession();
+    });
+
+    player.addEventListener('waiting', () => {
+      if (isPlaying) {
+        isLoading = true;
+        updateUI();
       }
     });
 
-    audio.addEventListener('play',  function(){ $('playBtn').textContent = '❚❚'; $('playBtn').classList.add('playing'); });
-    audio.addEventListener('pause', function(){ $('playBtn').textContent = '▶';  $('playBtn').classList.remove('playing'); });
-    audio.addEventListener('error', function(){ console.warn('[RD] audio error:', audio.error && audio.error.code); });
-
-    $('volume').addEventListener('input', function(e){
-      audio.volume = parseFloat(e.target.value);
+    player.addEventListener('error', () => {
+      console.error('Audio element error:', player.error);
+      isPlaying = false;
+      isLoading = false;
+      updateUI();
     });
-  }
 
-  // ============ FETCH META ============
-  function fetchNow(){
-    fetch(AZURA_API, {cache: 'no-store'})
-      .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(onData)
-      .catch(function(err){
-        console.warn('[RD] static failed (' + err.message + '), using fallback');
-        fetch(AZURA_FALLBACK, {cache: 'no-store'})
-          .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-          .then(onData)
-          .catch(function(e2){ console.error('[RD] fallback failed:', e2.message); });
+    muteBtn.addEventListener('click', () => {
+      isMuted = !isMuted;
+      player.muted = isMuted;
+      player.volume = isMuted ? 0 : 1;
+      updateVolumeIcon();
+    });
+
+    /* ==== Загрузка данных из AzuraCast ==== */
+    async function fetchAzura() {
+      try {
+        const res = await fetch(`${AZURA_API}?_=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return await res.json();
+      } catch (e) {
+        const res = await fetch(`${AZURA_FALLBACK}?_=${Date.now()}`, { cache: 'no-store' });
+        return await res.json();
+      }
+    }
+
+    async function updateMetadata() {
+      try {
+        const data = await fetchAzura();
+        if (!data) return;
+
+        // --- Слушатели ---
+        if (data.listeners) {
+          const l = data.listeners;
+          listenersEl.textContent = l.current ?? l.total ?? 0;
+        }
+
+        // --- Текущий трек ---
+        const np = data.now_playing;
+        if (!np || !np.song) return;
+
+        const s = np.song;
+        const artist  = s.artist || 'Retro Radio';
+        const title   = s.title  || '';
+        const art     = s.art    || STATION_LOGO;
+        const trackKey = `${artist} - ${title}`;
+
+        if (trackKey !== currentTrackId) {
+          currentTrackId = trackKey;
+          currentTrackTitle = title;
+          currentTrackArtist = artist;
+
+          titleEl.textContent = title;
+          artistEl.textContent = artist;
+
+          applyMediaSession();
+
+          setMainCover(art).then(() => {
+            keepMediaSessionAlive();
+
+            const currentTab = document.querySelector('.tab-btn.active').dataset.tab;
+            if (currentTab === 'history') updateHistory();
+          });
+
+        } else {
+          applyMediaSession();
+        }
+      } catch (e) {
+        console.error('Ошибка получения метаданных:', e);
+      }
+    }
+
+    async function updateHistory() {
+      try {
+        const data = await fetchAzura();
+        if (!data || !Array.isArray(data.song_history)) return;
+
+        historyList.innerHTML = '';
+
+        for (const entry of data.song_history.slice(0, 5)) {
+          const s = entry.song;
+          if (!s) continue;
+
+          const artistName = s.artist || 'Retro Radio';
+          const songTitle  = s.title  || '';
+          const art        = s.art    || STATION_LOGO;
+
+          const item = document.createElement('div');
+          item.className = 'history-item';
+          item.innerHTML = `
+            <img class="history-thumb" src="${art}" onerror="this.src='${STATION_LOGO}'">
+            <div class="history-text">
+              <span class="history-artist">${artistName}</span>
+              <span class="history-song-title">${songTitle}</span>
+            </div>`;
+          historyList.appendChild(item);
+        }
+        historySection.style.display = 'block';
+      } catch (e) {
+        console.error('Ошибка получения истории:', e);
+      }
+    }
+
+    // Слушатели теперь приходят из того же запроса, что и метаданные
+    // (см. updateMetadata) — отдельная функция оставлена как заглушка на случай,
+    // если понадобится обновлять их независимо.
+    function updateListeners() { /* handled inside updateMetadata */ }
+
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach((b) => {
+          const active = b.dataset.tab === tab;
+          b.classList.toggle('active', active);
+          b.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        document.querySelectorAll('.tab-panel').forEach((panel) => {
+          panel.classList.toggle('active', panel.id === 'panel-' + tab);
+        });
+        if (tab === 'history') updateHistory();
       });
-  }
+    });
 
-  function onData(data){
-    if(!data) return;
-    var np = data.now_playing;
-    if(!np || !np.song) return;
+    updateVolumeIcon();
+    applyMediaSession();
 
-    var s   = np.song;
-    var key = (s.artist || '') + ' - ' + (s.title || '');
+    setInterval(updateMetadata, 8000);
 
-    if(!current || current.key !== key){
-      current = {
-        key:       key,
-        artist:    s.artist || '',
-        title:     s.title  || '',
-        album:     s.album  || '',
-        art:       s.art    || '',
-        played_at: np.played_at,
-        duration:  np.duration || 0
-      };
-      renderCurrent(current);
-    } else {
-      // уточняем тайминги на случай пересчёта на сервере
-      current.played_at = np.played_at;
-      if(np.duration) current.duration = np.duration;
-    }
-
-    renderListeners(data.listeners);
-    renderNext(data.playing_next);
-    renderHistory(data.song_history);
-  }
-
-  // ============ RENDER ============
-  function renderCurrent(t){
-    $('artist').textContent = t.artist || 'Retro Dance Radio';
-    $('title').textContent  = t.title  || '';
-    $('album').textContent  = t.album  || '';
-
-    if(t.art){
-      // предзагрузка, чтобы не мигало
-      var pre = new Image();
-      pre.onload = function(){ $('cover').src = t.art; };
-      pre.onerror = function(){ /* оставляем заглушку */ };
-      pre.src = t.art;
-    }
-
-    document.title = (t.artist ? t.artist + ' — ' : '') + (t.title || 'Retro Dance Radio');
-    console.log('[RD] now:', t.artist, '—', t.title, '| art:', t.art ? 'yes' : 'no');
-  }
-
-  function renderListeners(l){
-    if(!l) return;
-    $('listeners').textContent = l.current || l.total || 0;
-  }
-
-  function renderNext(pn){
-    if(!pn || !pn.song){ $('nextTitle').textContent = '—'; return; }
-    $('nextTitle').textContent = (pn.song.artist || '') + ' — ' + (pn.song.title || '');
-  }
-
-  function renderHistory(hist){
-    var box = $('history');
-    if(!box || !Array.isArray(hist)) return;
-
-    var html = '';
-    var count = 0;
-
-    for(var i = 0; i < hist.length && count < HISTORY_LIMIT; i++){
-      var s = hist[i].song;
-      if(!s) continue;
-
-      var isJingle = (s.artist === 'RetroDance Radio');
-      var cls  = 'history-item' + (isJingle ? ' history-item--jingle' : '');
-
-      // У джинглов "artist" и "title" слегка пересекаются — оставляем оба поля как есть.
-      var artist = esc(s.artist);
-      var title  = esc(s.title);
-
-      html +=
-        '<div class="' + cls + '">' +
-          '<img src="' + esc(s.art) + '" alt="" loading="lazy" ' +
-               'onerror="this.style.visibility=\'hidden\'">' +
-          '<div class="history-text">' +
-            '<div class="history-artist">' + artist + '</div>' +
-            '<div class="history-title">'  + title  + '</div>' +
-          '</div>' +
-        '</div>';
-      count++;
-    }
-    box.innerHTML = html;
-  }
-
-  // ============ PROGRESS ============
-  function tickProgress(){
-    if(!current || !current.duration) return;
-
-    var now       = Math.floor(Date.now() / 1000) - META_OFFSET;
-    var elapsed   = Math.max(0, now - current.played_at);
-    var remaining = Math.max(0, current.duration - elapsed);
-    var pct       = Math.min(100, (elapsed / current.duration) * 100);
-
-    $('progressBar').style.width = pct + '%';
-    $('elapsed').textContent     = fmt(elapsed);
-    $('remaining').textContent   = '-' + fmt(remaining);
-  }
-
-  // ============ BOOT ============
-  setupAudio();
-  fetchNow();
-  setInterval(fetchNow, POLL_MS);
-  setInterval(tickProgress, PROGRESS_MS);
-
-  // для отладки из консоли
-  window.RD = {
-    fetchNow: fetchNow,
-    get current(){ return current; },
-    get audio(){ return audio; }
-  };
-})();
-</script>
+    updateMetadata();
+  </script>
 </body>
 </html>
