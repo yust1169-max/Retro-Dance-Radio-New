@@ -491,7 +491,7 @@
     const AZURA_API      = 'https://radio.retrodanceradio.com/api/nowplaying_static/retro_dance_radio.json';
     const AZURA_FALLBACK = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
 
-    const DISPLAY_DELAY = 10;
+    const DISPLAY_DELAY = 20;
 
     const player    = document.getElementById('player');
     const playBtn   = document.getElementById('play-btn');
@@ -592,16 +592,11 @@
       return score;
     }
 
-    /* Единственный источник обложек — iTunes.
-       AzuraCast art не используется (на сервере обложек нет).
-       Если iTunes пусто — вернём null, вызывающий код подставит логотип. */
     async function fetchCover(artist, title) {
       if (!artist || !title) return null;
       const key = `${artist}|${title}`.toLowerCase();
       if (coverCache[key] !== undefined) return coverCache[key];
 
-      // Убираем служебные хвосты типа "Remix By ...", "DJ ... Remix", "Version 2019" и т.п.
-      // из названия — они мешают поиску.
       const cleanTitle = String(title)
         .replace(/\s*[-–—]\s*(dj\s+[^-]+remix|remix.*|version.*|.*remix.*)$/i, '')
         .replace(/\s*\(\s*(remix|version|feat\..*)\s*\)/i, '')
@@ -862,7 +857,6 @@
 
           console.log('[RD] === new track ===', artist, '—', title);
 
-          // Всегда идём в iTunes. AzuraCast art игнорируем.
           (async () => {
             const art = await fetchCover(artist, title);
             await setMainCover(art || STATION_LOGO);
@@ -904,7 +898,6 @@
           const artistName = s.artist || 'Retro Radio';
           const songTitle  = s.title  || '';
 
-          // Также игнорируем art из AzuraCast — только iTunes.
           let art = await fetchCover(artistName, songTitle);
           if (!art) art = STATION_LOGO;
 
