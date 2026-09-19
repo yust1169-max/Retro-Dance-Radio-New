@@ -487,22 +487,13 @@
     const STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
     const STREAM_URL   = 'https://stream.laut.fm/retrodance';
 
-    /* ==== AzuraCast: метаданные, обложки, история, слушатели ==== */
+    /* ==== AzuraCast ==== */
     const AZURA_API      = 'https://radio.retrodanceradio.com/api/nowplaying_static/retro_dance_radio.json';
     const AZURA_FALLBACK = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
 
-    /* ============================================================
-       ЗАДЕРЖКА ОТОБРАЖЕНИЯ
-       ------------------------------------------------------------
-       AzuraCast видит смену трека раньше, чем её слышит слушатель
-       через laut.fm. Чтобы картинка/название не "убегали" вперёд,
-       сайт показывает то, что звучало N секунд назад.
-
-       Как подобрать: поставь 8, обнови страницу, послушай момент
-       смены трека. Если название всё ещё опережает звук —
-       увеличь (10, 12, 15). Если наоборот отстаёт — уменьши.
-       ============================================================ */
-    const DISPLAY_DELAY = 10; // секунд
+    /* Задержка отображения метаданных, сек.
+       Если название опережает звук — увеличь (12, 15). Если отстаёт — уменьши (8, 5). */
+    const DISPLAY_DELAY = 10;
 
     const player    = document.getElementById('player');
     const playBtn   = document.getElementById('play-btn');
@@ -568,27 +559,90 @@
       });
     }
 
-    /* Запасной источник обложки — iTunes. */
+    /* ==== Нормализация строки для сравнения ==== */
+    function normalize(s) {
+      return String(s || '')
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    /* ==== Оценка совпадения результата iTunes с запросом ==== */
+    function scoreMatch(queryArtist, queryTitle, r) {
+      const qArt = normalize(queryArtist);
+      const qTit = normalize(queryTitle);
+      const rArt = normalize(r.artistName);
+      const rTit = normalize(r.trackName);
+
+      let score = 0;
+
+      // Название
+      if (rTit === qTit) score += 4;
+      else if (rTit.includes(qTit) || qTit.includes(rTit)) score += 2;
+      else {
+        const qw = qTit.split(' ').filter(w => w.length > 2);
+        const rw = rTit.split(' ');
+        const overlap = qw.filter(w => rw.includes(w)).length;
+        if (overlap > 0) score += 1;
+      }
+
+      // Артист
+      if (rArt === qArt) score += 4;
+      else if (rArt.includes(qArt) || qArt.includes(rArt)) score += 2;
+      else {
+        const qw = qArt.split(' ').filter(w => w.length > 2);
+        const rw = rArt.split(' ');
+        const overlap = qw.filter(w => rw.includes(w)).length;
+        if (overlap > 0) score += 1;
+      }
+
+      return score;
+    }
+
+    /* ==== iTunes: берём 25 результатов, выбираем лучший по совпадению ==== */
+    async function searchItunes(artist, title, country) {
+      const q = `${artist} ${title}`.trim();
+      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&limit=25&entity=song${country ? '&country=' + country : ''}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.results || !data.results.length) return null;
+
+      let best = null, bestScore = 0;
+      for (const r of data.results) {
+        const sc = scoreMatch(artist, title, r);
+        if (sc > bestScore) { bestScore = sc; best = r; }
+      }
+      // Минимальный порог: 3 (точный артист + частичное название, или наоборот)
+      if (!best || bestScore < 3) return null;
+
+      return best.artworkUrl100
+        .replace('100x100bb.jpg', '600x600bb.jpg')
+        .replace('100x100', '600x600');
+    }
+
+    /* ==== Главная функция: AzuraCast → iTunes (несколько стран) ==== */
     async function fetchCover(artist, title) {
       if (!artist || !title) return null;
       const key = `${artist}|${title}`.toLowerCase();
       if (coverCache[key] !== undefined) return coverCache[key];
 
-      try {
-        const query = encodeURIComponent(`${artist} ${title}`);
-        const response = await fetch(`https://itunes.apple.com/search?term=${query}&limit=1&entity=song`);
-        const data = await response.json();
-        if (data.results && data.results.length > 0) {
-          const art = data.results[0].artworkUrl100
-            .replace('100x100bb.jpg', '600x600bb.jpg')
-            .replace('100x100', '600x600');
-          coverCache[key] = art;
-          return art;
-        }
-      } catch (e) {}
+      let art = null;
 
-      coverCache[key] = null;
-      return null;
+      for (const country of ['', 'DE', 'IT', 'RU', 'GB']) {
+        try {
+          art = await searchItunes(artist, title, country);
+          if (art) {
+            console.log(`[RD] iTunes (${country || 'US'}) → ${art}`);
+            break;
+          }
+        } catch (e) {}
+      }
+
+      if (!art) console.warn('[RD] cover not found in iTunes:', artist, '—', title);
+
+      coverCache[key] = art;
+      return art;
     }
 
     function applyMediaSession() {
@@ -736,7 +790,6 @@
       updateVolumeIcon();
     });
 
-    /* ==== Загрузка данных из AzuraCast ==== */
     async function fetchAzura() {
       try {
         const res = await fetch(`${AZURA_API}?_=${Date.now()}`, { cache: 'no-store' });
@@ -748,21 +801,15 @@
       }
     }
 
-    /* Какой трек должен быть на экране СЕЙЧАС (с учётом задержки).
-       Возвращает объект { song, played_at, duration } или null. */
     function pickDisplayedTrack(data) {
       const shiftedNow = Math.floor(Date.now() / 1000) - DISPLAY_DELAY;
       const np = data.now_playing;
       const hist = Array.isArray(data.song_history) ? data.song_history : [];
 
-      // Если текущий трек AzuraCast начался раньше, чем "сдвинутое" время —
-      // значит, слушатель его уже слышит. Показываем его.
       if (np && np.played_at && np.played_at <= shiftedNow) {
         return { song: np.song, played_at: np.played_at, duration: np.duration };
       }
 
-      // Иначе идём по истории и ищем последний трек,
-      // который в "сдвинутый" момент уже звучал.
       for (let i = 0; i < hist.length; i++) {
         const e = hist[i];
         if (e.played_at && e.played_at <= shiftedNow) {
@@ -770,7 +817,6 @@
         }
       }
 
-      // Fallback — показываем текущий (например, в первые секунды после загрузки).
       if (np) return { song: np.song, played_at: np.played_at, duration: np.duration };
       return null;
     }
@@ -780,13 +826,11 @@
         const data = await fetchAzura();
         if (!data) return;
 
-        // --- Слушатели (без задержки, они и так в реальном времени) ---
         if (data.listeners) {
           const l = data.listeners;
           listenersEl.textContent = l.current ?? l.total ?? 0;
         }
 
-        // --- Какой трек показывать с учётом задержки ---
         const shown = pickDisplayedTrack(data);
         if (!shown || !shown.song) return;
 
@@ -810,8 +854,10 @@
             let art = okArt;
 
             if (!art) {
-              console.log('[RD] AzuraCast art missing, trying iTunes:', artist, '—', title);
+              console.log('[RD] AzuraCast art missing, searching iTunes:', artist, '—', title);
               art = await fetchCover(artist, title);
+            } else {
+              console.log('[RD] AzuraCast art OK');
             }
 
             await setMainCover(art || STATION_LOGO);
@@ -834,8 +880,6 @@
         const data = await fetchAzura();
         if (!data || !Array.isArray(data.song_history)) return;
 
-        // Сдвинутое "сейчас" — история должна показывать треки,
-        // которые слушатель реально слышал.
         const shiftedNow = Math.floor(Date.now() / 1000) - DISPLAY_DELAY;
 
         historyList.innerHTML = '';
