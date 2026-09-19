@@ -565,8 +565,6 @@
         .trim();
     }
 
-    /* Раздельные оценки по артисту и названию.
-       Совпадение по артисту — ОБЯЗАТЕЛЬНО. */
     function scoreMatch(queryArtist, queryTitle, r) {
       const qArt = normalize(queryArtist);
       const qTit = normalize(queryTitle);
@@ -576,27 +574,74 @@
       let artistScore = 0;
       let titleScore = 0;
 
-      // --- Артист (высокий вес) ---
       if (rArt === qArt) artistScore = 6;
       else if (rArt.includes(qArt) || qArt.includes(rArt)) artistScore = 4;
       else {
         const qw = qArt.split(' ').filter(w => w.length > 2);
         const rw = rArt.split(' ');
-        if (qw.some(w => rw.includes(w))) artistScore = 2;
+        if (qw.length && qw.every(w => rw.includes(w))) artistScore = 3;
       }
 
-      // --- Название ---
       if (rTit === qTit) titleScore = 5;
       else if (rTit.includes(qTit) || qTit.includes(rTit)) titleScore = 3;
       else {
         const qw = qTit.split(' ').filter(w => w.length > 2);
         const rw = rTit.split(' ');
-        if (qw.some(w => rw.includes(w))) titleScore = 1;
+        if (qw.length && qw.every(w => rw.includes(w))) titleScore = 2;
       }
 
       return { artist: artistScore, title: titleScore, total: artistScore + titleScore };
     }
 
+    /* Один запрос к iTunes в конкретном регионе.
+       Возвращает URL обложки или null. Жёсткий фильтр: и артист, и название. */
+    async function queryItunesOne(query, artist, title, country) {
+      const cc = country ? ('&country=' + country) : '';
+      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=25${cc}&_=${Date.now()}`;
+
+      let res;
+      try {
+        res = await fetch(url);
+      } catch (e) {
+        return null;
+      }
+      if (!res.ok) return null;
+
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        return null;
+      }
+
+      if (!data.results || !data.results.length) return null;
+
+      const scored = data.results.map(r => ({ r, sc: scoreMatch(artist, title, r) }))
+        .sort((a, b) => b.sc.total - a.sc.total);
+
+      // Требуем и артиста, и название
+      let best = null, bestScore = -1;
+      for (const item of scored) {
+        if (item.sc.artist === 0) continue;
+        if (item.sc.title === 0) continue;
+        if (item.sc.total > bestScore) {
+          best = item.r;
+          bestScore = item.sc.total;
+        }
+      }
+
+      if (!best || !best.artworkUrl100) return null;
+
+      console.log(`[RD] iTunes (${country || 'US'}) pick:`, best.artistName, '—', best.trackName, '| score:', bestScore);
+
+      return best.artworkUrl100
+        .replace('100x100bb.jpg', '600x600bb.jpg')
+        .replace('100x100bb.png', '600x600bb.png')
+        .replace('100x100', '600x600');
+    }
+
+    /* Перебор: 2 варианта запроса × 5 регионов.
+       Найдём — останавливаемся. */
     async function fetchCover(artist, title) {
       if (!artist || !title) return null;
       const key = `${artist}|${title}`.toLowerCase();
@@ -614,53 +659,26 @@
 
       const queries = [
         `${cleanArtist} ${cleanTitle}`,
-        `${artist} ${title}`,
-        cleanTitle
+        `${artist} ${title}`
       ];
+
+      // Пустой код — US по умолчанию, затем региональные каталоги
+      const countries = ['', 'RU', 'DE', 'IT', 'GB'];
 
       let found = null;
 
+      outer:
       for (const q of queries) {
-        if (found) break;
-        try {
-          const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&limit=25&entity=song&_=${Date.now()}`;
-          console.log('[RD] iTunes query:', q);
-
-          const res = await fetch(url);
-          const data = await res.json();
-          console.log('[RD] iTunes resultCount:', data.resultCount);
-
-          if (!data.results || !data.results.length) continue;
-
-          // Оцениваем все результаты, логируем топ-3
-          const scored = data.results.map(r => ({ r, sc: scoreMatch(artist, title, r) }))
-            .sort((a, b) => b.sc.total - a.sc.total);
-
-          console.log('[RD] iTunes top:', scored.slice(0, 3).map(x =>
-            `${x.sc.total} (a${x.sc.artist}/t${x.sc.title}) | ${x.r.artistName} — ${x.r.trackName}`
-          ));
-
-          // Принимаем только результаты с совпадением по артисту
-          let best = null, bestScore = -1;
-          for (const item of scored) {
-            if (item.sc.artist === 0) continue;
-            if (item.sc.total > bestScore) {
-              best = item.r;
-              bestScore = item.sc.total;
+        for (const cc of countries) {
+          try {
+            found = await queryItunesOne(q, artist, title, cc);
+            if (found) {
+              console.log(`[RD] cover found via query="${q}" country=${cc || 'US'}`);
+              break outer;
             }
+          } catch (e) {
+            console.warn('[RD] iTunes error:', e.message || e);
           }
-
-          if (best && best.artworkUrl100) {
-            found = best.artworkUrl100
-              .replace('100x100bb.jpg', '600x600bb.jpg')
-              .replace('100x100bb.png', '600x600bb.png')
-              .replace('100x100', '600x600');
-            console.log('[RD] iTunes pick:', best.artistName, '—', best.trackName, '| score:', bestScore);
-          } else {
-            console.log('[RD] iTunes: no result with matching artist in this query');
-          }
-        } catch (e) {
-          console.warn('[RD] iTunes error:', e.message || e);
         }
       }
 
