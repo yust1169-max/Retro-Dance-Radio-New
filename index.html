@@ -485,6 +485,8 @@
   </div>
 
   <script>
+    console.log('%c[RD] build v4 — AzuraCast URL check', 'background:#e11d48;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold;');
+
     const STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
     const STREAM_URL   = 'https://stream.laut.fm/retrodance';
 
@@ -515,6 +517,7 @@
     let mediaSessionTimer = null;
 
     const coverCache = {};
+    const azuraArtCache = {};
 
     const SVG_PLAY = '<path d="M7 5v14l11-7z"/>';
     const SVG_STOP = '<path d="M6 6h12v12H6z"/>';
@@ -557,6 +560,45 @@
       });
     }
 
+    /* Реальная обложка от AzuraCast имеет URL вида:
+       .../art/<hash>-<timestamp>.jpg
+       Заглушка-логотип:
+       .../art/<hash>
+       Проверяем регуляркой. */
+    function looksLikeRealArtUrl(url) {
+      return /-\d+\.(jpe?g|png|webp)$/i.test(url || '');
+    }
+
+    function checkAzuraArt(url) {
+      if (!url) return Promise.resolve(null);
+
+      if (!looksLikeRealArtUrl(url)) {
+        console.log('[RD] AzuraCast art: URL looks like placeholder → reject');
+        return Promise.resolve(null);
+      }
+
+      if (azuraArtCache[url] !== undefined) return Promise.resolve(azuraArtCache[url]);
+
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const w = img.naturalWidth;
+          const h = img.naturalHeight;
+          const ratio = w / h;
+          const ok = w >= 200 && h >= 200 && ratio > 0.75 && ratio < 1.35;
+          console.log(`[RD] AzuraCast art: ${w}×${h} ratio ${ratio.toFixed(2)} → ${ok ? 'OK' : 'reject'}`);
+          azuraArtCache[url] = ok ? url : null;
+          resolve(ok ? url : null);
+        };
+        img.onerror = () => {
+          console.log('[RD] AzuraCast art: load failed → reject');
+          azuraArtCache[url] = null;
+          resolve(null);
+        };
+        img.src = url;
+      });
+    }
+
     function normalize(s) {
       return String(s || '')
         .toLowerCase()
@@ -593,33 +635,21 @@
       return { artist: artistScore, title: titleScore, total: artistScore + titleScore };
     }
 
-    /* Один запрос к iTunes в конкретном регионе.
-       Возвращает URL обложки или null. Жёсткий фильтр: и артист, и название. */
     async function queryItunesOne(query, artist, title, country) {
       const cc = country ? ('&country=' + country) : '';
       const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=25${cc}&_=${Date.now()}`;
 
       let res;
-      try {
-        res = await fetch(url);
-      } catch (e) {
-        return null;
-      }
+      try { res = await fetch(url); } catch (e) { return null; }
       if (!res.ok) return null;
 
       let data;
-      try {
-        data = await res.json();
-      } catch (e) {
-        return null;
-      }
-
+      try { data = await res.json(); } catch (e) { return null; }
       if (!data.results || !data.results.length) return null;
 
       const scored = data.results.map(r => ({ r, sc: scoreMatch(artist, title, r) }))
         .sort((a, b) => b.sc.total - a.sc.total);
 
-      // Требуем и артиста, и название
       let best = null, bestScore = -1;
       for (const item of scored) {
         if (item.sc.artist === 0) continue;
@@ -640,11 +670,9 @@
         .replace('100x100', '600x600');
     }
 
-    /* Перебор: 2 варианта запроса × 5 регионов.
-       Найдём — останавливаемся. */
-    async function fetchCover(artist, title) {
+    async function fetchItunesCover(artist, title) {
       if (!artist || !title) return null;
-      const key = `${artist}|${title}`.toLowerCase();
+      const key = `it|${artist}|${title}`.toLowerCase();
       if (coverCache[key] !== undefined) return coverCache[key];
 
       const cleanTitle = String(title)
@@ -661,8 +689,6 @@
         `${cleanArtist} ${cleanTitle}`,
         `${artist} ${title}`
       ];
-
-      // Пустой код — US по умолчанию, затем региональные каталоги
       const countries = ['', 'RU', 'DE', 'IT', 'GB'];
 
       let found = null;
@@ -673,7 +699,7 @@
           try {
             found = await queryItunesOne(q, artist, title, cc);
             if (found) {
-              console.log(`[RD] cover found via query="${q}" country=${cc || 'US'}`);
+              console.log(`[RD] iTunes found via query="${q}" country=${cc || 'US'}`);
               break outer;
             }
           } catch (e) {
@@ -682,10 +708,32 @@
         }
       }
 
-      if (!found) console.warn('[RD] cover NOT FOUND:', artist, '—', title);
+      if (!found) console.warn('[RD] iTunes NOT FOUND:', artist, '—', title);
 
       coverCache[key] = found;
       return found;
+    }
+
+    async function resolveCover(artist, title, azuraArtUrl) {
+      console.log('[RD] resolveCover:', artist, '—', title, '| azuraArt:', azuraArtUrl ? 'has URL' : 'empty');
+
+      // Шаг 1: AzuraCast. Принимаем только "настоящую" обложку (URL с timestamp).
+      let art = await checkAzuraArt(azuraArtUrl);
+      if (art) {
+        console.log('[RD] cover source: AzuraCast');
+        return art;
+      }
+
+      // Шаг 2: iTunes.
+      art = await fetchItunesCover(artist, title);
+      if (art) {
+        console.log('[RD] cover source: iTunes');
+        return art;
+      }
+
+      // Шаг 3: логотип.
+      console.log('[RD] cover source: station logo (fallback)');
+      return null;
     }
 
     function applyMediaSession() {
@@ -880,6 +928,7 @@
         const s = shown.song;
         const artist  = s.artist || 'Retro Radio';
         const title   = s.title  || '';
+        const azuraArt = s.art || '';
         const trackKey = `${artist} - ${title}`;
 
         if (trackKey !== currentTrackId) {
@@ -892,10 +941,10 @@
 
           applyMediaSession();
 
-          console.log('[RD] === new track ===', artist, '—', title);
+          console.log('[RD] === new track ===', artist, '—', title, '| azuraArt:', azuraArt ? 'yes' : 'no');
 
           (async () => {
-            const art = await fetchCover(artist, title);
+            const art = await resolveCover(artist, title, azuraArt);
             await setMainCover(art || STATION_LOGO);
             keepMediaSessionAlive();
 
@@ -935,7 +984,7 @@
           const artistName = s.artist || 'Retro Radio';
           const songTitle  = s.title  || '';
 
-          let art = await fetchCover(artistName, songTitle);
+          let art = await resolveCover(artistName, songTitle, s.art || '');
           if (!art) art = STATION_LOGO;
 
           const item = document.createElement('div');
