@@ -491,6 +491,19 @@
     const AZURA_API      = 'https://radio.retrodanceradio.com/api/nowplaying_static/retro_dance_radio.json';
     const AZURA_FALLBACK = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
 
+    /* ============================================================
+       ЗАДЕРЖКА ОТОБРАЖЕНИЯ
+       ------------------------------------------------------------
+       AzuraCast видит смену трека раньше, чем её слышит слушатель
+       через laut.fm. Чтобы картинка/название не "убегали" вперёд,
+       сайт показывает то, что звучало N секунд назад.
+
+       Как подобрать: поставь 8, обнови страницу, послушай момент
+       смены трека. Если название всё ещё опережает звук —
+       увеличь (10, 12, 15). Если наоборот отстаёт — уменьши.
+       ============================================================ */
+    const DISPLAY_DELAY = 10; // секунд
+
     const player    = document.getElementById('player');
     const playBtn   = document.getElementById('play-btn');
     const playSvg   = document.getElementById('play-svg');
@@ -545,7 +558,6 @@
       }
     }
 
-    /* Возвращает URL, если картинка реально загрузилась, иначе null */
     function preloadImage(url) {
       return new Promise((resolve) => {
         if (!url) return resolve(null);
@@ -556,8 +568,7 @@
       });
     }
 
-    /* Запасной источник обложки — iTunes. Используется,
-       если AzuraCast не отдал картинку для текущего трека. */
+    /* Запасной источник обложки — iTunes. */
     async function fetchCover(artist, title) {
       if (!artist || !title) return null;
       const key = `${artist}|${title}`.toLowerCase();
@@ -737,22 +748,49 @@
       }
     }
 
+    /* Какой трек должен быть на экране СЕЙЧАС (с учётом задержки).
+       Возвращает объект { song, played_at, duration } или null. */
+    function pickDisplayedTrack(data) {
+      const shiftedNow = Math.floor(Date.now() / 1000) - DISPLAY_DELAY;
+      const np = data.now_playing;
+      const hist = Array.isArray(data.song_history) ? data.song_history : [];
+
+      // Если текущий трек AzuraCast начался раньше, чем "сдвинутое" время —
+      // значит, слушатель его уже слышит. Показываем его.
+      if (np && np.played_at && np.played_at <= shiftedNow) {
+        return { song: np.song, played_at: np.played_at, duration: np.duration };
+      }
+
+      // Иначе идём по истории и ищем последний трек,
+      // который в "сдвинутый" момент уже звучал.
+      for (let i = 0; i < hist.length; i++) {
+        const e = hist[i];
+        if (e.played_at && e.played_at <= shiftedNow) {
+          return { song: e.song, played_at: e.played_at, duration: e.duration };
+        }
+      }
+
+      // Fallback — показываем текущий (например, в первые секунды после загрузки).
+      if (np) return { song: np.song, played_at: np.played_at, duration: np.duration };
+      return null;
+    }
+
     async function updateMetadata() {
       try {
         const data = await fetchAzura();
         if (!data) return;
 
-        // --- Слушатели ---
+        // --- Слушатели (без задержки, они и так в реальном времени) ---
         if (data.listeners) {
           const l = data.listeners;
           listenersEl.textContent = l.current ?? l.total ?? 0;
         }
 
-        // --- Текущий трек ---
-        const np = data.now_playing;
-        if (!np || !np.song) return;
+        // --- Какой трек показывать с учётом задержки ---
+        const shown = pickDisplayedTrack(data);
+        if (!shown || !shown.song) return;
 
-        const s = np.song;
+        const s = shown.song;
         const artist  = s.artist || 'Retro Radio';
         const title   = s.title  || '';
         const azuraArt = s.art || '';
@@ -768,9 +806,6 @@
 
           applyMediaSession();
 
-          // 1) Пытаемся взять обложку из AzuraCast.
-          // 2) Если её нет/битая — идём в iTunes.
-          // 3) Если и там пусто — показываем логотип.
           preloadImage(azuraArt).then(async (okArt) => {
             let art = okArt;
 
@@ -799,16 +834,27 @@
         const data = await fetchAzura();
         if (!data || !Array.isArray(data.song_history)) return;
 
+        // Сдвинутое "сейчас" — история должна показывать треки,
+        // которые слушатель реально слышал.
+        const shiftedNow = Math.floor(Date.now() / 1000) - DISPLAY_DELAY;
+
         historyList.innerHTML = '';
 
-        for (const entry of data.song_history.slice(0, 5)) {
+        const visible = [];
+        for (const entry of data.song_history) {
+          if (entry.played_at && entry.played_at <= shiftedNow) {
+            visible.push(entry);
+          }
+          if (visible.length >= 5) break;
+        }
+
+        for (const entry of visible) {
           const s = entry.song;
           if (!s) continue;
 
           const artistName = s.artist || 'Retro Radio';
           const songTitle  = s.title  || '';
 
-          // В истории тоже используем фолбэк на iTunes, если обложки нет
           let art = await preloadImage(s.art);
           if (!art) art = await fetchCover(artistName, songTitle);
           if (!art) art = STATION_LOGO;
