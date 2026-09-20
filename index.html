@@ -485,13 +485,14 @@
   </div>
 
   <script>
-    console.log('%c[RD] build v4 — AzuraCast URL check', 'background:#e11d48;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold;');
+    console.log('%c[RD] build v5 — listeners = AzuraCast + laut.fm', 'background:#e11d48;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold;');
 
     const STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
     const STREAM_URL   = 'https://stream.laut.fm/retrodance';
 
-    const AZURA_API      = 'https://radio.retrodanceradio.com/api/nowplaying_static/retro_dance_radio.json';
-    const AZURA_FALLBACK = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
+    const AZURA_API       = 'https://radio.retrodanceradio.com/api/nowplaying_static/retro_dance_radio.json';
+    const AZURA_FALLBACK  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
+    const LAUT_LISTENERS  = 'https://api.laut.fm/station/retrodance/listeners';
 
     const DISPLAY_DELAY = 20;
 
@@ -560,11 +561,6 @@
       });
     }
 
-    /* Реальная обложка от AzuraCast имеет URL вида:
-       .../art/<hash>-<timestamp>.jpg
-       Заглушка-логотип:
-       .../art/<hash>
-       Проверяем регуляркой. */
     function looksLikeRealArtUrl(url) {
       return /-\d+\.(jpe?g|png|webp)$/i.test(url || '');
     }
@@ -717,23 +713,34 @@
     async function resolveCover(artist, title, azuraArtUrl) {
       console.log('[RD] resolveCover:', artist, '—', title, '| azuraArt:', azuraArtUrl ? 'has URL' : 'empty');
 
-      // Шаг 1: AzuraCast. Принимаем только "настоящую" обложку (URL с timestamp).
       let art = await checkAzuraArt(azuraArtUrl);
       if (art) {
         console.log('[RD] cover source: AzuraCast');
         return art;
       }
 
-      // Шаг 2: iTunes.
       art = await fetchItunesCover(artist, title);
       if (art) {
         console.log('[RD] cover source: iTunes');
         return art;
       }
 
-      // Шаг 3: логотип.
       console.log('[RD] cover source: station logo (fallback)');
       return null;
+    }
+
+    /* Слушатели laut.fm (число в plain text) */
+    async function fetchLautListeners() {
+      try {
+        const res = await fetch(`${LAUT_LISTENERS}?_=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const text = await res.text();
+        const n = parseInt(text, 10);
+        return Number.isFinite(n) ? n : 0;
+      } catch (e) {
+        console.warn('[RD] laut.fm listeners fetch failed:', e.message || e);
+        return 0;
+      }
     }
 
     function applyMediaSession() {
@@ -914,49 +921,58 @@
 
     async function updateMetadata() {
       try {
-        const data = await fetchAzura();
-        if (!data) return;
+        // Слушатели: AzuraCast + laut.fm параллельно
+        fetchAzura().then(async (data) => {
+          if (!data) return;
 
-        if (data.listeners) {
-          const l = data.listeners;
-          listenersEl.textContent = l.current ?? l.total ?? 0;
-        }
+          const azuraCount = (data.listeners && (data.listeners.current ?? data.listeners.total)) || 0;
 
-        const shown = pickDisplayedTrack(data);
-        if (!shown || !shown.song) return;
+          try {
+            const lautCount = await fetchLautListeners();
+            const total = azuraCount + lautCount;
+            listenersEl.textContent = total;
+            console.log(`[RD] listeners — AzuraCast: ${azuraCount}, laut.fm: ${lautCount}, total: ${total}`);
+          } catch (e) {
+            listenersEl.textContent = azuraCount;
+          }
 
-        const s = shown.song;
-        const artist  = s.artist || 'Retro Radio';
-        const title   = s.title  || '';
-        const azuraArt = s.art || '';
-        const trackKey = `${artist} - ${title}`;
+          const shown = pickDisplayedTrack(data);
+          if (!shown || !shown.song) return;
 
-        if (trackKey !== currentTrackId) {
-          currentTrackId = trackKey;
-          currentTrackTitle = title;
-          currentTrackArtist = artist;
+          const s = shown.song;
+          const artist  = s.artist || 'Retro Radio';
+          const title   = s.title  || '';
+          const azuraArt = s.art || '';
+          const trackKey = `${artist} - ${title}`;
 
-          titleEl.textContent = title;
-          artistEl.textContent = artist;
+          if (trackKey !== currentTrackId) {
+            currentTrackId = trackKey;
+            currentTrackTitle = title;
+            currentTrackArtist = artist;
 
-          applyMediaSession();
+            titleEl.textContent = title;
+            artistEl.textContent = artist;
 
-          console.log('[RD] === new track ===', artist, '—', title, '| azuraArt:', azuraArt ? 'yes' : 'no');
+            applyMediaSession();
 
-          (async () => {
-            const art = await resolveCover(artist, title, azuraArt);
-            await setMainCover(art || STATION_LOGO);
-            keepMediaSessionAlive();
+            console.log('[RD] === new track ===', artist, '—', title, '| azuraArt:', azuraArt ? 'yes' : 'no');
 
-            const currentTab = document.querySelector('.tab-btn.active').dataset.tab;
-            if (currentTab === 'history') updateHistory();
-          })();
+            (async () => {
+              const art = await resolveCover(artist, title, azuraArt);
+              await setMainCover(art || STATION_LOGO);
+              keepMediaSessionAlive();
 
-        } else {
-          applyMediaSession();
-        }
+              const currentTab = document.querySelector('.tab-btn.active').dataset.tab;
+              if (currentTab === 'history') updateHistory();
+            })();
+          } else {
+            applyMediaSession();
+          }
+        }).catch((e) => {
+          console.error('Ошибка получения метаданных:', e);
+        });
       } catch (e) {
-        console.error('Ошибка получения метаданных:', e);
+        console.error('Ошибка:', e);
       }
     }
 
