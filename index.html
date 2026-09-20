@@ -6,6 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/png" href="https://i.postimg.cc/28VKXjCx/logo.png">
   <link rel="apple-touch-icon" href="https://i.postimg.cc/28VKXjCx/logo.png">
   <title>RetroDance Radio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -729,7 +730,6 @@
       return null;
     }
 
-    /* Слушатели laut.fm (число в plain text) */
     async function fetchLautListeners() {
       try {
         const res = await fetch(`${LAUT_LISTENERS}?_=${Date.now()}`, { cache: 'no-store' });
@@ -921,7 +921,6 @@
 
     async function updateMetadata() {
       try {
-        // Слушатели: AzuraCast + laut.fm параллельно
         fetchAzura().then(async (data) => {
           if (!data) return;
 
