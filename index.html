@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" style="background-color:#0d0d0d;">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d0d0d">
   <link rel="icon" type="image/png" href="https://i.postimg.cc/28VKXjCx/logo.png">
   <link rel="apple-touch-icon" href="https://i.postimg.cc/28VKXjCx/logo.png">
   <title>RetroDance Radio</title>
+  <style>html,body{background-color:#0d0d0d;margin:0;padding:0;}</style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
@@ -486,7 +488,7 @@
   </div>
 
   <script>
-    console.log('%c[RD] build v5 — listeners = AzuraCast + laut.fm', 'background:#e11d48;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold;');
+    console.log('%c[RD] build v6 — compilation filter', 'background:#e11d48;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold;');
 
     const STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
     const STREAM_URL   = 'https://stream.laut.fm/retrodance';
@@ -604,6 +606,18 @@
         .trim();
     }
 
+    function isCompilation(collectionName) {
+      if (!collectionName) return false;
+      const c = String(collectionName).toLowerCase();
+      const markers = [
+        'various', 'va ', 'сборник', 'hits', 'greatest', 'best of', 'best-of',
+        'collection', 'compilation', 'the best', 'super hits', 'megamix',
+        'mixtape', 'mix tape', 'дискотека', 'хит', 'le meilleur', 'los mejores',
+        'the very best', 'ultimate', 'антология', 'золотые', 'лучшие'
+      ];
+      return markers.some(m => c.includes(m));
+    }
+
     function scoreMatch(queryArtist, queryTitle, r) {
       const qArt = normalize(queryArtist);
       const qTit = normalize(queryTitle);
@@ -647,10 +661,20 @@
       const scored = data.results.map(r => ({ r, sc: scoreMatch(artist, title, r) }))
         .sort((a, b) => b.sc.total - a.sc.total);
 
+      console.log(`[RD] iTunes (${country || 'US'}) top:`,
+        scored.slice(0, 3).map(x =>
+          `${x.sc.total}(a${x.sc.artist}/t${x.sc.title}) "${x.r.artistName} — ${x.r.trackName}" [${x.r.collectionName || '—'}]`
+        )
+      );
+
       let best = null, bestScore = -1;
       for (const item of scored) {
-        if (item.sc.artist === 0) continue;
-        if (item.sc.title === 0) continue;
+        if (item.sc.artist < 3) continue;
+        if (item.sc.title  < 2) continue;
+        if (isCompilation(item.r.collectionName)) {
+          console.log('[RD] iTunes skip (compilation):', item.r.collectionName);
+          continue;
+        }
         if (item.sc.total > bestScore) {
           best = item.r;
           bestScore = item.sc.total;
@@ -659,7 +683,7 @@
 
       if (!best || !best.artworkUrl100) return null;
 
-      console.log(`[RD] iTunes (${country || 'US'}) pick:`, best.artistName, '—', best.trackName, '| score:', bestScore);
+      console.log(`[RD] iTunes (${country || 'US'}) pick:`, best.artistName, '—', best.trackName, '| album:', best.collectionName, '| score:', bestScore);
 
       return best.artworkUrl100
         .replace('100x100bb.jpg', '600x600bb.jpg')
