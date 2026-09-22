@@ -488,7 +488,7 @@
   </div>
 
   <script>
-    console.log('%c[RD] build v6 — compilation filter', 'background:#e11d48;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold;');
+    console.log('%c[RD] build v7 — listeners = laut.fm only', 'background:#e11d48;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold;');
 
     const STATION_LOGO = 'https://i.postimg.cc/28VKXjCx/logo.png';
     const STREAM_URL   = 'https://stream.laut.fm/retrodance';
@@ -763,7 +763,7 @@
         return Number.isFinite(n) ? n : 0;
       } catch (e) {
         console.warn('[RD] laut.fm listeners fetch failed:', e.message || e);
-        return 0;
+        return null;
       }
     }
 
@@ -948,15 +948,15 @@
         fetchAzura().then(async (data) => {
           if (!data) return;
 
-          const azuraCount = (data.listeners && (data.listeners.current ?? data.listeners.total)) || 0;
-
+          // Слушатели: только laut.fm
           try {
             const lautCount = await fetchLautListeners();
-            const total = azuraCount + lautCount;
-            listenersEl.textContent = total;
-            console.log(`[RD] listeners — AzuraCast: ${azuraCount}, laut.fm: ${lautCount}, total: ${total}`);
+            if (lautCount !== null) {
+              listenersEl.textContent = lautCount;
+              console.log(`[RD] listeners (laut.fm): ${lautCount}`);
+            }
           } catch (e) {
-            listenersEl.textContent = azuraCount;
+            // оставляем прежнее значение
           }
 
           const shown = pickDisplayedTrack(data);
