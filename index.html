@@ -77,73 +77,26 @@
     .contact-value { font-size: 13px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .legal { font-size: 9px; opacity: 0.4; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; margin-top: 10px; text-align: center; }
 
-    /* ============ Скрытая лог-панель ============ */
-    .rd-log {
-      position: fixed;
-      left: 0; right: 0; bottom: 0;
-      max-height: 45vh;
-      background: rgba(0, 0, 0, 0.94);
-      border-top: 1px solid #e11d48;
-      z-index: 9999;
-      transform: translateY(110%);
-      transition: transform 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      pointer-events: none;
-    }
-    .rd-log.visible {
-      transform: translateY(0);
-      pointer-events: auto;
-    }
-    .rd-log-head {
-      padding: 8px 12px;
-      font-size: 10px;
-      font-weight: 900;
-      color: #e11d48;
-      letter-spacing: 0.15em;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      flex-shrink: 0;
-    }
-    .rd-log-head > span:last-child {
-      display: flex;
-      gap: 4px;
-    }
-    .rd-log-head button {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-      padding: 2px 10px;
-      font-family: inherit;
-      border-radius: 6px;
-      transition: background 0.15s;
-    }
-    .rd-log-head button:active {
-      background: rgba(255,255,255,0.1);
-    }
-    .rd-log-body {
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 6px 10px;
-      font-family: ui-monospace, Menlo, Consolas, monospace;
-      font-size: 10px;
-      line-height: 1.4;
-      color: rgba(255,255,255,0.85);
-      white-space: pre-wrap;
-      word-break: break-all;
-      flex: 1 1 auto;
-    }
-    .rd-log-body .ln {
-      padding: 1px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
-    }
+    .rd-log { position: fixed; left: 0; right: 0; bottom: 0; max-height: 45vh; background: rgba(0, 0, 0, 0.95); border-top: 1px solid #e11d48; z-index: 9999; transform: translateY(110%); transition: transform 0.3s ease; display: flex; flex-direction: column; pointer-events: none; }
+    .rd-log.visible { transform: translateY(0); pointer-events: auto; }
+    .rd-log-head { padding: 8px 12px; font-size: 10px; font-weight: 900; color: #e11d48; letter-spacing: 0.15em; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; gap: 6px; }
+    .rd-log-head > span:last-child { display: flex; gap: 2px; }
+    .rd-log-head button { background: none; border: none; color: white; font-size: 15px; cursor: pointer; padding: 4px 8px; font-family: inherit; border-radius: 6px; transition: background 0.15s; }
+    .rd-log-head button:active { background: rgba(255,255,255,0.1); }
+    .rd-log-head button.paused { background: rgba(225,29,72,0.4); }
+    .rd-log-body { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px 10px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10px; line-height: 1.4; color: rgba(255,255,255,0.85); white-space: pre-wrap; word-break: break-all; flex: 1 1 auto; }
+    .rd-log-body .ln { padding: 1px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
     .rd-log-body .ln.err { color: #fca5a5; }
     .rd-log-body .ln.ok  { color: #86efac; }
     .rd-log-body .ln.warn { color: #fde047; }
+
+    /* Модалка "Показать всё" */
+    .rd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 10000; display: none; flex-direction: column; padding: 12px; }
+    .rd-modal.visible { display: flex; }
+    .rd-modal-head { display: flex; justify-content: space-between; align-items: center; padding: 4px 4px 10px; color: #e11d48; font-size: 12px; font-weight: 900; letter-spacing: 0.1em; flex-shrink: 0; }
+    .rd-modal-head button { background: #e11d48; border: none; color: white; font-size: 12px; font-weight: 900; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: inherit; letter-spacing: 0.05em; }
+    .rd-modal-head button:active { background: #9f1239; }
+    #rd-modal-text { flex: 1 1 auto; width: 100%; background: #000; color: #86efac; border: 1px solid #e11d48; border-radius: 8px; padding: 8px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; line-height: 1.4; resize: none; white-space: pre; overflow: auto; -webkit-user-select: text; user-select: text; }
   </style>
 </head>
 <body>
@@ -215,16 +168,25 @@
     </div>
   </div>
 
-  <!-- Скрытая лог-панель -->
   <div id="rd-log" class="rd-log" aria-hidden="true">
     <div class="rd-log-head">
       <span>RD DEBUG LOG</span>
       <span>
+        <button id="rd-log-pause" type="button" aria-label="Пауза">❄️</button>
+        <button id="rd-log-full" type="button" aria-label="Показать всё">🔍</button>
         <button id="rd-log-copy" type="button" aria-label="Копировать">📋</button>
         <button id="rd-log-close" type="button" aria-label="Закрыть">✕</button>
       </span>
     </div>
     <div id="rd-log-body" class="rd-log-body"></div>
+  </div>
+
+  <div id="rd-modal" class="rd-modal" aria-hidden="true">
+    <div class="rd-modal-head">
+      <span>ПОЛНЫЙ ЛОГ</span>
+      <button id="rd-modal-close" type="button">ЗАКРЫТЬ</button>
+    </div>
+    <textarea id="rd-modal-text" readonly></textarea>
   </div>
 
   <script>
@@ -242,8 +204,6 @@
     var MIN_ARTIST_SCORE = 0.5;
     var MAX_POLL_DELAY   = 12000;
     var MIN_TITLE_SCORE  = 0.35;
-    var WATCHDOG_INTERVAL = 6000;
-    var WATCHDOG_STUCK_MAX = 3;
     var LASTFM_PLACEHOLDER_HASH = '2a96cbd8b46e442fc41c2b86b821562f';
 
     var VERSION_MARKERS = /(english version|spanish version|russian version|instrumental|минус|minus|karaoke|караоке|extended mix|extended version|rework|dub version|acoustic version)/i;
@@ -292,12 +252,10 @@
     var VOL_HIGH = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
     var VOL_MUTE = 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-3-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z';
 
-    /* ============================================================
-       LOG
-    ============================================================ */
     var logBuffer = [];
-    var LOG_MAX = 120;
+    var LOG_MAX = 200;
     var logPanelVisible = false;
+    var logPaused = false;
 
     function log() {
       var args = [].slice.call(arguments);
@@ -324,13 +282,13 @@
       logBuffer.push(line);
       while (logBuffer.length > LOG_MAX) logBuffer.shift();
 
-      if (logPanelVisible) appendLogLine(line);
+      if (logPanelVisible && !logPaused) appendLogLine(line);
     }
 
     function lineClass(line) {
       if (/error|fail|skip|stuck|force/i.test(line)) return 'ln err';
       if (/playing|ok|source:/i.test(line)) return 'ln ok';
-      if (/stalled|suspend|offline|watchdog/i.test(line)) return 'ln warn';
+      if (/stalled|suspend|offline|waiting/i.test(line)) return 'ln warn';
       return 'ln';
     }
 
@@ -341,9 +299,7 @@
       div.className = lineClass(line);
       div.textContent = line;
       body.appendChild(div);
-      while (body.childNodes.length > LOG_MAX) {
-        body.removeChild(body.firstChild);
-      }
+      while (body.childNodes.length > LOG_MAX) body.removeChild(body.firstChild);
       body.scrollTop = body.scrollHeight;
     }
 
@@ -369,9 +325,6 @@
       if (logPanelVisible) renderLogFull();
     }
 
-    /* ============================================================
-       COVER IMG
-    ============================================================ */
     coverImg.addEventListener('load', function () { coverImg.classList.add('loaded'); });
     coverImg.addEventListener('error', function () { coverImg.classList.remove('loaded'); });
 
@@ -393,9 +346,6 @@
       }
     }
 
-    /* ============================================================
-       CACHE
-    ============================================================ */
     var coverCache = (function () {
       try {
         var raw = localStorage.getItem(CACHE_KEY);
@@ -491,10 +441,7 @@
       return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=10&entity=song', 4500)
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (!data || !data.results || !data.results.length) {
-            log('iTunes: пусто');
-            return null;
-          }
+          if (!data || !data.results || !data.results.length) { log('iTunes: пусто'); return null; }
           var artists = expandArtists(artist);
           var best = null, bestScore = 0;
           var safeNonCompilation = null;
@@ -518,19 +465,12 @@
             var score = sa * 0.4 + st * 0.6;
             if (VERSION_MARKERS.test(r.trackName)) score -= 0.10;
             if (score > bestScore) { bestScore = score; best = r; }
-            if (!safeNonCompilation && !isCompilation(r.collectionName, r.trackCount)) {
-              safeNonCompilation = r;
-            }
+            if (!safeNonCompilation && !isCompilation(r.collectionName, r.trackCount)) safeNonCompilation = r;
           }
           var chosen = safeNonCompilation || best;
-          if (!chosen || !chosen.artworkUrl100) {
-            log('iTunes: нечего выбрать');
-            return null;
-          }
+          if (!chosen || !chosen.artworkUrl100) { log('iTunes: нечего выбрать'); return null; }
           log('iTunes pick:', chosen.artistName, '-', chosen.trackName, '| score:', bestScore.toFixed(2));
-          return chosen.artworkUrl100
-            .replace('100x100bb.jpg', '600x600bb.jpg')
-            .replace('100x100', '600x600');
+          return chosen.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
         })
         .catch(function (e) { log('iTunes error:', e && e.message); return null; });
     }
@@ -573,10 +513,7 @@
               }
             }
             if (!url2) return null;
-            if (url2.indexOf(LASTFM_PLACEHOLDER_HASH) !== -1) {
-              log('Last.fm: placeholder');
-              return null;
-            }
+            if (url2.indexOf(LASTFM_PLACEHOLDER_HASH) !== -1) { log('Last.fm: placeholder'); return null; }
             log('Last.fm cover →', url2.slice(0, 80));
             return url2;
           })
@@ -593,10 +530,7 @@
       return fetchWithTimeout(url, 4000)
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (!data || !data.artists || !data.artists.length) {
-            log('TheAudioDB: пусто');
-            return null;
-          }
+          if (!data || !data.artists || !data.artists.length) { log('TheAudioDB: пусто'); return null; }
           var bestA = null, bestScore = 0;
           data.artists.forEach(function (a) {
             var s = similarity(a.strArtist, artist);
@@ -616,10 +550,7 @@
 
     function fetchCover(artist, title, cacheKey) {
       var key = cacheKey;
-      if (coverCache[key]) {
-        log('cover from cache:', key);
-        return Promise.resolve(coverCache[key]);
-      }
+      if (coverCache[key]) { log('cover from cache:', key); return Promise.resolve(coverCache[key]); }
       var manualKey = normalize(artist + ' - ' + title);
       for (var mk in MANUAL_COVERS) {
         if (normalize(mk) === manualKey) {
@@ -782,25 +713,16 @@
     player.addEventListener('pause', function () {
       if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); applyMediaSessionState(); }
     });
-
     player.addEventListener('stalled', function () {
       log('stream stalled');
       if (userIntent && !reconnectTimer) scheduleReconnect();
     });
-
     player.addEventListener('waiting', function () {
       log('stream waiting (буферизация)');
-      if (userIntent && !isLoading && !reconnectTimer) {
-        isLoading = true;
-        updateUI();
-        scheduleReconnect();
-      }
     });
-
     player.addEventListener('suspend', function () {
-      log('stream suspend (загрузка приостановлена)');
+      log('stream suspend');
     });
-
     player.addEventListener('ended', function () {
       log('stream ended');
       if (userIntent) scheduleReconnect();
@@ -827,71 +749,28 @@
       isLoading = true; updateUI();
     });
 
+    /* connection.change — только при смене wifi<->cellular, не чаще раз в 8 сек */
+    var lastConnType = navigator.connection ? (navigator.connection.type || navigator.connection.effectiveType || '') : '';
+    var lastConnChangeTime = 0;
     if (navigator.connection && navigator.connection.addEventListener) {
       navigator.connection.addEventListener('change', function () {
         var c = navigator.connection;
-        log('connection change: type=' + (c.effectiveType || '?'),
-            'downlink=' + (c.downlink || '?'),
-            'rtt=' + (c.rtt || '?'));
+        var newType = c.type || c.effectiveType || '';
+        var now = Date.now();
+        log('connection change:', lastConnType, '→', newType, '| rtt=' + (c.rtt || '?'));
+        if (now - lastConnChangeTime < 8000) { log('connection: игнор (частые переключения)'); return; }
+        lastConnChangeTime = now;
+        lastConnType = newType;
         if (!userIntent) return;
         if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
         reconnectAttempts = 0;
         setTimeout(function () {
-          if (userIntent && !isPlaying && !isLoading) {
-            log('connection change: force reconnect');
-            tryReconnect();
-          }
+          if (userIntent) { log('connection: force reconnect'); tryReconnect(); }
         }, 1200);
       });
     } else {
       log('navigator.connection не поддерживается');
     }
-
-    var lastVisibleCheckTime = 0;
-    document.addEventListener('visibilitychange', function () {
-      if (document.hidden) {
-        lastVisibleCheckTime = player.currentTime || 0;
-        return;
-      }
-      log('вкладка снова активна');
-      if (!userIntent || !isPlaying || isLoading) return;
-      setTimeout(function () {
-        var now = player.currentTime || 0;
-        if (Math.abs(now - lastVisibleCheckTime) < 0.5) {
-          log('visibility: currentTime не продвинулся с возврата');
-          if (!reconnectTimer) {
-            isLoading = true;
-            updateUI();
-            tryReconnect();
-          }
-        }
-      }, 2000);
-    });
-
-    var stuckCurrentTime = 0;
-    var stuckCounter = 0;
-    setInterval(function () {
-      if (!userIntent || !isPlaying || isLoading) {
-        stuckCounter = 0;
-        stuckCurrentTime = player.currentTime || 0;
-        return;
-      }
-      var now = player.currentTime || 0;
-      if (now - stuckCurrentTime > 0.5) {
-        stuckCounter = 0;
-        stuckCurrentTime = now;
-        return;
-      }
-      stuckCounter++;
-      log('watchdog ' + stuckCounter + '/' + WATCHDOG_STUCK_MAX + ': currentTime не растёт');
-      if (stuckCounter >= WATCHDOG_STUCK_MAX && !reconnectTimer) {
-        log('watchdog: FORCE reconnect');
-        stuckCounter = 0;
-        isLoading = true;
-        updateUI();
-        tryReconnect();
-      }
-    }, WATCHDOG_INTERVAL);
 
     muteBtn.addEventListener('click', function () {
       isMuted = !isMuted;
@@ -933,9 +812,7 @@
             var endTime = parseLautDate(data.ends_at);
             if (endTime) {
               var diff = endTime - Date.now();
-              if (diff > 2000 && diff < 30 * 60 * 1000) {
-                nextDelay = Math.min(diff + 1200, MAX_POLL_DELAY);
-              }
+              if (diff > 2000 && diff < 30 * 60 * 1000) nextDelay = Math.min(diff + 1200, MAX_POLL_DELAY);
             }
           }
           scheduleMetadata(nextDelay);
@@ -1032,7 +909,6 @@
       });
     });
 
-    /* ============ ЛОГ-ПАНЕЛЬ: активация ============ */
     if (/[?&]debug=1\b/.test(window.location.search)) {
       setTimeout(function () { toggleLogPanel(true); }, 300);
     }
@@ -1045,51 +921,61 @@
         taps++;
         if (timer) clearTimeout(timer);
         timer = setTimeout(function () { taps = 0; }, 1500);
-        if (taps >= 5) {
-          taps = 0;
-          toggleLogPanel();
-        }
+        if (taps >= 5) { taps = 0; toggleLogPanel(); }
       });
     })();
+
+    /* Кнопка "Пауза" — заморозить лог */
+    document.getElementById('rd-log-pause').addEventListener('click', function () {
+      logPaused = !logPaused;
+      this.classList.toggle('paused', logPaused);
+      this.textContent = logPaused ? '▶️' : '❄️';
+      log('лог', logPaused ? 'ПАУЗА' : 'ПРОДОЛЖЕН');
+    });
+
+    /* Кнопка "Показать всё" — модалка с textarea */
+    document.getElementById('rd-log-full').addEventListener('click', function () {
+      var modal = document.getElementById('rd-modal');
+      var ta = document.getElementById('rd-modal-text');
+      ta.value = logBuffer.join('\n');
+      modal.classList.add('visible');
+      modal.setAttribute('aria-hidden', 'false');
+      setTimeout(function () {
+        ta.focus();
+        ta.select();
+      }, 100);
+    });
+    document.getElementById('rd-modal-close').addEventListener('click', function () {
+      var modal = document.getElementById('rd-modal');
+      modal.classList.remove('visible');
+      modal.setAttribute('aria-hidden', 'true');
+    });
+
+    /* Кнопка "Копировать" */
+    document.getElementById('rd-log-copy').addEventListener('click', function () {
+      var text = logBuffer.join('\n');
+      var btn = document.getElementById('rd-log-copy');
+      function done() { btn.textContent = '✓'; setTimeout(function () { btn.textContent = '📋'; }, 1500); }
+      function fallbackCopy(t) {
+        var ta = document.createElement('textarea');
+        ta.value = t;
+        ta.style.position = 'fixed'; ta.style.left = '-9999px'; ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy(text); done(); });
+      } else {
+        fallbackCopy(text); done();
+      }
+    });
 
     document.getElementById('rd-log-close').addEventListener('click', function () {
       toggleLogPanel(false);
     });
 
-    /* ============ КНОПКА КОПИРОВАНИЯ ============ */
-    document.getElementById('rd-log-copy').addEventListener('click', function () {
-      var text = logBuffer.join('\n');
-      var btn = document.getElementById('rd-log-copy');
-
-      function done() {
-        btn.textContent = '✓';
-        setTimeout(function () { btn.textContent = '📋'; }, 1500);
-      }
-
-      function fallbackCopy(t) {
-        var ta = document.createElement('textarea');
-        ta.value = t;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        ta.style.top = '0';
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        try { document.execCommand('copy'); } catch (e) {}
-        document.body.removeChild(ta);
-      }
-
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text)
-          .then(done)
-          .catch(function () { fallbackCopy(text); done(); });
-      } else {
-        fallbackCopy(text);
-        done();
-      }
-    });
-
-    /* ============ STARTUP ============ */
     updateVolumeIcon();
     applyMediaSessionMetadata();
     updateMetadata();
@@ -1097,7 +983,7 @@
     setInterval(updateListeners, 45000);
 
     log('система инициализирована | cache:', Object.keys(coverCache).length, 'записей');
-    log('watchdog каждые', WATCHDOG_INTERVAL, 'мс');
+    log('watchdog ОТКЛЮЧЁН');
     log('отладка: ?debug=1 или 5 тапов по RetroDance');
   })();
   </script>
