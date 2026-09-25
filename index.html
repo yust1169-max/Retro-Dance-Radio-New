@@ -194,7 +194,7 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v22';
+    var CACHE_KEY      = 'rd_cover_cache_v23';
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
@@ -349,7 +349,7 @@
     async function requestWakeLock() {
       if (!('wakeLock' in navigator)) return;
       if (wakeLock) return;
-      if (document.hidden) return; /* не запрашиваем когда страница скрыта */
+      if (document.hidden) return;
       try {
         wakeLock = await navigator.wakeLock.request('screen');
         wakeLock.addEventListener('release', function () { wakeLock = null; });
@@ -579,12 +579,13 @@
           });
         });
       }).then(function (art) {
-        coverCache[key] = art;
-        saveCache();
-        return art;
+        /* Логотип не кэшируем — при следующем проигрывании попробуем снова */
+        if (art && art !== STATION_LOGO) {
+          coverCache[key] = art;
+          saveCache();
+        }
+        return art || STATION_LOGO;
       }).catch(function () {
-        coverCache[key] = STATION_LOGO;
-        saveCache();
         return STATION_LOGO;
       });
     }
@@ -668,7 +669,14 @@
         clearTimeout(timer);
         log('server art ERROR → fallback');
         fetchCoverFallback(artist, title, trackKey).then(function (art) {
-          if (currentTrackKey === trackKey) setMainCover(art);
+          if (currentTrackKey === trackKey) {
+            setMainCover(art);
+            /* Логотип не сохраняем в кэш — попробуем в следующий раз */
+            if (art && art !== STATION_LOGO) {
+              coverCache[trackKey] = art;
+              saveCache();
+            }
+          }
         });
       };
       test.src = serverArt;
@@ -680,8 +688,8 @@
       updateUI();
       var myToken = ++playToken;
       try {
-        if (player.src !== STREAM_URL) {
-          player.src = STREAM_URL;
+        if (!player.src || player.src.indexOf(STREAM_URL) !== 0) {
+          player.src = STREAM_URL + '?r=' + Date.now();
         }
         player.volume = isMuted ? 0 : 1;
         player.muted  = isMuted;
@@ -719,9 +727,6 @@
       }
     }
 
-    /* ============================================================
-       Реконнект — оставлен, но watchdog УБРАН
-    ============================================================ */
     function scheduleReconnect() {
       if (!userIntent) return;
       if (reconnectTimer) return;
@@ -760,17 +765,12 @@
       if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); applyMediaSessionState(); }
     });
 
-    /* ============================================================
-       STALLED — НЕ делаем reconnect, просто логируем.
-       Chrome сам восстановит live-поток (проверено: 1-2 сек).
-    ============================================================ */
     player.addEventListener('stalled', function () {
       log('stream stalled (Chrome сам восстановит)');
     });
 
     player.addEventListener('ended', function () {
       log('stream ended');
-      /* Для live-стрима ended — редкость, но если случился — реконнект */
       if (userIntent && !document.hidden) scheduleReconnect();
     });
 
@@ -779,8 +779,6 @@
       if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); return; }
       if (code === 1) return;
       log('Audio error code:', code);
-      /* Реагируем ТОЛЬКО на code 2 (NETWORK) и 3 (DECODE).
-         code 4 (SRC_NOT_SUPPORTED) — обычно пустой ответ, не наш случай. */
       if (code === 2 || code === 3) {
         isPlaying = false; isLoading = true; updateUI();
         if (!document.hidden) scheduleReconnect();
@@ -822,8 +820,6 @@
         }, 1500);
       });
     }
-
-    /* WATCHDOG ПОЛНОСТЬЮ УДАЛЁН */
 
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) {
@@ -1074,6 +1070,7 @@
     log('платформа:', isWindows ? 'Windows' : 'Mobile');
     log('watchdog: УДАЛЁН (был причиной затыков)');
     log('stalled: НЕ реконнектит (Chrome сам восстанавливает)');
+    log('cache: логотипы не сохраняются, CACHE_KEY=v23');
     log('отладка: ?debug=1 или 5 тапов по RetroDance');
   })();
   </script>
