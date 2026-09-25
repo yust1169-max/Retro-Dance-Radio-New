@@ -194,13 +194,14 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v18';
+    var CACHE_KEY      = 'rd_cover_cache_v19';
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
     var MIN_ARTIST_SCORE = 0.5;
-    var MIN_POLL_DELAY   = 30000;   /* минимум 30 сек между запросами */
-    var MAX_POLL_DELAY   = 60000;   /* максимум 60 сек */
+    var MIN_POLL_DELAY   = 30000;
+    var MAX_POLL_DELAY   = 60000;
+    var SERVER_ART_TIMEOUT = 3000;
     var MIN_TITLE_SCORE  = 0.35;
     var MIN_ARTIST_ANY   = 0.05;
     var WATCHDOG_INTERVAL = 5000;
@@ -246,6 +247,7 @@
     var currentTrackKey = '', currentTrackTitle = 'Нажмите Play', currentTrackArtist = 'Retro Radio';
     var currentArtwork = STATION_LOGO;
     var reconnectTimer = null, reconnectAttempts = 0, metadataTimer = null, playToken = 0;
+    var wakeLock = null;
 
     var SVG_PLAY = '<path d="M7 5v14l11-7z"/>';
     var SVG_STOP = '<path d="M6 6h12v12H6z"/>';
@@ -281,8 +283,8 @@
     }
 
     function lineClass(line) {
-      if (/error|fail|skip|stuck|force|weak/i.test(line)) return 'ln err';
-      if (/playing|ok|source:|server art/i.test(line)) return 'ln ok';
+      if (/error|fail|skip|stuck|force|weak|timeout/i.test(line)) return 'ln err';
+      if (/playing|ok|source:|server art|iTunes|Last\.fm|hidden|visible/i.test(line)) return 'ln ok';
       if (/stalled|suspend|offline|waiting|watchdog/i.test(line)) return 'ln warn';
       return 'ln';
     }
@@ -321,7 +323,10 @@
     }
 
     coverImg.addEventListener('load', function () { coverImg.classList.add('loaded'); });
-    coverImg.addEventListener('error', function () { coverImg.classList.remove('loaded'); });
+    coverImg.addEventListener('error', function () {
+      coverImg.classList.remove('loaded');
+      log('cover-img ERROR');
+    });
 
     function updateUI() {
       if (isLoading) { playSvg.innerHTML = SVG_LOAD; playSvg.classList.remove('ico-play-shape'); }
@@ -341,6 +346,27 @@
       }
     }
 
+    /* ============ WAKE LOCK ============ */
+    async function requestWakeLock() {
+      if (!('wakeLock' in navigator)) return;
+      if (wakeLock) return;
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', function () { wakeLock = null; });
+        log('wake lock: ON');
+      } catch (e) {
+        log('wake lock error:', e && e.message);
+      }
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) {
+        try { wakeLock.release(); } catch (e) {}
+        wakeLock = null;
+      }
+    }
+
+    /* ============ КЭШ ============ */
     var coverCache = (function () {
       try {
         var raw = localStorage.getItem(CACHE_KEY);
@@ -434,7 +460,7 @@
       return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=10&entity=song', 4500)
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (!data || !data.results || !data.results.length) return null;
+          if (!data || !data.results || !data.results.length) { log('iTunes: пусто'); return null; }
           var artists = expandArtists(artist);
           var withArtist = null, withArtistScore = 0;
           var withArtistNonComp = null, withArtistNonCompScore = 0;
@@ -461,11 +487,11 @@
             }
           }
           var chosen = withArtistNonComp || withArtist || titleOnly;
-          if (!chosen || !chosen.artworkUrl100) return null;
+          if (!chosen || !chosen.artworkUrl100) { log('iTunes: нечего выбрать'); return null; }
           log('iTunes pick:', chosen.artistName, '-', chosen.trackName);
           return chosen.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
         })
-        .catch(function () { return null; });
+        .catch(function (e) { log('iTunes error:', e && e.message); return null; });
     }
 
     var lastFmQueue = Promise.resolve();
@@ -485,7 +511,7 @@
         return fetchWithTimeout(url, 4500)
           .then(function (r) { return r.json(); })
           .then(function (data) {
-            if (!data || !data.track) return null;
+            if (!data || !data.track) { log('Last.fm: пусто'); return null; }
             var track = data.track;
             if (track.artist && looksLikeVariousArtists(track.artist.name)) return null;
             var sa = similarity(track.artist && track.artist.name, artist);
@@ -513,7 +539,7 @@
       return fetchWithTimeout(url, 4000)
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (!data || !data.artists || !data.artists.length) return null;
+          if (!data || !data.artists || !data.artists.length) { log('TheAudioDB: пусто'); return null; }
           var bestA = null, bestScore = 0;
           data.artists.forEach(function (a) {
             var s = similarity(a.strArtist, artist);
@@ -608,8 +634,49 @@
       applyMediaSessionMetadata();
     }
 
+    function trySetServerArt(serverArt, artist, title, trackKey) {
+      if (!serverArt) {
+        log('server art отсутствует → fallback');
+        fetchCoverFallback(artist, title, trackKey).then(function (art) {
+          if (currentTrackKey === trackKey) setMainCover(art);
+        });
+        return;
+      }
+      var settled = false;
+      var test = new Image();
+      var timer = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        log('server art timeout → fallback');
+        fetchCoverFallback(artist, title, trackKey).then(function (art) {
+          if (currentTrackKey === trackKey) setMainCover(art);
+        });
+      }, SERVER_ART_TIMEOUT);
+      test.onload = function () {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        log('server art OK');
+        if (currentTrackKey === trackKey) {
+          setMainCover(serverArt);
+          coverCache[trackKey] = serverArt;
+          saveCache();
+        }
+      };
+      test.onerror = function () {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        log('server art ERROR → fallback');
+        fetchCoverFallback(artist, title, trackKey).then(function (art) {
+          if (currentTrackKey === trackKey) setMainCover(art);
+        });
+      };
+      test.src = serverArt;
+    }
+
     function startRadio() {
-      if (isLoading) return;
+      if (isLoading) { log('startRadio: уже isLoading'); return; }
       isLoading = true;
       updateUI();
       var myToken = ++playToken;
@@ -637,6 +704,7 @@
       try { player.removeAttribute('src'); player.load(); } catch (e) {}
       isPlaying = false; isLoading = false;
       updateUI(); applyMediaSessionState();
+      releaseWakeLock();
     }
 
     function toggleRadio(e) {
@@ -682,6 +750,7 @@
     player.addEventListener('playing', function () {
       isPlaying = true; isLoading = false; reconnectAttempts = 0;
       updateUI(); applyMediaSessionState(); applyMediaSessionMetadata();
+      requestWakeLock();
       log('stream playing');
     });
     player.addEventListener('pause', function () {
@@ -689,11 +758,11 @@
     });
     player.addEventListener('stalled', function () {
       log('stream stalled');
-      if (userIntent && !reconnectTimer) scheduleReconnect();
+      if (userIntent && !reconnectTimer && !document.hidden) scheduleReconnect();
     });
     player.addEventListener('ended', function () {
       log('stream ended');
-      if (userIntent) scheduleReconnect();
+      if (userIntent && !document.hidden) scheduleReconnect();
     });
     player.addEventListener('error', function () {
       var code = player.error && player.error.code;
@@ -701,12 +770,13 @@
       if (code === 1) return;
       log('Audio error code:', code);
       isPlaying = false; isLoading = true; updateUI();
-      scheduleReconnect();
+      if (!document.hidden) scheduleReconnect();
     });
 
     window.addEventListener('online', function () {
       log('browser online');
       if (!userIntent) return;
+      if (document.hidden) return;
       if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
       reconnectAttempts = 0; isLoading = true; updateUI();
       setTimeout(function () { if (userIntent) tryReconnect(); }, 800);
@@ -721,6 +791,7 @@
     var lastConnType = navigator.connection ? (navigator.connection.type || navigator.connection.effectiveType || '') : '';
     if (navigator.connection && navigator.connection.addEventListener) {
       navigator.connection.addEventListener('change', function () {
+        if (document.hidden) return;
         var c = navigator.connection;
         var newType = c.type || c.effectiveType || '';
         log('connection change:', lastConnType, '→', newType);
@@ -728,7 +799,7 @@
         if (connDebounceTimer) clearTimeout(connDebounceTimer);
         connDebounceTimer = setTimeout(function () {
           connDebounceTimer = null;
-          if (!userIntent) return;
+          if (!userIntent || document.hidden) return;
           if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
           reconnectAttempts = 0;
           log('connection debounce → force reconnect');
@@ -737,9 +808,11 @@
       });
     }
 
+    /* ============ WATCHDOG — только когда вкладка видима ============ */
     var watchdogLastTime = 0;
     var watchdogStuck = 0;
     setInterval(function () {
+      if (document.hidden) { watchdogStuck = 0; return; }
       if (!userIntent || isLoading) { watchdogStuck = 0; return; }
       if (player.paused || player.ended) { watchdogStuck = 0; return; }
       if (player.readyState < 2) { watchdogStuck = 0; return; }
@@ -757,6 +830,45 @@
         tryReconnect();
       }
     }, WATCHDOG_INTERVAL);
+
+    /* ============ VISIBILITY — ключевая логика ============ */
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        /* Свёрнуто: полная тишина, только audio играет */
+        log('hidden → freeze all');
+        if (metadataTimer) { clearTimeout(metadataTimer); metadataTimer = null; }
+        if (connDebounceTimer) { clearTimeout(connDebounceTimer); connDebounceTimer = null; }
+        watchdogStuck = 0;
+        return;
+      }
+
+      /* Вкладка вернулась */
+      log('visible → resume');
+      requestWakeLock();
+
+      /* Проверить, играет ли ещё */
+      if (userIntent && !player.paused && player.currentTime > 0) {
+        var testTime = player.currentTime;
+        setTimeout(function () {
+          if (player.currentTime === testTime && !player.paused) {
+            log('visible: currentTime не растёт → reconnect');
+            isLoading = true;
+            updateUI();
+            tryReconnect();
+          } else {
+            log('visible: OK, currentTime=' + player.currentTime.toFixed(1));
+          }
+        }, 1500);
+      } else if (userIntent && (player.paused || player.ended)) {
+        log('visible: player не играет, но userIntent=true → reconnect');
+        isLoading = true;
+        updateUI();
+        tryReconnect();
+      }
+
+      /* Возобновить polling метаданных */
+      updateMetadata();
+    });
 
     muteBtn.addEventListener('click', function () {
       isMuted = !isMuted;
@@ -776,17 +888,19 @@
       } catch (e) {}
     }
 
-    /* ============ МЕТАДАННЫЕ от AzuraCast ============ */
     function scheduleMetadata(delay) {
       if (metadataTimer) clearTimeout(metadataTimer);
+      if (document.hidden) return;
       metadataTimer = setTimeout(updateMetadata, delay);
     }
 
     function updateMetadata() {
+      if (document.hidden) return;
       if (!navigator.onLine) { scheduleMetadata(MIN_POLL_DELAY); return; }
       fetchWithTimeout(AZURACAST_API + '?t=' + Date.now(), 5000)
         .then(function (r) { return r.json(); })
         .then(function (data) {
+          if (document.hidden) return;
           if (!data || !data.now_playing || !data.now_playing.song) {
             log('AzuraCast: нет now_playing');
             scheduleMetadata(MIN_POLL_DELAY);
@@ -799,8 +913,6 @@
           var serverArt = song.art || '';
           var trackKey = (artist + ' - ' + title).toLowerCase();
 
-          /* следующая проверка: не раньше MIN_POLL_DELAY (30 сек),
-             не позже MAX_POLL_DELAY (60 сек) */
           var nextDelay = MIN_POLL_DELAY;
           if (typeof data.now_playing.remaining === 'number' && data.now_playing.remaining > 0) {
             var remMs = (data.now_playing.remaining + 3) * 1000;
@@ -823,14 +935,17 @@
             artistEl.textContent = artist;
             applyMediaSessionMetadata();
 
-            if (serverArt) {
+            if (coverCache[trackKey]) {
+              log('cover from cache');
+              setMainCover(coverCache[trackKey]);
+            } else if (serverArt) {
               log('server art:', serverArt.slice(0, 80));
-              setMainCover(serverArt);
-              coverCache[trackKey] = serverArt;
-              saveCache();
+              trySetServerArt(serverArt, artist, title, trackKey);
             } else {
               log('server art отсутствует → fallback');
-              fetchCoverFallback(artist, title, trackKey).then(setMainCover);
+              fetchCoverFallback(artist, title, trackKey).then(function (art) {
+                if (currentTrackKey === trackKey) setMainCover(art);
+              });
             }
           }
         })
@@ -841,7 +956,6 @@
         });
     }
 
-    /* ============ ИСТОРИЯ из AzuraCast song_history ============ */
     function updateHistory() {
       if (!navigator.onLine) return;
       fetchWithTimeout(AZURACAST_API + '?t=' + Date.now(), 5000)
@@ -970,8 +1084,7 @@
 
     log('система инициализирована | cache:', Object.keys(coverCache).length);
     log('источник метаданных: AzuraCast');
-    log('polling: минимум', MIN_POLL_DELAY, 'мс / максимум', MAX_POLL_DELAY, 'мс');
-    log('preload выключен');
+    log('в фоне: полная тишина (freeze all)');
     log('отладка: ?debug=1 или 5 тапов по RetroDance');
   })();
   </script>
