@@ -118,7 +118,7 @@
         <p id="artist-el">Retro Radio</p>
         <p id="title-el">Нажмите Play</p>
       </div>
-      <audio id="player" preload="none" playsinline webkit-playsinline></audio>
+      <audio id="player" preload="auto" playsinline webkit-playsinline></audio>
       <div class="tabs" role="tablist" aria-label="Разделы radio">
         <button class="tab-btn active" id="tab-player" type="button" data-tab="player" role="tab" aria-selected="true">Плеер</button>
         <button class="tab-btn" id="tab-history" type="button" data-tab="history" role="tab" aria-selected="false">История</button>
@@ -194,19 +194,19 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v19';
+    var CACHE_KEY      = 'rd_cover_cache_v22';
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
     var MIN_ARTIST_SCORE = 0.5;
-    var MIN_POLL_DELAY   = 30000;
-    var MAX_POLL_DELAY   = 60000;
+    var MID_POLL_DELAY   = 30000;
+    var END_OF_TRACK_WINDOW = 30;
     var SERVER_ART_TIMEOUT = 3000;
     var MIN_TITLE_SCORE  = 0.35;
     var MIN_ARTIST_ANY   = 0.05;
-    var WATCHDOG_INTERVAL = 5000;
-    var WATCHDOG_STUCK_MAX = 3;
     var LASTFM_PLACEHOLDER_HASH = '2a96cbd8b46e442fc41c2b86b821562f';
+
+    var isWindows = /windows|win32|win64/i.test(navigator.userAgent);
 
     var VERSION_MARKERS = /(english version|spanish version|russian version|instrumental|минус|minus|karaoke|караоке|extended mix|extended version|rework|dub version|acoustic version)/i;
 
@@ -285,7 +285,7 @@
     function lineClass(line) {
       if (/error|fail|skip|stuck|force|weak|timeout/i.test(line)) return 'ln err';
       if (/playing|ok|source:|server art|iTunes|Last\.fm|hidden|visible/i.test(line)) return 'ln ok';
-      if (/stalled|suspend|offline|waiting|watchdog/i.test(line)) return 'ln warn';
+      if (/stalled|suspend|offline|waiting/i.test(line)) return 'ln warn';
       return 'ln';
     }
 
@@ -346,10 +346,10 @@
       }
     }
 
-    /* ============ WAKE LOCK ============ */
     async function requestWakeLock() {
       if (!('wakeLock' in navigator)) return;
       if (wakeLock) return;
+      if (document.hidden) return; /* не запрашиваем когда страница скрыта */
       try {
         wakeLock = await navigator.wakeLock.request('screen');
         wakeLock.addEventListener('release', function () { wakeLock = null; });
@@ -366,7 +366,6 @@
       }
     }
 
-    /* ============ КЭШ ============ */
     var coverCache = (function () {
       try {
         var raw = localStorage.getItem(CACHE_KEY);
@@ -681,8 +680,9 @@
       updateUI();
       var myToken = ++playToken;
       try {
-        player.src = STREAM_URL + '?t=' + Date.now();
-        player.load();
+        if (player.src !== STREAM_URL) {
+          player.src = STREAM_URL;
+        }
         player.volume = isMuted ? 0 : 1;
         player.muted  = isMuted;
       } catch (e) {}
@@ -701,7 +701,7 @@
     function stopRadio() {
       playToken++;
       player.pause();
-      try { player.removeAttribute('src'); player.load(); } catch (e) {}
+      try { player.removeAttribute('src'); } catch (e) {}
       isPlaying = false; isLoading = false;
       updateUI(); applyMediaSessionState();
       releaseWakeLock();
@@ -719,6 +719,9 @@
       }
     }
 
+    /* ============================================================
+       Реконнект — оставлен, но watchdog УБРАН
+    ============================================================ */
     function scheduleReconnect() {
       if (!userIntent) return;
       if (reconnectTimer) return;
@@ -736,7 +739,7 @@
 
     function tryReconnect() {
       var myToken = ++playToken;
-      try { player.src = STREAM_URL + '?t=' + Date.now(); player.load(); } catch (e) {}
+      try { player.src = STREAM_URL + '?r=' + Date.now(); } catch (e) {}
       var p = player.play();
       if (p && p.catch) {
         p.catch(function (err) {
@@ -756,21 +759,32 @@
     player.addEventListener('pause', function () {
       if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); applyMediaSessionState(); }
     });
+
+    /* ============================================================
+       STALLED — НЕ делаем reconnect, просто логируем.
+       Chrome сам восстановит live-поток (проверено: 1-2 сек).
+    ============================================================ */
     player.addEventListener('stalled', function () {
-      log('stream stalled');
-      if (userIntent && !reconnectTimer && !document.hidden) scheduleReconnect();
+      log('stream stalled (Chrome сам восстановит)');
     });
+
     player.addEventListener('ended', function () {
       log('stream ended');
+      /* Для live-стрима ended — редкость, но если случился — реконнект */
       if (userIntent && !document.hidden) scheduleReconnect();
     });
+
     player.addEventListener('error', function () {
       var code = player.error && player.error.code;
       if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); return; }
       if (code === 1) return;
       log('Audio error code:', code);
-      isPlaying = false; isLoading = true; updateUI();
-      if (!document.hidden) scheduleReconnect();
+      /* Реагируем ТОЛЬКО на code 2 (NETWORK) и 3 (DECODE).
+         code 4 (SRC_NOT_SUPPORTED) — обычно пустой ответ, не наш случай. */
+      if (code === 2 || code === 3) {
+        isPlaying = false; isLoading = true; updateUI();
+        if (!document.hidden) scheduleReconnect();
+      }
     });
 
     window.addEventListener('online', function () {
@@ -792,6 +806,7 @@
     if (navigator.connection && navigator.connection.addEventListener) {
       navigator.connection.addEventListener('change', function () {
         if (document.hidden) return;
+        if (isWindows) return;
         var c = navigator.connection;
         var newType = c.type || c.effectiveType || '';
         log('connection change:', lastConnType, '→', newType);
@@ -808,49 +823,21 @@
       });
     }
 
-    /* ============ WATCHDOG — только когда вкладка видима ============ */
-    var watchdogLastTime = 0;
-    var watchdogStuck = 0;
-    setInterval(function () {
-      if (document.hidden) { watchdogStuck = 0; return; }
-      if (!userIntent || isLoading) { watchdogStuck = 0; return; }
-      if (player.paused || player.ended) { watchdogStuck = 0; return; }
-      if (player.readyState < 2) { watchdogStuck = 0; return; }
-      var ct = player.currentTime || 0;
-      if (ct > watchdogLastTime + 0.3) { watchdogStuck = 0; watchdogLastTime = ct; return; }
-      watchdogStuck++;
-      log('watchdog:', watchdogStuck + '/' + WATCHDOG_STUCK_MAX);
-      if (watchdogStuck >= WATCHDOG_STUCK_MAX) {
-        watchdogStuck = 0;
-        log('watchdog: FORCE reconnect');
-        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-        reconnectAttempts = 0;
-        isLoading = true;
-        updateUI();
-        tryReconnect();
-      }
-    }, WATCHDOG_INTERVAL);
+    /* WATCHDOG ПОЛНОСТЬЮ УДАЛЁН */
 
-    /* ============ VISIBILITY — ключевая логика ============ */
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) {
-        /* Свёрнуто: полная тишина, только audio играет */
         log('hidden → freeze all');
         if (metadataTimer) { clearTimeout(metadataTimer); metadataTimer = null; }
         if (connDebounceTimer) { clearTimeout(connDebounceTimer); connDebounceTimer = null; }
-        watchdogStuck = 0;
         return;
       }
-
-      /* Вкладка вернулась */
       log('visible → resume');
       requestWakeLock();
-
-      /* Проверить, играет ли ещё */
       if (userIntent && !player.paused && player.currentTime > 0) {
         var testTime = player.currentTime;
         setTimeout(function () {
-          if (player.currentTime === testTime && !player.paused) {
+          if (player.currentTime === testTime && !player.paused && !player.ended) {
             log('visible: currentTime не растёт → reconnect');
             isLoading = true;
             updateUI();
@@ -860,13 +847,11 @@
           }
         }, 1500);
       } else if (userIntent && (player.paused || player.ended)) {
-        log('visible: player не играет, но userIntent=true → reconnect');
+        log('visible: player не играет → reconnect');
         isLoading = true;
         updateUI();
         tryReconnect();
       }
-
-      /* Возобновить polling метаданных */
       updateMetadata();
     });
 
@@ -896,14 +881,14 @@
 
     function updateMetadata() {
       if (document.hidden) return;
-      if (!navigator.onLine) { scheduleMetadata(MIN_POLL_DELAY); return; }
+      if (!navigator.onLine) { scheduleMetadata(MID_POLL_DELAY); return; }
       fetchWithTimeout(AZURACAST_API + '?t=' + Date.now(), 5000)
         .then(function (r) { return r.json(); })
         .then(function (data) {
           if (document.hidden) return;
           if (!data || !data.now_playing || !data.now_playing.song) {
             log('AzuraCast: нет now_playing');
-            scheduleMetadata(MIN_POLL_DELAY);
+            scheduleMetadata(MID_POLL_DELAY);
             return;
           }
 
@@ -913,15 +898,17 @@
           var serverArt = song.art || '';
           var trackKey = (artist + ' - ' + title).toLowerCase();
 
-          var nextDelay = MIN_POLL_DELAY;
+          var nextDelay = MID_POLL_DELAY;
           if (typeof data.now_playing.remaining === 'number' && data.now_playing.remaining > 0) {
-            var remMs = (data.now_playing.remaining + 3) * 1000;
-            if (remMs < MIN_POLL_DELAY) nextDelay = MIN_POLL_DELAY;
-            else if (remMs > MAX_POLL_DELAY) nextDelay = MAX_POLL_DELAY;
-            else nextDelay = remMs;
+            var rem = data.now_playing.remaining;
+            if (rem > END_OF_TRACK_WINDOW) {
+              nextDelay = MID_POLL_DELAY;
+            } else {
+              nextDelay = Math.max(3000, (rem + 2) * 1000);
+            }
           }
           scheduleMetadata(nextDelay);
-          log('track:', trackKey, '| same:', trackKey === currentTrackKey, '| next in', nextDelay, 'ms');
+          log('track:', trackKey, '| same:', trackKey === currentTrackKey, '| remaining:', (data.now_playing.remaining || '?'), '| next in', nextDelay, 'ms');
 
           if (data.listeners && typeof data.listeners.total === 'number' && data.listeners.total > 0) {
             listenersEl.textContent = data.listeners.total;
@@ -950,9 +937,9 @@
           }
         })
         .catch(function (e) {
-          if (e && e.name === 'AbortError') { scheduleMetadata(MIN_POLL_DELAY); return; }
+          if (e && e.name === 'AbortError') { scheduleMetadata(MID_POLL_DELAY); return; }
           log('Metadata error:', e && e.message);
-          scheduleMetadata(MIN_POLL_DELAY);
+          scheduleMetadata(MID_POLL_DELAY);
         });
     }
 
@@ -1084,7 +1071,9 @@
 
     log('система инициализирована | cache:', Object.keys(coverCache).length);
     log('источник метаданных: AzuraCast');
-    log('в фоне: полная тишина (freeze all)');
+    log('платформа:', isWindows ? 'Windows' : 'Mobile');
+    log('watchdog: УДАЛЁН (был причиной затыков)');
+    log('stalled: НЕ реконнектит (Chrome сам восстанавливает)');
     log('отладка: ?debug=1 или 5 тапов по RetroDance');
   })();
   </script>
