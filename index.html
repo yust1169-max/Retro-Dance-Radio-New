@@ -194,14 +194,13 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v24';
+    var CACHE_KEY      = 'rd_cover_cache_v25';
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
     var MIN_ARTIST_SCORE = 0.5;
     var MID_POLL_DELAY   = 30000;
     var END_OF_TRACK_WINDOW = 30;
-    var SERVER_ART_TIMEOUT = 3000;
     var MIN_TITLE_SCORE  = 0.35;
     var MIN_ARTIST_ANY   = 0.05;
     var LASTFM_PLACEHOLDER_HASH = '2a96cbd8b46e442fc41c2b86b821562f';
@@ -284,7 +283,7 @@
 
     function lineClass(line) {
       if (/error|fail|skip|stuck|force|weak|timeout/i.test(line)) return 'ln err';
-      if (/playing|ok|source:|server art|iTunes|Last\.fm|hidden|visible/i.test(line)) return 'ln ok';
+      if (/playing|ok|source:|server art|iTunes|Last\.fm|hidden|visible|замена/i.test(line)) return 'ln ok';
       if (/stalled|suspend|offline|waiting/i.test(line)) return 'ln warn';
       return 'ln';
     }
@@ -552,40 +551,16 @@
         .catch(function () { return null; });
     }
 
-    function fetchCoverFallback(artist, title, cacheKey) {
-      var key = cacheKey;
-      if (coverCache[key]) {
-        log('cover from cache');
-        return Promise.resolve(coverCache[key]);
-      }
-      var manualKey = normalize(artist + ' - ' + title);
-      for (var mk in MANUAL_COVERS) {
-        if (normalize(mk) === manualKey) {
-          log('cover MANUAL');
-          var art0 = MANUAL_COVERS[mk];
-          coverCache[key] = art0;
-          saveCache();
-          return Promise.resolve(art0);
-        }
-      }
+    /* ============================================================
+       Внешний fallback: iTunes → Last.fm → TheAudioDB
+    ============================================================ */
+    function fetchCoverExternal(artist, title) {
       return fetchCoverITunes(artist, title).then(function (art) {
-        if (art) { log('→ iTunes'); return art; }
+        if (art) return art;
         return fetchCoverLastFm(artist, title).then(function (art2) {
-          if (art2) { log('→ Last.fm'); return art2; }
-          return fetchCoverAudioDB(artist).then(function (art3) {
-            if (art3) { log('→ TheAudioDB'); return art3; }
-            log('→ логотип');
-            return STATION_LOGO;
-          });
+          if (art2) return art2;
+          return fetchCoverAudioDB(artist);
         });
-      }).then(function (art) {
-        if (art && art !== STATION_LOGO) {
-          coverCache[key] = art;
-          saveCache();
-        }
-        return art || STATION_LOGO;
-      }).catch(function () {
-        return STATION_LOGO;
       });
     }
 
@@ -633,51 +608,64 @@
       applyMediaSessionMetadata();
     }
 
-    function trySetServerArt(serverArt, artist, title, trackKey) {
-      if (!serverArt) {
-        log('server art отсутствует → fallback');
-        fetchCoverFallback(artist, title, trackKey).then(function (art) {
-          if (currentTrackKey === trackKey) setMainCover(art);
-        });
+    /* ============================================================
+       ПРОГРЕССИВНАЯ ЗАГРУЗКА ОБЛОЖКИ:
+       1. Кэш — если есть, сразу берём оттуда
+       2. Серверная обложка — показываем МГНОВЕННО
+       3. Параллельно ищем во внешних базах. Если нашли ДРУГУЮ —
+          через 1-2 сек подменяем (это чинит случай с заглушками
+          AzuraCast, которые он отдаёт как "обложку станции")
+    ============================================================ */
+    function applyCoverForTrack(artist, title, trackKey, serverArt) {
+      /* 1. Кэш — самый быстрый путь */
+      if (coverCache[trackKey]) {
+        log('cover from cache');
+        setMainCover(coverCache[trackKey]);
         return;
       }
-      var settled = false;
-      var test = new Image();
-      var timer = setTimeout(function () {
-        if (settled) return;
-        settled = true;
-        log('server art timeout → fallback');
-        fetchCoverFallback(artist, title, trackKey).then(function (art) {
-          if (currentTrackKey === trackKey) setMainCover(art);
-        });
-      }, SERVER_ART_TIMEOUT);
-      test.onload = function () {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        log('server art OK');
-        if (currentTrackKey === trackKey) {
-          setMainCover(serverArt);
+
+      /* 2. Серверная — мгновенно */
+      var hasServerArt = serverArt && serverArt !== STATION_LOGO;
+      if (hasServerArt) {
+        log('server art сразу');
+        setMainCover(serverArt);
+      } else {
+        log('server art отсутствует');
+      }
+
+      /* 3. Параллельно внешние */
+      log('external lookup (iTunes → Last.fm → TheAudioDB)');
+      fetchCoverExternal(artist, title).then(function (externalArt) {
+        if (currentTrackKey !== trackKey) {
+          log('external: трек сменился, игнорируем');
+          return;
+        }
+
+        var hasExternal = externalArt && externalArt !== STATION_LOGO;
+
+        /* Внешней нет или она совпадает с серверной → кэшируем что есть */
+        if (!hasExternal || externalArt === serverArt) {
+          if (hasExternal) log('external совпала с серверной');
+          else log('external: ничего не нашли');
+          if (hasServerArt) {
+            coverCache[trackKey] = serverArt;
+            saveCache();
+          }
+          return;
+        }
+
+        /* Внешняя отличается → подменяем */
+        log('external замена:', externalArt.slice(0, 60));
+        setMainCover(externalArt);
+        coverCache[trackKey] = externalArt;
+        saveCache();
+      }).catch(function (e) {
+        log('external error:', e && e.message);
+        if (hasServerArt && currentTrackKey === trackKey) {
           coverCache[trackKey] = serverArt;
           saveCache();
         }
-      };
-      test.onerror = function () {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        log('server art ERROR → fallback');
-        fetchCoverFallback(artist, title, trackKey).then(function (art) {
-          if (currentTrackKey === trackKey) {
-            setMainCover(art);
-            if (art && art !== STATION_LOGO) {
-              coverCache[trackKey] = art;
-              saveCache();
-            }
-          }
-        });
-      };
-      test.src = serverArt;
+      });
     }
 
     function startRadio() {
@@ -916,18 +904,7 @@
             artistEl.textContent = artist;
             applyMediaSessionMetadata();
 
-            if (coverCache[trackKey]) {
-              log('cover from cache');
-              setMainCover(coverCache[trackKey]);
-            } else if (serverArt) {
-              log('server art:', serverArt.slice(0, 80));
-              trySetServerArt(serverArt, artist, title, trackKey);
-            } else {
-              log('server art отсутствует → fallback');
-              fetchCoverFallback(artist, title, trackKey).then(function (art) {
-                if (currentTrackKey === trackKey) setMainCover(art);
-              });
-            }
+            applyCoverForTrack(artist, title, trackKey, serverArt);
           }
         })
         .catch(function (e) {
@@ -1066,7 +1043,8 @@
     log('система инициализирована | cache:', Object.keys(coverCache).length);
     log('источник метаданных: AzuraCast');
     log('платформа:', isWindows ? 'Windows' : 'Mobile');
-    log('cache: лимит 500, логотипы не сохраняются, CACHE_KEY=v24');
+    log('cache: лимит 500, CACHE_KEY=v25');
+    log('режим: server art сразу + внешний fallback параллельно');
     log('отладка: ?debug=1 или 5 тапов по RetroDance');
   })();
   </script>
