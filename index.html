@@ -194,7 +194,7 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v23';
+    var CACHE_KEY      = 'rd_cover_cache_v24';
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
@@ -382,7 +382,7 @@
       try {
         var out = {}, i = 0;
         for (var k in coverCache) {
-          if (i++ >= 300) break;
+          if (i++ >= 500) break;
           out[k] = { v: coverCache[k], t: Date.now() };
         }
         localStorage.setItem(CACHE_KEY, JSON.stringify(out));
@@ -579,7 +579,6 @@
           });
         });
       }).then(function (art) {
-        /* Логотип не кэшируем — при следующем проигрывании попробуем снова */
         if (art && art !== STATION_LOGO) {
           coverCache[key] = art;
           saveCache();
@@ -671,7 +670,6 @@
         fetchCoverFallback(artist, title, trackKey).then(function (art) {
           if (currentTrackKey === trackKey) {
             setMainCover(art);
-            /* Логотип не сохраняем в кэш — попробуем в следующий раз */
             if (art && art !== STATION_LOGO) {
               coverCache[trackKey] = art;
               saveCache();
@@ -1068,9 +1066,7 @@
     log('система инициализирована | cache:', Object.keys(coverCache).length);
     log('источник метаданных: AzuraCast');
     log('платформа:', isWindows ? 'Windows' : 'Mobile');
-    log('watchdog: УДАЛЁН (был причиной затыков)');
-    log('stalled: НЕ реконнектит (Chrome сам восстанавливает)');
-    log('cache: логотипы не сохраняются, CACHE_KEY=v23');
+    log('cache: лимит 500, логотипы не сохраняются, CACHE_KEY=v24');
     log('отладка: ?debug=1 или 5 тапов по RetroDance');
   })();
   </script>
