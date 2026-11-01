@@ -194,7 +194,7 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v25';
+    var CACHE_KEY      = 'rd_cover_cache_v27'; // Обновлено для сброса старых неправильных обложек
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
@@ -202,7 +202,7 @@
     var MID_POLL_DELAY   = 30000;
     var END_OF_TRACK_WINDOW = 30;
     var MIN_TITLE_SCORE  = 0.35;
-    var MIN_ARTIST_ANY   = 0.05;
+    var MIN_ARTIST_ANY   = 0.4;
     var LASTFM_PLACEHOLDER_HASH = '2a96cbd8b46e442fc41c2b86b821562f';
 
     var isWindows = /windows|win32|win64/i.test(navigator.userAgent);
@@ -283,7 +283,7 @@
 
     function lineClass(line) {
       if (/error|fail|skip|stuck|force|weak|timeout/i.test(line)) return 'ln err';
-      if (/playing|ok|source:|server art|iTunes|Last\.fm|hidden|visible|замена/i.test(line)) return 'ln ok';
+      if (/playing|ok|source:|server art|iTunes|Last\.fm|hidden|visible|замена|Deezer/i.test(line)) return 'ln ok';
       if (/stalled|suspend|offline|waiting/i.test(line)) return 'ln warn';
       return 'ln';
     }
@@ -452,9 +452,49 @@
       return n.split(/\s+/).length >= 2;
     }
 
+    /* ============================================================
+       ПОИСК ОБЛОЖКИ В DEEZER (Лучший источник для 90-х и евродэнса)
+    ============================================================ */
+    function fetchCoverDeezer(artist, title) {
+      var q = encodeURIComponent('artist:"' + artist + '" track:"' + title + '"');
+      return fetchWithTimeout('https://api.deezer.com/search?q=' + q, 4000)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data || !data.data || !data.data.length) {
+            log('Deezer: пусто');
+            return null;
+          }
+          
+          var artists = expandArtists(artist);
+          
+          for (var i = 0; i < data.data.length; i++) {
+            var r = data.data[i];
+            if (!r.album || !r.album.cover_xl) continue;
+            if (looksLikeVariousArtists(r.artist.name)) continue;
+            
+            var sa = 0;
+            for (var j = 0; j < artists.length; j++) {
+              var s = similarity(r.artist.name, artists[j]);
+              if (s > sa) sa = s;
+            }
+            var st = similarity(r.title, title);
+            
+            if (sa >= MIN_ARTIST_SCORE && st >= MIN_TITLE_SCORE) {
+              log('Deezer pick:', r.artist.name, '-', r.title);
+              return r.album.cover_xl; // 1000x1000
+            }
+          }
+          log('Deezer: совпадений не найдено');
+          return null;
+        })
+        .catch(function(e) { log('Deezer error:', e && e.message); return null; });
+    }
+
+    /* ============================================================
+       ПОИСК ОБЛОЖКИ ТРЕКА В iTUNES
+    ============================================================ */
     function fetchCoverITunes(artist, title) {
       var q = encodeURIComponent(artist + ' ' + title);
-      var allowTitleOnly = isMultiWordTitle(title);
       return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=10&entity=song', 4500)
         .then(function (r) { return r.json(); })
         .then(function (data) {
@@ -462,34 +502,78 @@
           var artists = expandArtists(artist);
           var withArtist = null, withArtistScore = 0;
           var withArtistNonComp = null, withArtistNonCompScore = 0;
-          var titleOnly = null, titleOnlyScore = 0;
+
           for (var i = 0; i < data.results.length; i++) {
             var r = data.results[i];
             if (!r.artworkUrl100) continue;
             if (looksLikeVariousArtists(r.artistName)) continue;
+
             var sa = 0;
             for (var j = 0; j < artists.length; j++) {
               var s = similarity(r.artistName, artists[j]);
               if (s > sa) sa = s;
             }
+
             var st = similarity(r.trackName, title);
+
             if (st < MIN_TITLE_SCORE) continue;
+            if (sa < MIN_ARTIST_ANY) continue;
+
             var score = sa * 0.4 + st * 0.6;
             if (VERSION_MARKERS.test(r.trackName)) score -= 0.10;
+
             var isComp = isCompilation(r.collectionName, r.trackCount);
-            if (sa >= MIN_ARTIST_ANY) {
-              if (score > withArtistScore) { withArtist = r; withArtistScore = score; }
-              if (!isComp && score > withArtistNonCompScore) { withArtistNonComp = r; withArtistNonCompScore = score; }
-            } else if (allowTitleOnly && st >= 0.9) {
-              if (score > titleOnlyScore) { titleOnly = r; titleOnlyScore = score; }
-            }
+
+            if (score > withArtistScore) { withArtist = r; withArtistScore = score; }
+            if (!isComp && score > withArtistNonCompScore) { withArtistNonComp = r; withArtistNonCompScore = score; }
           }
-          var chosen = withArtistNonComp || withArtist || titleOnly;
-          if (!chosen || !chosen.artworkUrl100) { log('iTunes: нечего выбрать'); return null; }
+
+          var chosen = withArtistNonComp || withArtist;
+          if (!chosen || !chosen.artworkUrl100) { log('iTunes: точная обложка трека не найдена'); return null; }
           log('iTunes pick:', chosen.artistName, '-', chosen.trackName);
           return chosen.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
         })
         .catch(function (e) { log('iTunes error:', e && e.message); return null; });
+    }
+
+    /* ============================================================
+       ПОИСК ЛЮБОЙ ОБЛОЖКИ АЛЬБОМА ИСПОЛНИТЕЛЯ (фолбэк)
+    ============================================================ */
+    function fetchArtistCoverITunes(artist) {
+      var q = encodeURIComponent(artist);
+      return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=15&entity=album', 4500)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data || !data.results || !data.results.length) { log('iTunes artist-only: пусто'); return null; }
+          var artists = expandArtists(artist);
+          var best = null, bestScore = 0;
+
+          for (var i = 0; i < data.results.length; i++) {
+            var r = data.results[i];
+            if (!r.artworkUrl100) continue;
+            if (looksLikeVariousArtists(r.artistName)) continue;
+
+            var sa = 0;
+            for (var j = 0; j < artists.length; j++) {
+              var s = similarity(r.artistName, artists[j]);
+              if (s > sa) sa = s;
+            }
+
+            if (sa >= MIN_ARTIST_SCORE) {
+              var isComp = isCompilation(r.collectionName, r.trackCount);
+              var score = sa + (isComp ? -0.1 : 0.05);
+              if (score > bestScore) {
+                bestScore = score;
+                best = r;
+              }
+            }
+          }
+
+          if (!best) { log('iTunes artist-only: подходящий артист не найден'); return null; }
+          log('iTunes artist-only pick:', best.artistName, '-', best.collectionName);
+          return best.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
+        })
+        .catch(function (e) { log('iTunes artist-only error:', e && e.message); return null; });
     }
 
     var lastFmQueue = Promise.resolve();
@@ -505,7 +589,7 @@
           + '&api_key=' + LASTFM_KEY
           + '&artist=' + encodeURIComponent(artist)
           + '&track=' + encodeURIComponent(title)
-          + '&autocorrect=1&format=json';
+          + '&autocorrect=0&format=json';
         return fetchWithTimeout(url, 4500)
           .then(function (r) { return r.json(); })
           .then(function (data) {
@@ -552,14 +636,39 @@
     }
 
     /* ============================================================
-       Внешний fallback: iTunes → Last.fm → TheAudioDB
+       Внешний fallback: ПАРАЛЛЕЛЬНЫЙ поиск в Deezer и iTunes
     ============================================================ */
     function fetchCoverExternal(artist, title) {
-      return fetchCoverITunes(artist, title).then(function (art) {
-        if (art) return art;
-        return fetchCoverLastFm(artist, title).then(function (art2) {
-          if (art2) return art2;
-          return fetchCoverAudioDB(artist);
+      log('external: запуск параллельного поиска (Deezer + iTunes)');
+      
+      var deezerPromise = fetchCoverDeezer(artist, title);
+      var itunesPromise = fetchCoverITunes(artist, title);
+
+      return Promise.all([deezerPromise, itunesPromise]).then(function(results) {
+        var deezerArt = results[0];
+        var itunesArt = results[1];
+
+        if (deezerArt) {
+          log('external: победа за Deezer');
+          return deezerArt;
+        }
+        
+        if (itunesArt) {
+          log('external: победа за iTunes');
+          return itunesArt;
+        }
+
+        log('external: точный трек не найден нигде, ищем любой альбом исполнителя...');
+        return fetchArtistCoverITunes(artist).then(function (artistArt) {
+          if (artistArt) return artistArt;
+
+          log('Last.fm: поиск обложки трека...');
+          return fetchCoverLastFm(artist, title).then(function (art2) {
+            if (art2) return art2;
+
+            log('TheAudioDB: поиск фото исполнителя...');
+            return fetchCoverAudioDB(artist);
+          });
         });
       });
     }
@@ -613,18 +722,15 @@
        1. Кэш — если есть, сразу берём оттуда
        2. Серверная обложка — показываем МГНОВЕННО
        3. Параллельно ищем во внешних базах. Если нашли ДРУГУЮ —
-          через 1-2 сек подменяем (это чинит случай с заглушками
-          AzuraCast, которые он отдаёт как "обложку станции")
+          через 1-2 сек подменяем
     ============================================================ */
     function applyCoverForTrack(artist, title, trackKey, serverArt) {
-      /* 1. Кэш — самый быстрый путь */
       if (coverCache[trackKey]) {
         log('cover from cache');
         setMainCover(coverCache[trackKey]);
         return;
       }
 
-      /* 2. Серверная — мгновенно */
       var hasServerArt = serverArt && serverArt !== STATION_LOGO;
       if (hasServerArt) {
         log('server art сразу');
@@ -633,8 +739,7 @@
         log('server art отсутствует');
       }
 
-      /* 3. Параллельно внешние */
-      log('external lookup (iTunes → Last.fm → TheAudioDB)');
+      log('external lookup (Deezer + iTunes параллельно → фолбэки)');
       fetchCoverExternal(artist, title).then(function (externalArt) {
         if (currentTrackKey !== trackKey) {
           log('external: трек сменился, игнорируем');
@@ -643,7 +748,6 @@
 
         var hasExternal = externalArt && externalArt !== STATION_LOGO;
 
-        /* Внешней нет или она совпадает с серверной → кэшируем что есть */
         if (!hasExternal || externalArt === serverArt) {
           if (hasExternal) log('external совпала с серверной');
           else log('external: ничего не нашли');
@@ -654,7 +758,6 @@
           return;
         }
 
-        /* Внешняя отличается → подменяем */
         log('external замена:', externalArt.slice(0, 60));
         setMainCover(externalArt);
         coverCache[trackKey] = externalArt;
@@ -1043,8 +1146,8 @@
     log('система инициализирована | cache:', Object.keys(coverCache).length);
     log('источник метаданных: AzuraCast');
     log('платформа:', isWindows ? 'Windows' : 'Mobile');
-    log('cache: лимит 500, CACHE_KEY=v25');
-    log('режим: server art сразу + внешний fallback параллельно');
+    log('cache: лимит 500, CACHE_KEY=v27');
+    log('режим: параллельный Deezer + iTunes → фолбэки');
     log('отладка: ?debug=1 или 5 тапов по RetroDance');
   })();
   </script>
