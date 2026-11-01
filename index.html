@@ -194,7 +194,7 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v29'; // Обновлено для сброса кэша
+    var CACHE_KEY      = 'rd_cover_cache_v31'; // Обновлено для сброса кэша
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
@@ -208,8 +208,6 @@
     var isWindows = /windows|win32|win64/i.test(navigator.userAgent);
 
     var VERSION_MARKERS = /(english version|spanish version|russian version|instrumental|минус|minus|karaoke|караоке|extended mix|extended version|rework|dub version|acoustic version)/i;
-
-    var MANUAL_COVERS = {};
 
     var ARTIST_ALIASES = {
       'виктор салтыков': ['форум', 'forum'],
@@ -394,6 +392,7 @@
       return fetch(url, { signal: controller.signal }).finally(function () { clearTimeout(timer); });
     }
 
+    /* Улучшенная нормализация: убираем ВСЕ спецсимволы, оставляем только буквы и цифры */
     function normalize(s) {
       return String(s || '')
         .toLowerCase()
@@ -401,7 +400,7 @@
         .replace(/\[.*?\]/g, ' ')
         .replace(/\bfeat\.?\b.*$/i, ' ')
         .replace(/\bft\.?\b.*$/i, ' ')
-        .replace(/[^a-zа-яё0-9]+/gi, ' ')
+        .replace(/[^a-zа-яё0-9]/gi, '') // Теперь T-SEVEN и T Seven станут tseven
         .trim();
     }
 
@@ -446,119 +445,159 @@
       return false;
     }
 
-    function isMultiWordTitle(title) {
-      var n = normalize(title);
-      if (!n) return false;
-      return n.split(/\s+/).length >= 2;
-    }
-
     /* ============================================================
-       ПОИСК ОБЛОЖКИ В DEEZER (Свободный поиск по строке)
+       ПОИСК ОБЛОЖКИ В DEEZER (Два запроса: точный и по названию)
     ============================================================ */
     function fetchCoverDeezer(artist, title) {
       return new Promise(function(resolve) {
-        // Убрали строгие кавычки artist:"..." track:"...", ищем просто как в поиске
-        var q = artist + ' ' + title;
-        var cbName = 'deezerCb_' + Math.floor(Math.random() * 1000000);
-        var script = document.createElement('script');
         
-        window[cbName] = function(data) {
-          if (script.parentNode) script.parentNode.removeChild(script);
-          try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+        function doSearch(query, isFallback) {
+          var cbName = 'deezerCb_' + Math.floor(Math.random() * 1000000);
+          var script = document.createElement('script');
           
-          if (!data || !data.data || !data.data.length) {
-            log('Deezer: пусто');
-            return resolve(null);
-          }
-          
-          var artists = expandArtists(artist);
-          
-          for (var i = 0; i < data.data.length; i++) {
-            var r = data.data[i];
-            if (!r.album || !r.album.cover_xl) continue;
-            if (looksLikeVariousArtists(r.artist.name)) continue;
-            
-            var sa = 0;
-            for (var j = 0; j < artists.length; j++) {
-              var s = similarity(r.artist.name, artists[j]);
-              if (s > sa) sa = s;
-            }
-            var st = similarity(r.title, title);
-            
-            // Порог 0.5 для артиста сработает даже если "Михей и Джуманджи" vs "Михей"
-            if (sa >= MIN_ARTIST_SCORE && st >= MIN_TITLE_SCORE) {
-              log('Deezer pick:', r.artist.name, '-', r.title);
-              return resolve(r.album.cover_xl);
-            }
-          }
-          log('Deezer: совпадений не найдено');
-          resolve(null);
-        };
-        
-        script.src = 'https://api.deezer.com/search?q=' + encodeURIComponent(q) + '&output=jsonp&callback=' + cbName;
-        script.onerror = function() {
-          if (script.parentNode) script.parentNode.removeChild(script);
-          try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
-          log('Deezer: ошибка загрузки (JSONP)');
-          resolve(null);
-        };
-        document.body.appendChild(script);
-        
-        setTimeout(function() {
-          if (window[cbName]) {
+          window[cbName] = function(data) {
             if (script.parentNode) script.parentNode.removeChild(script);
             try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
-            log('Deezer: timeout');
-            resolve(null);
-          }
-        }, 4000);
+            
+            if (!data || !data.data || !data.data.length) {
+              if (!isFallback) {
+                log('Deezer: пусто (пробуем только название)');
+                doSearch(title, true); // Fallback: ищем только по треку
+              } else {
+                log('Deezer: пусто (все попытки)');
+                resolve(null);
+              }
+              return;
+            }
+            
+            var artists = expandArtists(artist);
+            
+            for (var i = 0; i < data.data.length; i++) {
+              var r = data.data[i];
+              if (!r.album || !r.album.cover_xl) continue;
+              if (looksLikeVariousArtists(r.artist.name)) continue;
+              
+              var sa = 0;
+              for (var j = 0; j < artists.length; j++) {
+                var s = similarity(r.artist.name, artists[j]);
+                if (s > sa) sa = s;
+              }
+              var st = similarity(r.title, title);
+              
+              // Если ищем по названию (fallback), требуем 100% совпадения трека, но 40% совпадения артиста
+              if (isFallback) {
+                if (st >= 0.9 && sa >= 0.4) {
+                  log('Deezer pick (fallback):', r.artist.name, '-', r.title);
+                  return resolve(r.album.cover_xl);
+                }
+              } else {
+                if (sa >= MIN_ARTIST_SCORE && st >= MIN_TITLE_SCORE) {
+                  log('Deezer pick:', r.artist.name, '-', r.title);
+                  return resolve(r.album.cover_xl);
+                }
+              }
+            }
+            
+            if (!isFallback) {
+              log('Deezer: совпадений нет (пробуем только название)');
+              doSearch(title, true);
+            } else {
+              log('Deezer: совпадений нет (все попытки)');
+              resolve(null);
+            }
+          };
+          
+          script.src = 'https://api.deezer.com/search?q=' + encodeURIComponent(query) + '&output=jsonp&callback=' + cbName;
+          script.onerror = function() {
+            if (script.parentNode) script.parentNode.removeChild(script);
+            try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+            if (!isFallback) { doSearch(title, true); } 
+            else { log('Deezer: ошибка (JSONP)'); resolve(null); }
+          };
+          document.body.appendChild(script);
+          
+          setTimeout(function() {
+            if (window[cbName]) {
+              if (script.parentNode) script.parentNode.removeChild(script);
+              try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+              if (!isFallback) { doSearch(title, true); } 
+              else { log('Deezer: timeout'); resolve(null); }
+            }
+          }, 3500);
+        }
+
+        doSearch(artist + ' ' + title, false);
       });
     }
 
     /* ============================================================
-       ПОИСК ОБЛОЖКИ ТРЕКА В iTUNES
+       ПОИСК ОБЛОЖКИ ТРЕКА В iTUNES (Тоже два запроса)
     ============================================================ */
     function fetchCoverITunes(artist, title) {
-      var q = encodeURIComponent(artist + ' ' + title);
-      return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=10&entity=song', 4500)
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (!data || !data.results || !data.results.length) { log('iTunes: пусто'); return null; }
-          var artists = expandArtists(artist);
-          var withArtist = null, withArtistScore = 0;
-          var withArtistNonComp = null, withArtistNonCompScore = 0;
+      function search(query, isFallback) {
+        var q = encodeURIComponent(query);
+        return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=15&entity=song', 4000)
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data || !data.results || !data.results.length) {
+              if (!isFallback) { log('iTunes: пусто (ищем только трек)'); return search(title, true); }
+              log('iTunes: пусто (все попытки)'); return null;
+            }
+            var artists = expandArtists(artist);
+            var withArtist = null, withArtistScore = 0;
+            var withArtistNonComp = null, withArtistNonCompScore = 0;
 
-          for (var i = 0; i < data.results.length; i++) {
-            var r = data.results[i];
-            if (!r.artworkUrl100) continue;
-            if (looksLikeVariousArtists(r.artistName)) continue;
+            for (var i = 0; i < data.results.length; i++) {
+              var r = data.results[i];
+              if (!r.artworkUrl100) continue;
+              if (looksLikeVariousArtists(r.artistName)) continue;
 
-            var sa = 0;
-            for (var j = 0; j < artists.length; j++) {
-              var s = similarity(r.artistName, artists[j]);
-              if (s > sa) sa = s;
+              var sa = 0;
+              for (var j = 0; j < artists.length; j++) {
+                var s = similarity(r.artistName, artists[j]);
+                if (s > sa) sa = s;
+              }
+
+              var st = similarity(r.trackName, title);
+
+              if (isFallback) {
+                if (st >= 0.9 && sa >= 0.4) {
+                   log('iTunes pick (fallback):', r.artistName, '-', r.trackName);
+                   return r.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
+                }
+              } else {
+                if (st < MIN_TITLE_SCORE) continue;
+                if (sa < MIN_ARTIST_ANY) continue;
+
+                var score = sa * 0.4 + st * 0.6;
+                if (VERSION_MARKERS.test(r.trackName)) score -= 0.10;
+
+                var isComp = isCompilation(r.collectionName, r.trackCount);
+
+                if (score > withArtistScore) { withArtist = r; withArtistScore = score; }
+                if (!isComp && score > withArtistNonCompScore) { withArtistNonComp = r; withArtistNonCompScore = score; }
+              }
             }
 
-            var st = similarity(r.trackName, title);
+            if (!isFallback) {
+              var chosen = withArtistNonComp || withArtist;
+              if (chosen && chosen.artworkUrl100) {
+                log('iTunes pick:', chosen.artistName, '-', chosen.trackName);
+                return chosen.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
+              }
+              log('iTunes: точная обложка не найдена (ищем только трек)');
+              return search(title, true);
+            }
+            log('iTunes: совпадений нет (все попытки)');
+            return null;
+          })
+          .catch(function (e) {
+            if (!isFallback) return search(title, true);
+            log('iTunes error:', e && e.message); return null;
+          });
+      }
 
-            if (st < MIN_TITLE_SCORE) continue;
-            if (sa < MIN_ARTIST_ANY) continue;
-
-            var score = sa * 0.4 + st * 0.6;
-            if (VERSION_MARKERS.test(r.trackName)) score -= 0.10;
-
-            var isComp = isCompilation(r.collectionName, r.trackCount);
-
-            if (score > withArtistScore) { withArtist = r; withArtistScore = score; }
-            if (!isComp && score > withArtistNonCompScore) { withArtistNonComp = r; withArtistNonCompScore = score; }
-          }
-
-          var chosen = withArtistNonComp || withArtist;
-          if (!chosen || !chosen.artworkUrl100) { log('iTunes: точная обложка трека не найдена'); return null; }
-          log('iTunes pick:', chosen.artistName, '-', chosen.trackName);
-          return chosen.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
-        })
-        .catch(function (e) { log('iTunes error:', e && e.message); return null; });
+      return search(artist + ' ' + title, false);
     }
 
     /* ============================================================
@@ -614,7 +653,7 @@
           + '&api_key=' + LASTFM_KEY
           + '&artist=' + encodeURIComponent(artist)
           + '&track=' + encodeURIComponent(title)
-          + '&autocorrect=1&format=json'; // Включили autocorrect обратно для поиска!
+          + '&autocorrect=1&format=json';
         return fetchWithTimeout(url, 4500)
           .then(function (r) { return r.json(); })
           .then(function (data) {
@@ -1167,8 +1206,8 @@
     log('система инициализирована | cache:', Object.keys(coverCache).length);
     log('источник метаданных: AzuraCast');
     log('платформа:', isWindows ? 'Windows' : 'Mobile');
-    log('cache: лимит 500, CACHE_KEY=v29');
-    log('режим: умный поиск Deezer + iTunes → фолбэки');
+    log('cache: лимит 500, CACHE_KEY=v31');
+    log('режим: глубокий поиск Deezer + iTunes (по треку и артисту)');
     log('отладка: ?debug=1 или 5 тапов по RetroDance');
   })();
   </script>
