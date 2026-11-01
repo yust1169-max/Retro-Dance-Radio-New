@@ -194,7 +194,7 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v28'; // Обновлено для сброса кэша
+    var CACHE_KEY      = 'rd_cover_cache_v29'; // Обновлено для сброса кэша
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
@@ -453,16 +453,16 @@
     }
 
     /* ============================================================
-       ПОИСК ОБЛОЖКИ В DEEZER (через JSONP для обхода CORS)
+       ПОИСК ОБЛОЖКИ В DEEZER (Свободный поиск по строке)
     ============================================================ */
     function fetchCoverDeezer(artist, title) {
       return new Promise(function(resolve) {
-        var q = 'artist:"' + artist + '" track:"' + title + '"';
+        // Убрали строгие кавычки artist:"..." track:"...", ищем просто как в поиске
+        var q = artist + ' ' + title;
         var cbName = 'deezerCb_' + Math.floor(Math.random() * 1000000);
         var script = document.createElement('script');
         
         window[cbName] = function(data) {
-          // Очистка после получения ответа
           if (script.parentNode) script.parentNode.removeChild(script);
           try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
           
@@ -485,6 +485,7 @@
             }
             var st = similarity(r.title, title);
             
+            // Порог 0.5 для артиста сработает даже если "Михей и Джуманджи" vs "Михей"
             if (sa >= MIN_ARTIST_SCORE && st >= MIN_TITLE_SCORE) {
               log('Deezer pick:', r.artist.name, '-', r.title);
               return resolve(r.album.cover_xl);
@@ -503,7 +504,6 @@
         };
         document.body.appendChild(script);
         
-        // Таймаут, чтобы промис не висел вечно, если Deezer тупит
         setTimeout(function() {
           if (window[cbName]) {
             if (script.parentNode) script.parentNode.removeChild(script);
@@ -614,7 +614,7 @@
           + '&api_key=' + LASTFM_KEY
           + '&artist=' + encodeURIComponent(artist)
           + '&track=' + encodeURIComponent(title)
-          + '&autocorrect=0&format=json';
+          + '&autocorrect=1&format=json'; // Включили autocorrect обратно для поиска!
         return fetchWithTimeout(url, 4500)
           .then(function (r) { return r.json(); })
           .then(function (data) {
@@ -1167,8 +1167,8 @@
     log('система инициализирована | cache:', Object.keys(coverCache).length);
     log('источник метаданных: AzuraCast');
     log('платформа:', isWindows ? 'Windows' : 'Mobile');
-    log('cache: лимит 500, CACHE_KEY=v28');
-    log('режим: JSONP Deezer + iTunes → фолбэки');
+    log('cache: лимит 500, CACHE_KEY=v29');
+    log('режим: умный поиск Deezer + iTunes → фолбэки');
     log('отладка: ?debug=1 или 5 тапов по RetroDance');
   })();
   </script>
