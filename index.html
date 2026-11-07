@@ -194,7 +194,7 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v31'; // Обновлено для сброса кэша
+    var CACHE_KEY      = 'rd_cover_cache_v32'; // Обновлено для сброса кэша
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
@@ -225,7 +225,7 @@
     var COMPILATION_MARKERS = [
       'hits', 'best of', 'greatest', 'collection', 'compilation',
       '90er', '80er', '70er', '60er', 'generation', 'various',
-      'the best', 'essential', 'ultimate', 'now that',
+      'the best', 'essential', 'ultimate', 'now that', 'italian dance',
       'хиты', 'лучшие', 'сборник', 'золотые', 'дискотека'
     ];
 
@@ -392,7 +392,6 @@
       return fetch(url, { signal: controller.signal }).finally(function () { clearTimeout(timer); });
     }
 
-    /* Улучшенная нормализация: убираем ВСЕ спецсимволы, оставляем только буквы и цифры */
     function normalize(s) {
       return String(s || '')
         .toLowerCase()
@@ -400,7 +399,7 @@
         .replace(/\[.*?\]/g, ' ')
         .replace(/\bfeat\.?\b.*$/i, ' ')
         .replace(/\bft\.?\b.*$/i, ' ')
-        .replace(/[^a-zа-яё0-9]/gi, '') // Теперь T-SEVEN и T Seven станут tseven
+        .replace(/[^a-zа-яё0-9]/gi, '')
         .trim();
     }
 
@@ -445,12 +444,8 @@
       return false;
     }
 
-    /* ============================================================
-       ПОИСК ОБЛОЖКИ В DEEZER (Два запроса: точный и по названию)
-    ============================================================ */
     function fetchCoverDeezer(artist, title) {
       return new Promise(function(resolve) {
-        
         function doSearch(query, isFallback) {
           var cbName = 'deezerCb_' + Math.floor(Math.random() * 1000000);
           var script = document.createElement('script');
@@ -460,13 +455,8 @@
             try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
             
             if (!data || !data.data || !data.data.length) {
-              if (!isFallback) {
-                log('Deezer: пусто (пробуем только название)');
-                doSearch(title, true); // Fallback: ищем только по треку
-              } else {
-                log('Deezer: пусто (все попытки)');
-                resolve(null);
-              }
+              if (!isFallback) { doSearch(title, true); } 
+              else { resolve(null); }
               return;
             }
             
@@ -484,35 +474,22 @@
               }
               var st = similarity(r.title, title);
               
-              // Если ищем по названию (fallback), требуем 100% совпадения трека, но 40% совпадения артиста
               if (isFallback) {
-                if (st >= 0.9 && sa >= 0.4) {
-                  log('Deezer pick (fallback):', r.artist.name, '-', r.title);
-                  return resolve(r.album.cover_xl);
-                }
+                if (st >= 0.9 && sa >= 0.4) { return resolve(r.album.cover_xl); }
               } else {
-                if (sa >= MIN_ARTIST_SCORE && st >= MIN_TITLE_SCORE) {
-                  log('Deezer pick:', r.artist.name, '-', r.title);
-                  return resolve(r.album.cover_xl);
-                }
+                if (sa >= MIN_ARTIST_SCORE && st >= MIN_TITLE_SCORE) { return resolve(r.album.cover_xl); }
               }
             }
             
-            if (!isFallback) {
-              log('Deezer: совпадений нет (пробуем только название)');
-              doSearch(title, true);
-            } else {
-              log('Deezer: совпадений нет (все попытки)');
-              resolve(null);
-            }
+            if (!isFallback) { doSearch(title, true); } 
+            else { resolve(null); }
           };
           
           script.src = 'https://api.deezer.com/search?q=' + encodeURIComponent(query) + '&output=jsonp&callback=' + cbName;
           script.onerror = function() {
             if (script.parentNode) script.parentNode.removeChild(script);
             try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
-            if (!isFallback) { doSearch(title, true); } 
-            else { log('Deezer: ошибка (JSONP)'); resolve(null); }
+            if (!isFallback) { doSearch(title, true); } else { resolve(null); }
           };
           document.body.appendChild(script);
           
@@ -520,19 +497,14 @@
             if (window[cbName]) {
               if (script.parentNode) script.parentNode.removeChild(script);
               try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
-              if (!isFallback) { doSearch(title, true); } 
-              else { log('Deezer: timeout'); resolve(null); }
+              if (!isFallback) { doSearch(title, true); } else { resolve(null); }
             }
           }, 3500);
         }
-
         doSearch(artist + ' ' + title, false);
       });
     }
 
-    /* ============================================================
-       ПОИСК ОБЛОЖКИ ТРЕКА В iTUNES (Тоже два запроса)
-    ============================================================ */
     function fetchCoverITunes(artist, title) {
       function search(query, isFallback) {
         var q = encodeURIComponent(query);
@@ -540,8 +512,8 @@
           .then(function (r) { return r.json(); })
           .then(function (data) {
             if (!data || !data.results || !data.results.length) {
-              if (!isFallback) { log('iTunes: пусто (ищем только трек)'); return search(title, true); }
-              log('iTunes: пусто (все попытки)'); return null;
+              if (!isFallback) { return search(title, true); }
+              return null;
             }
             var artists = expandArtists(artist);
             var withArtist = null, withArtistScore = 0;
@@ -557,12 +529,10 @@
                 var s = similarity(r.artistName, artists[j]);
                 if (s > sa) sa = s;
               }
-
               var st = similarity(r.trackName, title);
 
               if (isFallback) {
                 if (st >= 0.9 && sa >= 0.4) {
-                   log('iTunes pick (fallback):', r.artistName, '-', r.trackName);
                    return r.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
                 }
               } else {
@@ -571,46 +541,42 @@
 
                 var score = sa * 0.4 + st * 0.6;
                 if (VERSION_MARKERS.test(r.trackName)) score -= 0.10;
-
                 var isComp = isCompilation(r.collectionName, r.trackCount);
 
                 if (score > withArtistScore) { withArtist = r; withArtistScore = score; }
                 if (!isComp && score > withArtistNonCompScore) { withArtistNonComp = r; withArtistNonCompScore = score; }
               }
             }
-
             if (!isFallback) {
               var chosen = withArtistNonComp || withArtist;
               if (chosen && chosen.artworkUrl100) {
-                log('iTunes pick:', chosen.artistName, '-', chosen.trackName);
                 return chosen.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
               }
-              log('iTunes: точная обложка не найдена (ищем только трек)');
               return search(title, true);
             }
-            log('iTunes: совпадений нет (все попытки)');
             return null;
           })
           .catch(function (e) {
             if (!isFallback) return search(title, true);
-            log('iTunes error:', e && e.message); return null;
+            return null;
           });
       }
-
       return search(artist + ' ' + title, false);
     }
 
     /* ============================================================
-       ПОИСК ЛЮБОЙ ОБЛОЖКИ АЛЬБОМА ИСПОЛНИТЕЛЯ (фолбэк)
+       ПОИСК ЛЮБОЙ ОБЛОЖКИ АЛЬБОМА ИСПОЛНИТЕЛЯ (Улучшенный фолбэк)
+       Теперь он строго предпочитает студийные альбомы, а не сборники!
     ============================================================ */
     function fetchArtistCoverITunes(artist) {
       var q = encodeURIComponent(artist);
-      return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=15&entity=album', 4500)
+      return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=25&entity=album', 4500)
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (!data || !data.results || !data.results.length) { log('iTunes artist-only: пусто'); return null; }
+          if (!data || !data.results || !data.results.length) { return null; }
           var artists = expandArtists(artist);
-          var best = null, bestScore = 0;
+          var bestNonComp = null, bestNonCompScore = 0;
+          var bestComp = null, bestCompScore = 0;
 
           for (var i = 0; i < data.results.length; i++) {
             var r = data.results[i];
@@ -625,19 +591,20 @@
 
             if (sa >= MIN_ARTIST_SCORE) {
               var isComp = isCompilation(r.collectionName, r.trackCount);
-              var score = sa + (isComp ? -0.1 : 0.05);
-              if (score > bestScore) {
-                bestScore = score;
-                best = r;
+              if (isComp) {
+                if (sa > bestCompScore) { bestCompScore = sa; bestComp = r; }
+              } else {
+                if (sa > bestNonCompScore) { bestNonCompScore = sa; bestNonComp = r; }
               }
             }
           }
 
-          if (!best) { log('iTunes artist-only: подходящий артист не найден'); return null; }
+          var best = bestNonComp || bestComp;
+          if (!best) return null;
           log('iTunes artist-only pick:', best.artistName, '-', best.collectionName);
           return best.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
         })
-        .catch(function (e) { log('iTunes artist-only error:', e && e.message); return null; });
+        .catch(function (e) { return null; });
     }
 
     var lastFmQueue = Promise.resolve();
@@ -657,7 +624,7 @@
         return fetchWithTimeout(url, 4500)
           .then(function (r) { return r.json(); })
           .then(function (data) {
-            if (!data || !data.track) { log('Last.fm: пусто'); return null; }
+            if (!data || !data.track) return null;
             var track = data.track;
             if (track.artist && looksLikeVariousArtists(track.artist.name)) return null;
             var sa = similarity(track.artist && track.artist.name, artist);
@@ -673,7 +640,6 @@
             }
             if (!url2) return null;
             if (url2.indexOf(LASTFM_PLACEHOLDER_HASH) !== -1) return null;
-            log('Last.fm cover OK');
             return url2;
           })
           .catch(function () { return null; });
@@ -685,26 +651,19 @@
       return fetchWithTimeout(url, 4000)
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (!data || !data.artists || !data.artists.length) { log('TheAudioDB: пусто'); return null; }
+          if (!data || !data.artists || !data.artists.length) return null;
           var bestA = null, bestScore = 0;
           data.artists.forEach(function (a) {
             var s = similarity(a.strArtist, artist);
             if (s > bestScore) { bestScore = s; bestA = a; }
           });
           if (!bestA || bestScore < MIN_ARTIST_SCORE) return null;
-          var art = bestA.strArtistThumb || bestA.strArtistFanart;
-          if (art) { log('TheAudioDB: thumb'); return art; }
-          return null;
+          return bestA.strArtistThumb || bestA.strArtistFanart || null;
         })
         .catch(function () { return null; });
     }
 
-    /* ============================================================
-       Внешний fallback: ПАРАЛЛЕЛЬНЫЙ поиск в Deezer и iTunes
-    ============================================================ */
     function fetchCoverExternal(artist, title) {
-      log('external: запуск параллельного поиска (Deezer + iTunes)');
-      
       var deezerPromise = fetchCoverDeezer(artist, title);
       var itunesPromise = fetchCoverITunes(artist, title);
 
@@ -712,25 +671,13 @@
         var deezerArt = results[0];
         var itunesArt = results[1];
 
-        if (deezerArt) {
-          log('external: победа за Deezer');
-          return deezerArt;
-        }
-        
-        if (itunesArt) {
-          log('external: победа за iTunes');
-          return itunesArt;
-        }
+        if (deezerArt) return deezerArt;
+        if (itunesArt) return itunesArt;
 
-        log('external: точный трек не найден нигде, ищем любой альбом исполнителя...');
         return fetchArtistCoverITunes(artist).then(function (artistArt) {
           if (artistArt) return artistArt;
-
-          log('Last.fm: поиск обложки трека...');
           return fetchCoverLastFm(artist, title).then(function (art2) {
             if (art2) return art2;
-
-            log('TheAudioDB: поиск фото исполнителя...');
             return fetchCoverAudioDB(artist);
           });
         });
@@ -781,49 +728,29 @@
       applyMediaSessionMetadata();
     }
 
-    /* ============================================================
-       ПРОГРЕССИВНАЯ ЗАГРУЗКА ОБЛОЖКИ
-    ============================================================ */
     function applyCoverForTrack(artist, title, trackKey, serverArt) {
       if (coverCache[trackKey]) {
-        log('cover from cache');
         setMainCover(coverCache[trackKey]);
         return;
       }
 
       var hasServerArt = serverArt && serverArt !== STATION_LOGO;
-      if (hasServerArt) {
-        log('server art сразу');
-        setMainCover(serverArt);
-      } else {
-        log('server art отсутствует');
-      }
+      if (hasServerArt) { setMainCover(serverArt); }
 
-      log('external lookup (Deezer + iTunes параллельно → фолбэки)');
       fetchCoverExternal(artist, title).then(function (externalArt) {
-        if (currentTrackKey !== trackKey) {
-          log('external: трек сменился, игнорируем');
-          return;
-        }
+        if (currentTrackKey !== trackKey) return;
 
         var hasExternal = externalArt && externalArt !== STATION_LOGO;
 
         if (!hasExternal || externalArt === serverArt) {
-          if (hasExternal) log('external совпала с серверной');
-          else log('external: ничего не нашли');
-          if (hasServerArt) {
-            coverCache[trackKey] = serverArt;
-            saveCache();
-          }
+          if (hasServerArt) { coverCache[trackKey] = serverArt; saveCache(); }
           return;
         }
 
-        log('external замена:', externalArt.slice(0, 60));
         setMainCover(externalArt);
         coverCache[trackKey] = externalArt;
         saveCache();
       }).catch(function (e) {
-        log('external error:', e && e.message);
         if (hasServerArt && currentTrackKey === trackKey) {
           coverCache[trackKey] = serverArt;
           saveCache();
@@ -832,7 +759,7 @@
     }
 
     function startRadio() {
-      if (isLoading) { log('startRadio: уже isLoading'); return; }
+      if (isLoading) return;
       isLoading = true;
       updateUI();
       var myToken = ++playToken;
@@ -848,7 +775,6 @@
         p.catch(function (err) {
           if (myToken !== playToken) return;
           if (err && err.name === 'AbortError') return;
-          log('Playback error:', err && err.message);
           isLoading = false; isPlaying = false; updateUI();
           if (userIntent) scheduleReconnect();
         });
@@ -877,13 +803,11 @@
     }
 
     function scheduleReconnect() {
-      if (!userIntent) return;
-      if (reconnectTimer) return;
-      if (reconnectAttempts >= 6) { log('reconnect: максимум'); isLoading = false; updateUI(); return; }
+      if (!userIntent || reconnectTimer) return;
+      if (reconnectAttempts >= 6) { isLoading = false; updateUI(); return; }
       reconnectAttempts++;
       var delay = Math.min(15000, 800 * Math.pow(1.6, reconnectAttempts - 1));
       isLoading = true; updateUI();
-      log('reconnect attempt', reconnectAttempts, 'in', delay, 'ms');
       reconnectTimer = setTimeout(function () {
         reconnectTimer = null;
         if (!userIntent) { isLoading = false; updateUI(); return; }
@@ -908,26 +832,17 @@
       isPlaying = true; isLoading = false; reconnectAttempts = 0;
       updateUI(); applyMediaSessionState(); applyMediaSessionMetadata();
       requestWakeLock();
-      log('stream playing');
     });
     player.addEventListener('pause', function () {
       if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); applyMediaSessionState(); }
     });
-
-    player.addEventListener('stalled', function () {
-      log('stream stalled (Chrome сам восстановит)');
-    });
-
     player.addEventListener('ended', function () {
-      log('stream ended');
       if (userIntent && !document.hidden) scheduleReconnect();
     });
-
     player.addEventListener('error', function () {
       var code = player.error && player.error.code;
       if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); return; }
       if (code === 1) return;
-      log('Audio error code:', code);
       if (code === 2 || code === 3) {
         isPlaying = false; isLoading = true; updateUI();
         if (!document.hidden) scheduleReconnect();
@@ -935,67 +850,31 @@
     });
 
     window.addEventListener('online', function () {
-      log('browser online');
-      if (!userIntent) return;
-      if (document.hidden) return;
+      if (!userIntent || document.hidden) return;
       if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
       reconnectAttempts = 0; isLoading = true; updateUI();
       setTimeout(function () { if (userIntent) tryReconnect(); }, 800);
     });
     window.addEventListener('offline', function () {
-      log('browser offline');
       if (!userIntent) return;
       isLoading = true; updateUI();
     });
 
-    var connDebounceTimer = null;
-    var lastConnType = navigator.connection ? (navigator.connection.type || navigator.connection.effectiveType || '') : '';
-    if (navigator.connection && navigator.connection.addEventListener) {
-      navigator.connection.addEventListener('change', function () {
-        if (document.hidden) return;
-        if (isWindows) return;
-        var c = navigator.connection;
-        var newType = c.type || c.effectiveType || '';
-        log('connection change:', lastConnType, '→', newType);
-        lastConnType = newType;
-        if (connDebounceTimer) clearTimeout(connDebounceTimer);
-        connDebounceTimer = setTimeout(function () {
-          connDebounceTimer = null;
-          if (!userIntent || document.hidden) return;
-          if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-          reconnectAttempts = 0;
-          log('connection debounce → force reconnect');
-          tryReconnect();
-        }, 1500);
-      });
-    }
-
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) {
-        log('hidden → freeze all');
         if (metadataTimer) { clearTimeout(metadataTimer); metadataTimer = null; }
-        if (connDebounceTimer) { clearTimeout(connDebounceTimer); connDebounceTimer = null; }
         return;
       }
-      log('visible → resume');
       requestWakeLock();
       if (userIntent && !player.paused && player.currentTime > 0) {
         var testTime = player.currentTime;
         setTimeout(function () {
           if (player.currentTime === testTime && !player.paused && !player.ended) {
-            log('visible: currentTime не растёт → reconnect');
-            isLoading = true;
-            updateUI();
-            tryReconnect();
-          } else {
-            log('visible: OK, currentTime=' + player.currentTime.toFixed(1));
+            isLoading = true; updateUI(); tryReconnect();
           }
         }, 1500);
       } else if (userIntent && (player.paused || player.ended)) {
-        log('visible: player не играет → reconnect');
-        isLoading = true;
-        updateUI();
-        tryReconnect();
+        isLoading = true; updateUI(); tryReconnect();
       }
       updateMetadata();
     });
@@ -1032,11 +911,8 @@
         .then(function (data) {
           if (document.hidden) return;
           if (!data || !data.now_playing || !data.now_playing.song) {
-            log('AzuraCast: нет now_playing');
-            scheduleMetadata(MID_POLL_DELAY);
-            return;
+            scheduleMetadata(MID_POLL_DELAY); return;
           }
-
           var song = data.now_playing.song;
           var artist = song.artist || 'Retro Radio';
           var title  = song.title || 'Нажмите Play';
@@ -1046,14 +922,9 @@
           var nextDelay = MID_POLL_DELAY;
           if (typeof data.now_playing.remaining === 'number' && data.now_playing.remaining > 0) {
             var rem = data.now_playing.remaining;
-            if (rem > END_OF_TRACK_WINDOW) {
-              nextDelay = MID_POLL_DELAY;
-            } else {
-              nextDelay = Math.max(3000, (rem + 2) * 1000);
-            }
+            nextDelay = (rem > END_OF_TRACK_WINDOW) ? MID_POLL_DELAY : Math.max(3000, (rem + 2) * 1000);
           }
           scheduleMetadata(nextDelay);
-          log('track:', trackKey, '| same:', trackKey === currentTrackKey, '| remaining:', (data.now_playing.remaining || '?'), '| next in', nextDelay, 'ms');
 
           if (data.listeners && typeof data.listeners.total === 'number' && data.listeners.total > 0) {
             listenersEl.textContent = data.listeners.total;
@@ -1066,15 +937,10 @@
             titleEl.textContent = title;
             artistEl.textContent = artist;
             applyMediaSessionMetadata();
-
             applyCoverForTrack(artist, title, trackKey, serverArt);
           }
         })
-        .catch(function (e) {
-          if (e && e.name === 'AbortError') { scheduleMetadata(MID_POLL_DELAY); return; }
-          log('Metadata error:', e && e.message);
-          scheduleMetadata(MID_POLL_DELAY);
-        });
+        .catch(function () { scheduleMetadata(MID_POLL_DELAY); });
     }
 
     function updateHistory() {
@@ -1084,52 +950,37 @@
         .then(function (data) {
           if (!data || !Array.isArray(data.song_history)) return;
           historyList.innerHTML = '';
-          var items = data.song_history.slice(0, 5);
-          items.forEach(function (item) {
+          data.song_history.slice(0, 5).forEach(function (item) {
             var song = item.song || {};
-            var artistName = song.artist || 'Retro Radio';
-            var titleName = song.title || '';
-            var artUrl = song.art || '';
-
             var div = document.createElement('div');
             div.className = 'history-item';
-
             var img = document.createElement('img');
             img.className = 'history-thumb';
             img.alt = '';
-            if (artUrl) img.src = artUrl;
-
+            if (song.art) img.src = song.art;
             var textDiv = document.createElement('div');
             textDiv.className = 'history-text';
-
             var aSpan = document.createElement('span');
             aSpan.className = 'history-artist';
-            aSpan.textContent = artistName;
-
+            aSpan.textContent = song.artist || 'Retro Radio';
             var tSpan = document.createElement('span');
             tSpan.className = 'history-song-title';
-            tSpan.textContent = titleName;
-
+            tSpan.textContent = song.title || '';
             textDiv.appendChild(aSpan);
             textDiv.appendChild(tSpan);
             div.appendChild(img);
             div.appendChild(textDiv);
             historyList.appendChild(div);
           });
-        })
-        .catch(function (e) {
-          if (e && e.name === 'AbortError') return;
-          log('History error:', e && e.message);
-        });
+        }).catch(function () {});
     }
 
     document.querySelectorAll('.tab-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var tab = btn.dataset.tab;
         document.querySelectorAll('.tab-btn').forEach(function (b) {
-          var active = b.dataset.tab === tab;
-          b.classList.toggle('active', active);
-          b.setAttribute('aria-selected', active ? 'true' : 'false');
+          b.classList.toggle('active', b.dataset.tab === tab);
+          b.setAttribute('aria-selected', b.dataset.tab === tab ? 'true' : 'false');
         });
         document.querySelectorAll('.tab-panel').forEach(function (panel) {
           panel.classList.toggle('active', panel.id === 'panel-' + tab);
@@ -1158,41 +1009,20 @@
       logPaused = !logPaused;
       this.classList.toggle('paused', logPaused);
       this.textContent = logPaused ? '▶️' : '❄️';
-      log('лог', logPaused ? 'ПАУЗА' : 'ПРОДОЛЖЕН');
     });
 
     document.getElementById('rd-log-full').addEventListener('click', function () {
       var modal = document.getElementById('rd-modal');
-      var ta = document.getElementById('rd-modal-text');
-      ta.value = logBuffer.join('\n');
+      document.getElementById('rd-modal-text').value = logBuffer.join('\n');
       modal.classList.add('visible');
-      modal.setAttribute('aria-hidden', 'false');
-      setTimeout(function () { ta.focus(); ta.select(); }, 100);
     });
     document.getElementById('rd-modal-close').addEventListener('click', function () {
-      var modal = document.getElementById('rd-modal');
-      modal.classList.remove('visible');
-      modal.setAttribute('aria-hidden', 'true');
+      document.getElementById('rd-modal').classList.remove('visible');
     });
 
     document.getElementById('rd-log-copy').addEventListener('click', function () {
       var text = logBuffer.join('\n');
-      var btn = document.getElementById('rd-log-copy');
-      function done() { btn.textContent = '✓'; setTimeout(function () { btn.textContent = '📋'; }, 1500); }
-      function fallbackCopy(t) {
-        var ta = document.createElement('textarea');
-        ta.value = t;
-        ta.style.position = 'fixed'; ta.style.left = '-9999px'; ta.style.top = '0';
-        document.body.appendChild(ta);
-        ta.focus(); ta.select();
-        try { document.execCommand('copy'); } catch (e) {}
-        document.body.removeChild(ta);
-      }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy(text); done(); });
-      } else {
-        fallbackCopy(text); done();
-      }
+      if (navigator.clipboard) navigator.clipboard.writeText(text);
     });
 
     document.getElementById('rd-log-close').addEventListener('click', function () {
@@ -1202,13 +1032,6 @@
     updateVolumeIcon();
     applyMediaSessionMetadata();
     updateMetadata();
-
-    log('система инициализирована | cache:', Object.keys(coverCache).length);
-    log('источник метаданных: AzuraCast');
-    log('платформа:', isWindows ? 'Windows' : 'Mobile');
-    log('cache: лимит 500, CACHE_KEY=v31');
-    log('режим: глубокий поиск Deezer + iTunes (по треку и артисту)');
-    log('отладка: ?debug=1 или 5 тапов по RetroDance');
   })();
   </script>
 </body>
