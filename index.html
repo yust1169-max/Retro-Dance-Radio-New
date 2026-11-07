@@ -194,7 +194,7 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v32'; // Обновлено для сброса кэша
+    var CACHE_KEY      = 'rd_cover_cache_v33'; // Обновлено для сброса кэша
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
@@ -346,7 +346,6 @@
     async function requestWakeLock() {
       if (!('wakeLock' in navigator)) return;
       if (wakeLock) return;
-      if (document.hidden) return;
       try {
         wakeLock = await navigator.wakeLock.request('screen');
         wakeLock.addEventListener('release', function () { wakeLock = null; });
@@ -564,10 +563,6 @@
       return search(artist + ' ' + title, false);
     }
 
-    /* ============================================================
-       ПОИСК ЛЮБОЙ ОБЛОЖКИ АЛЬБОМА ИСПОЛНИТЕЛЯ (Улучшенный фолбэк)
-       Теперь он строго предпочитает студийные альбомы, а не сборники!
-    ============================================================ */
     function fetchArtistCoverITunes(artist) {
       var q = encodeURIComponent(artist);
       return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=25&entity=album', 4500)
@@ -837,7 +832,7 @@
       if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); applyMediaSessionState(); }
     });
     player.addEventListener('ended', function () {
-      if (userIntent && !document.hidden) scheduleReconnect();
+      if (userIntent) scheduleReconnect();
     });
     player.addEventListener('error', function () {
       var code = player.error && player.error.code;
@@ -845,12 +840,12 @@
       if (code === 1) return;
       if (code === 2 || code === 3) {
         isPlaying = false; isLoading = true; updateUI();
-        if (!document.hidden) scheduleReconnect();
+        scheduleReconnect();
       }
     });
 
     window.addEventListener('online', function () {
-      if (!userIntent || document.hidden) return;
+      if (!userIntent) return;
       if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
       reconnectAttempts = 0; isLoading = true; updateUI();
       setTimeout(function () { if (userIntent) tryReconnect(); }, 800);
@@ -862,7 +857,6 @@
 
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) {
-        if (metadataTimer) { clearTimeout(metadataTimer); metadataTimer = null; }
         return;
       }
       requestWakeLock();
@@ -876,7 +870,6 @@
       } else if (userIntent && (player.paused || player.ended)) {
         isLoading = true; updateUI(); tryReconnect();
       }
-      updateMetadata();
     });
 
     muteBtn.addEventListener('click', function () {
@@ -899,17 +892,14 @@
 
     function scheduleMetadata(delay) {
       if (metadataTimer) clearTimeout(metadataTimer);
-      if (document.hidden) return;
       metadataTimer = setTimeout(updateMetadata, delay);
     }
 
     function updateMetadata() {
-      if (document.hidden) return;
       if (!navigator.onLine) { scheduleMetadata(MID_POLL_DELAY); return; }
       fetchWithTimeout(AZURACAST_API + '?t=' + Date.now(), 5000)
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          if (document.hidden) return;
           if (!data || !data.now_playing || !data.now_playing.song) {
             scheduleMetadata(MID_POLL_DELAY); return;
           }
