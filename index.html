@@ -194,7 +194,7 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v34'; // Обновлено для сброса кэша
+    var CACHE_KEY      = 'rd_cover_cache_v36'; // Обновлено для сброса кэша
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
@@ -243,8 +243,31 @@
     var userIntent = false, isPlaying = false, isLoading = false, isMuted = false;
     var currentTrackKey = '', currentTrackTitle = 'Нажмите Play', currentTrackArtist = 'Retro Radio';
     var currentArtwork = STATION_LOGO;
-    var reconnectTimer = null, reconnectAttempts = 0, metadataTimer = null, playToken = 0;
+    var reconnectTimer = null, reconnectAttempts = 0, playToken = 0;
     var wakeLock = null;
+
+    /* ============================================================
+       WEB WORKER ДЛЯ ОБХОДА ТРОТТЛИНГА
+    ============================================================ */
+    var workerCode = `
+      var timer = null;
+      self.onmessage = function(e) {
+        if (e.data && e.data.action === 'schedule') {
+          if (timer) clearTimeout(timer);
+          timer = setTimeout(function() {
+            self.postMessage('tick');
+          }, e.data.delay);
+        }
+      };
+    `;
+    var blob = new Blob([workerCode], {type: 'application/javascript'});
+    var metadataWorker = new Worker(URL.createObjectURL(blob));
+    
+    metadataWorker.onmessage = function(e) {
+      if (e.data === 'tick') {
+        updateMetadata();
+      }
+    };
 
     var SVG_PLAY = '<path d="M7 5v14l11-7z"/>';
     var SVG_STOP = '<path d="M6 6h12v12H6z"/>';
@@ -325,7 +348,6 @@
     coverImg.addEventListener('error', function () {
       coverImg.classList.remove('loaded');
       log('cover-img ERROR: ссылка битая, возвращаем логотип');
-      // Сбрасываем на логотип станции, чтобы не было пустого квадрата
       currentArtwork = STATION_LOGO;
       coverImg.src = STATION_LOGO;
       applyMediaSessionMetadata();
@@ -897,8 +919,9 @@
     }
 
     function scheduleMetadata(delay) {
-      if (metadataTimer) clearTimeout(metadataTimer);
-      metadataTimer = setTimeout(updateMetadata, delay);
+      if (metadataWorker) {
+        metadataWorker.postMessage({ action: 'schedule', delay: delay });
+      }
     }
 
     function updateMetadata() {
@@ -921,6 +944,9 @@
             nextDelay = (rem > END_OF_TRACK_WINDOW) ? MID_POLL_DELAY : Math.max(3000, (rem + 2) * 1000);
           }
           scheduleMetadata(nextDelay);
+
+          // ВОЗВРАЩАЕМ ПЛОТНЫЙ ЛОГ
+          log('track:', trackKey, '| same:', trackKey === currentTrackKey, '| remaining:', (data.now_playing.remaining || '?'), '| next in', nextDelay, 'ms');
 
           if (data.listeners && typeof data.listeners.total === 'number' && data.listeners.total > 0) {
             listenersEl.textContent = data.listeners.total;
