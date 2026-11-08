@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d0d0d">
+  <link rel="icon" type="image/png" href="https://i.postimg.cc/28VKXjCx/logo.png">
+  <link rel="apple-touch-icon" href="https://i.postimg.cc/28VKXjCx/logo.png">
+  <title>RetroDance Radio</title>
+  <meta name="description" content="RetroDance Radio — энергичное ретро и клубные хиты 90-х и 2000-х онлайн 24/7.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="RetroDance Radio">
+  <meta property="og:title" content="RetroDance Radio — включай энергию прошлого!">
+  <meta property="og:description" content="Энергичное ретро и клубные хиты онлайн 24/7.">
+  <meta property="og:image" content="https://i.postimg.cc/28VKXjCx/logo.png">
+  <meta property="og:url" content="https://retrodanceradio.com/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="RetroDance Radio">
+  <meta name="twitter:description" content="Энергичное ретро и клубные хиты онлайн 24/7.">
+  <meta name="twitter:image" content="https://i.postimg.cc/28VKXjCx/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: #0d0d0d; font-family: 'Inter', sans-serif; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow-x: hidden; }
+    .app-bg { width: 100%; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; }
+    .bg-sphere { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(225,29,72,0.18) 0%, transparent 70%); z-index: 0; filter: blur(80px); animation: sphereMove 30s infinite alternate linear; pointer-events: none; }
+    @keyframes sphereMove { from { transform: translate(-15%, -15%) scale(1.2); } to { transform: translate(15%, 15%) scale(0.9); } }
+    .glass-card { position: relative; z-index: 10; width: 100%; max-width: 420px; background: rgba(45,0,10,0.88); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,0.08); border-radius: 48px; padding: 32px; text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,0.7); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 0 4px; }
+    .live-badge { font-size: 10px; font-weight: 700; color: #e11d48; text-transform: uppercase; letter-spacing: 0.15em; animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .listeners-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10); color: rgba(255,255,255,0.78); font-size: 11px; font-weight: 900; line-height: 1; }
+    .listeners-pill svg { width: 14px; height: 14px; color: #e11d48; flex-shrink: 0; }
+    .cover-wrapper { width: 260px; height: 260px; margin: 0 auto 28px; background-color: #1a1a1a; background-image: url('https://i.postimg.cc/28VKXjCx/logo.png'); background-size: cover; background-position: center; background-repeat: no-repeat; border-radius: 36px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06); position: relative; }
+    #cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.4s ease-in-out; display: block; }
+    #cover-img.loaded { opacity: 1; }
+    .track-info { margin-bottom: 24px; }
+    .station-name { font-size: 26px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -0.03em; margin-bottom: 12px; line-height: 1; cursor: default; user-select: none; -webkit-user-select: none; }
+    .accent { color: #e11d48; }
+    #artist-el { font-size: 10px; font-weight: 700; color: #fb7185; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.85; margin-bottom: 8px; }
+    #title-el { font-size: 18px; font-weight: 900; text-transform: uppercase; font-style: italic; letter-spacing: -0.02em; line-height: 1.25; min-height: 2.8em; display: flex; align-items: center; justify-content: center; padding: 0 8px; }
+    .custom-player { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 24px; }
+    .play-btn { width: 74px; height: 74px; border-radius: 50%; border: none; background: linear-gradient(135deg, #e11d48, #9f1239); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 6px 20px rgba(225,29,72,0.4); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); padding: 0; outline: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+    .play-btn:active { transform: scale(0.92); }
+    .play-btn svg { width: 34px; height: 34px; display: block; }
+    .ico-play-shape { transform: translateX(4px); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 1s linear infinite; }
+    .side-btn { width: 74px; height: 74px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.85); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; outline: none; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; flex-shrink: 0; text-decoration: none; }
+    .side-btn:active { transform: scale(0.94); }
+    .laut-text { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.03em; color: rgba(255,255,255,0.9); display: block; line-height: 1; }
+    .side-btn.is-muted { color: #e11d48; background: rgba(225,29,72,0.12); border-color: rgba(225,29,72,0.2); }
+    .side-btn svg { width: 24px; height: 24px; display: block; }
+    .tabs { display: flex; gap: 4px; width: 100%; padding: 4px; margin: 0 0 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; }
+    .tab-btn { flex: 1; border: 0; border-radius: 14px; padding: 10px 4px; background: transparent; color: rgba(255,255,255,0.42); cursor: pointer; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; transition: background 0.2s, color 0.2s, box-shadow 0.2s; -webkit-tap-highlight-color: transparent; }
+    .tab-btn.active { background: #e11d48; color: white; box-shadow: 0 8px 22px rgba(225,29,72,0.25); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .history-section, .contacts-section { text-align: left; margin-bottom: 20px; }
+    .history-label, .contacts-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.25em; opacity: 0.35; margin-bottom: 12px; }
+    .history-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .history-thumb { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; background: #1a1a1a url('https://i.postimg.cc/28VKXjCx/logo.png') center/cover no-repeat; }
+    .history-text { display: flex; flex-direction: column; overflow: hidden; }
+    .history-artist { color: #fb7185; font-weight: 700; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-song-title { color: rgba(255,255,255,0.75); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .contacts-grid { display: flex; flex-direction: column; gap: 12px; padding-top: 4px; }
+    .contact-link { display: flex; align-items: center; gap: 16px; padding: 14px 20px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; color: white; text-decoration: none; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; }
+    .contact-link:active { transform: scale(0.98); background: rgba(255,255,255,0.08); }
+    .contact-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #fb7185; flex-shrink: 0; }
+    .contact-icon svg { width: 100%; height: 100%; }
+    .contact-info { display: flex; flex-direction: column; overflow: hidden; }
+    .contact-title { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; color: #fb7185; margin-bottom: 2px; }
+    .contact-value { font-size: 13px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .legal { font-size: 9px; opacity: 0.4; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; margin-top: 10px; text-align: center; }
+    .rd-log { position: fixed; left: 0; right: 0; bottom: 0; max-height: 45vh; background: rgba(0, 0, 0, 0.95); border-top: 1px solid #e11d48; z-index: 9999; transform: translateY(110%); transition: transform 0.3s ease; display: flex; flex-direction: column; pointer-events: none; }
+    .rd-log.visible { transform: translateY(0); pointer-events: auto; }
+    .rd-log-head { padding: 8px 12px; font-size: 10px; font-weight: 900; color: #e11d48; letter-spacing: 0.15em; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; gap: 6px; }
+    .rd-log-head > span:last-child { display: flex; gap: 2px; }
+    .rd-log-head button { background: none; border: none; color: white; font-size: 15px; cursor: pointer; padding: 4px 8px; font-family: inherit; border-radius: 6px; transition: background 0.15s; }
+    .rd-log-head button:active { background: rgba(255,255,255,0.1); }
+    .rd-log-head button.paused { background: rgba(225,29,72,0.4); }
+    .rd-log-body { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px 10px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10px; line-height: 1.4; color: rgba(255,255,255,0.85); white-space: pre-wrap; word-break: break-all; flex: 1 1 auto; }
+    .rd-log-body .ln { padding: 1px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .rd-log-body .ln.err { color: #fca5a5; }
+    .rd-log-body .ln.ok  { color: #86efac; }
+    .rd-log-body .ln.warn { color: #fde047; }
+    .rd-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 10000; display: none; flex-direction: column; padding: 12px; }
+    .rd-modal.visible { display: flex; }
+    .rd-modal-head { display: flex; justify-content: space-between; align-items: center; padding: 4px 4px 10px; color: #e11d48; font-size: 12px; font-weight: 900; letter-spacing: 0.1em; flex-shrink: 0; }
+    .rd-modal-head button { background: #e11d48; border: none; color: white; font-size: 12px; font-weight: 900; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: inherit; letter-spacing: 0.05em; }
+    .rd-modal-head button:active { background: #9f1239; }
+    #rd-modal-text { flex: 1 1 auto; width: 100%; background: #000; color: #86efac; border: 1px solid #e11d48; border-radius: 8px; padding: 8px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; line-height: 1.4; resize: none; white-space: pre; overflow: auto; -webkit-user-select: text; user-select: text; }
+  </style>
+</head>
+<body>
+  <div class="app-bg">
+    <div class="bg-sphere"></div>
+    <div class="glass-card">
+      <div class="card-header">
+        <span class="live-badge">● Live</span>
+        <span class="listeners-pill" aria-label="Количество слушателей">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span id="listeners-el">0</span>
+        </span>
+      </div>
+      <div class="cover-wrapper"><img id="cover-img" alt=""></div>
+      <div class="track-info">
+        <h1 class="station-name">Retro<span class="accent">Dance</span></h1>
+        <p id="artist-el">Retro Radio</p>
+        <p id="title-el">Нажмите Play</p>
+      </div>
+      <audio id="player" preload="auto" playsinline webkit-playsinline></audio>
+      <div class="tabs" role="tablist" aria-label="Разделы radio">
+        <button class="tab-btn active" id="tab-player" type="button" data-tab="player" role="tab" aria-selected="true">Плеер</button>
+        <button class="tab-btn" id="tab-history" type="button" data-tab="history" role="tab" aria-selected="false">История</button>
+        <button class="tab-btn" id="tab-contacts" type="button" data-tab="contacts" role="tab" aria-selected="false">Контакты</button>
+      </div>
+      <div class="tab-panel active" id="panel-player" role="tabpanel" aria-labelledby="tab-player">
+        <div class="custom-player">
+          <a href="https://laut.fm/retrodance" target="_blank" rel="noopener" class="side-btn" id="laut-btn" aria-label="Слушать на laut.fm"><span class="laut-text">LAUT.FM</span></a>
+          <button class="play-btn" id="play-btn" aria-label="Play/Pause">
+            <svg id="play-svg" class="ico-play-shape" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l11-7z"/></svg>
+          </button>
+          <button class="side-btn" id="mute-btn" type="button" aria-label="Выключить звук">
+            <svg id="mute-svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path id="mute-path" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="tab-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history">
+        <div class="history-section" id="history-section">
+          <h3 class="history-label">История эфира</h3>
+          <div id="history-list"></div>
+        </div>
+      </div>
+      <div class="tab-panel" id="panel-contacts" role="tabpanel" aria-labelledby="tab-contacts">
+        <div class="contacts-section">
+          <h3 class="contacts-label">Мы на связи</h3>
+          <div class="contacts-grid">
+            <a href="https://t.me/retrodance_radio" target="_blank" rel="noopener" class="contact-link">
+              <div class="contact-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 12 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-1-.65-.35-1 .22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.24-5.54 3.65-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.35-.49.97-.74 3.79-1.65 6.32-2.74 7.57-3.27 3.61-1.53 4.36-1.8 4.85-1.8.11 0 .35.03.5.15.13.1.17.25.18.35-.01.07-.01.19-.02.29z"/></svg></div>
+              <div class="contact-info"><span class="contact-title">Telegram</span><span class="contact-value">Канал RetroDance</span></div>
+            </a>
+            <a href="mailto:retrodanceradiomusic@gmail.com" class="contact-link">
+              <div class="contact-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div>
+              <div class="contact-info"><span class="contact-title">Gmail</span><span class="contact-value">retrodanceradiomusic@gmail.com</span></div>
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="legal">
+        <p>Radio-Hosting powered by <b>laut.fm</b> | Verantwortlich für die Inhalte: <b>laut.ag</b></p>
+        <p style="margin-top: 8px;">Some content on this site is created with AI assistance. / Einige Inhalte dieser Website wurden mit Hilfe von KI erstellt.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="rd-log" class="rd-log" aria-hidden="true">
+    <div class="rd-log-head">
+      <span>RD DEBUG LOG</span>
+      <span>
+        <button id="rd-log-pause" type="button" aria-label="Пауза">❄️</button>
+        <button id="rd-log-full" type="button" aria-label="Показать всё">🔍</button>
+        <button id="rd-log-copy" type="button" aria-label="Копировать">📋</button>
+        <button id="rd-log-close" type="button" aria-label="Закрыть">✕</button>
+      </span>
+    </div>
+    <div id="rd-log-body" class="rd-log-body"></div>
+  </div>
+
+  <div id="rd-modal" class="rd-modal" aria-hidden="true">
+    <div class="rd-modal-head">
+      <span>ПОЛНЫЙ ЛОГ</span>
+      <button id="rd-modal-close" type="button">ЗАКРЫТЬ</button>
+    </div>
+    <textarea id="rd-modal-text" readonly></textarea>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var STATION_LOGO   = 'https://i.postimg.cc/28VKXjCx/logo.png';
+    var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
+    var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
+    var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
+    var CACHE_KEY      = 'rd_cover_cache_v41'; // Новый алгоритм: старый кэш не используем
+    var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
+    var DEBUG          = true;
+
+    var MIN_ARTIST_SCORE = 0.5;
+    var MID_POLL_DELAY   = 30000;
+    var END_OF_TRACK_WINDOW = 30;
+    var MIN_TITLE_SCORE  = 0.35;
+    var MIN_ARTIST_ANY   = 0.4;
+    var LASTFM_PLACEHOLDER_HASH = '2a96cbd8b46e442fc41c2b86b821562f';
+
+    var isWindows = /windows|win32|win64/i.test(navigator.userAgent);
+
+    var VERSION_MARKERS = /(english version|spanish version|russian version|instrumental|минус|minus|karaoke|караоке|extended mix|extended version|rework|dub version|acoustic version)/i;
+
+    var ARTIST_ALIASES = {
+      'виктор салтыков': ['форум', 'forum'],
+      'форум':           ['виктор салтыков'],
+      'владимир кузьмин':['динамик', 'dinamik'],
+      'динамик':         ['владимир кузьмин'],
+      'юрий шатунов':    ['ласковый май'],
+      'ласковый май':    ['юрий шатунов'],
+      'роман жуков':     ['мираж'],
+      'мираж':           ['роман жуков', 'наталья гулякина'],
+      'кар-мэн':         ['car-man', 'carman'],
+      'car-man':         ['кар-мэн']
+    };
+
+    /* ============================================================
+       РАСШИРЕННЫЙ СПИСОК СЛОВ-МАРКЕРОВ СБОРНИКОВ
+    ============================================================ */
+    var COMPILATION_MARKERS = [
+      'presents', 'mixed', 'hits', 'best', 'greatest', 'collection',
+      'compilation', 'various', 'anthology', 'essential', 'ultimate',
+      'top', 'vol', 'volume', 'playlist', 'selection', 'sound of',
+      'gold', 'classic', 'remix', 'remixes',
+      'хиты', 'лучшие', 'сборник', 'золотые', 'дискотека', 'избранное'
+    ];
+
+    var player         = document.getElementById('player');
+    var playBtn        = document.getElementById('play-btn');
+    var playSvg        = document.getElementById('play-svg');
+    var muteBtn        = document.getElementById('mute-btn');
+    var mutePath       = document.getElementById('mute-path');
+    var coverImg       = document.getElementById('cover-img');
+    var artistEl       = document.getElementById('artist-el');
+    var titleEl        = document.getElementById('title-el');
+    var listenersEl    = document.getElementById('listeners-el');
+    var historyList    = document.getElementById('history-list');
+
+    var userIntent = false, isPlaying = false, isLoading = false, isMuted = false;
+    var currentTrackKey = '', currentTrackTitle = 'Нажмите Play', currentTrackArtist = 'Retro Radio';
+    var currentArtwork = STATION_LOGO;
+    var reconnectTimer = null, reconnectAttempts = 0, playToken = 0;
+    var wakeLock = null;
+
+    /* ============================================================
+       WEB WORKER ДЛЯ ОБХОДА ТРОТТЛИНГА
+    ============================================================ */
+    var workerCode = `
+      var timer = null;
+      self.onmessage = function(e) {
+        if (e.data && e.data.action === 'schedule') {
+          if (timer) clearTimeout(timer);
+          timer = setTimeout(function() {
+            self.postMessage('tick');
+          }, e.data.delay);
+        }
+      };
+    `;
+    var blob = new Blob([workerCode], {type: 'application/javascript'});
+    var metadataWorker = new Worker(URL.createObjectURL(blob));
+    
+    metadataWorker.onmessage = function(e) {
+      if (e.data === 'tick') {
+        updateMetadata();
+      }
+    };
+
+    var SVG_PLAY = '<path d="M7 5v14l11-7z"/>';
+    var SVG_STOP = '<path d="M6 6h12v12H6z"/>';
+    var SVG_LOAD = '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="40 20" fill="none" class="spin"/>';
+    var VOL_HIGH = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z';
+    var VOL_MUTE = 'M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-3-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z';
+
+    var logBuffer = [];
+    var LOG_MAX = 200;
+    var logPanelVisible = false;
+    var logPaused = false;
+
+    function log() {
+      var args = [].slice.call(arguments);
+      var parts = args.map(function (a) {
+        if (a === null) return 'null';
+        if (a === undefined) return 'undefined';
+        if (typeof a === 'object') { try { return JSON.stringify(a); } catch (e) { return String(a); } }
+        return String(a);
+      });
+      var msg = parts.join(' ');
+      if (DEBUG && window.console) {
+        try { console.log.apply(console, ['[RD]'].concat(args)); } catch (e) {}
+      }
+      var time = new Date();
+      var hh = ('0' + time.getHours()).slice(-2);
+      var mm = ('0' + time.getMinutes()).slice(-2);
+      var ss = ('0' + time.getSeconds()).slice(-2);
+      var line = hh + ':' + mm + ':' + ss + '  ' + msg;
+      logBuffer.push(line);
+      while (logBuffer.length > LOG_MAX) logBuffer.shift();
+      if (logPanelVisible && !logPaused) appendLogLine(line);
+    }
+
+    function lineClass(line) {
+      if (/error|fail|skip|stuck|force|weak|timeout/i.test(line)) return 'ln err';
+      if (/playing|ok|source:|server art|iTunes|Last\.fm|hidden|visible|замена|Deezer/i.test(line)) return 'ln ok';
+      if (/stalled|suspend|offline|waiting/i.test(line)) return 'ln warn';
+      return 'ln';
+    }
+
+    function appendLogLine(line) {
+      var body = document.getElementById('rd-log-body');
+      if (!body) return;
+      var div = document.createElement('div');
+      div.className = lineClass(line);
+      div.textContent = line;
+      body.appendChild(div);
+      while (body.childNodes.length > LOG_MAX) body.removeChild(body.firstChild);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function renderLogFull() {
+      var body = document.getElementById('rd-log-body');
+      if (!body) return;
+      body.innerHTML = '';
+      logBuffer.forEach(function (l) {
+        var div = document.createElement('div');
+        div.className = lineClass(l);
+        div.textContent = l;
+        body.appendChild(div);
+      });
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function toggleLogPanel(force) {
+      var el = document.getElementById('rd-log');
+      if (!el) return;
+      logPanelVisible = (typeof force === 'boolean') ? force : !logPanelVisible;
+      el.classList.toggle('visible', logPanelVisible);
+      el.setAttribute('aria-hidden', logPanelVisible ? 'false' : 'true');
+      if (logPanelVisible) renderLogFull();
+    }
+
+    coverImg.addEventListener('load', function () { 
+      coverImg.classList.add('loaded'); 
+    });
+    coverImg.addEventListener('error', function () {
+      coverImg.classList.remove('loaded');
+      var failedUrl = coverImg.getAttribute('src') || '';
+      log('cover-img ERROR:', failedUrl);
+      currentArtwork = STATION_LOGO;
+      applyMediaSessionMetadata();
+      if (failedUrl !== STATION_LOGO) {
+        coverImg.setAttribute('data-want', STATION_LOGO);
+        coverImg.src = STATION_LOGO;
+      } else {
+        coverImg.removeAttribute('src');
+      }
+    });
+
+    function updateUI() {
+      if (isLoading) { playSvg.innerHTML = SVG_LOAD; playSvg.classList.remove('ico-play-shape'); }
+      else if (isPlaying) { playSvg.innerHTML = SVG_STOP; playSvg.classList.remove('ico-play-shape'); }
+      else { playSvg.innerHTML = SVG_PLAY; playSvg.classList.add('ico-play-shape'); }
+    }
+
+    function updateVolumeIcon() {
+      if (isMuted) {
+        mutePath.setAttribute('d', VOL_MUTE);
+        muteBtn.classList.add('is-muted');
+        muteBtn.setAttribute('aria-label', 'Включить звук');
+      } else {
+        mutePath.setAttribute('d', VOL_HIGH);
+        muteBtn.classList.remove('is-muted');
+        muteBtn.setAttribute('aria-label', 'Выключить звук');
+      }
+    }
+
+    async function requestWakeLock() {
+      if (!('wakeLock' in navigator)) return;
+      if (wakeLock) return;
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', function () { wakeLock = null; });
+        log('wake lock: ON');
+      } catch (e) {
+        log('wake lock error:', e && e.message);
+      }
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) {
+        try { wakeLock.release(); } catch (e) {}
+        wakeLock = null;
+      }
+    }
+
+    var coverCache = (function () {
+      try {
+        var raw = localStorage.getItem(CACHE_KEY);
+        if (!raw) return {};
+        var data = JSON.parse(raw), now = Date.now(), out = {};
+        for (var k in data) {
+          if (data[k] && data[k].t && (now - data[k].t) < CACHE_TTL) out[k] = data[k].v;
+        }
+        return out;
+      } catch (e) { return {}; }
+    })();
+
+    function saveCache() {
+      try {
+        var out = {}, i = 0;
+        for (var k in coverCache) {
+          if (i++ >= 500) break;
+          out[k] = { v: coverCache[k], t: Date.now() };
+        }
+        localStorage.setItem(CACHE_KEY, JSON.stringify(out));
+      } catch (e) {}
+    }
+
+    function fetchWithTimeout(url, ms) {
+      var controller = new AbortController();
+      var timer = setTimeout(function () { controller.abort(); }, ms || 5000);
+      return fetch(url, { signal: controller.signal }).finally(function () { clearTimeout(timer); });
+    }
+
+    function normalize(s) {
+      return String(s || '')
+        .toLowerCase()
+        .replace(/\([^)]*\)/g, ' ')
+        .replace(/\[[^\]]*\]/g, ' ')
+        .replace(/\b(feat\.?|ft\.?)\b.*$/i, ' ')
+        .replace(/[’‘`]/g, "'")
+        .replace(/[^a-zа-яё0-9]+/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function similarity(a, b) {
+      a = normalize(a); b = normalize(b);
+      if (!a || !b) return 0;
+      if (a === b) return 1;
+
+      // Допускаем разницу в пробелах/дефисах, но только как дополнительную проверку.
+      var compactA = a.replace(/\s/g, '');
+      var compactB = b.replace(/\s/g, '');
+      if (compactA === compactB) return 0.98;
+
+      var as = a.split(' '), bs = b.split(' ');
+      var used = {};
+      var hit = 0;
+      for (var i = 0; i < as.length; i++) {
+        for (var j = 0; j < bs.length; j++) {
+          if (!used[j] && as[i] === bs[j]) {
+            used[j] = true;
+            hit++;
+            break;
+          }
+        }
+      }
+      var dice = (2 * hit) / (as.length + bs.length);
+
+      // Полное совпадение набора слов важнее частичного совпадения коротких названий.
+      if (hit === Math.min(as.length, bs.length) && Math.min(as.length, bs.length) >= 2) {
+        dice = Math.max(dice, 0.88);
+      }
+      return dice;
+    }
+
+    function expandArtists(artist) {
+      var key = normalize(artist);
+      var out = [artist];
+      Object.keys(ARTIST_ALIASES).forEach(function (alias) {
+        if (normalize(alias) === key) {
+          ARTIST_ALIASES[alias].forEach(function (a) {
+            if (a && out.indexOf(a) === -1) out.push(a);
+          });
+        }
+      });
+      return out;
+    }
+
+    function looksLikeVariousArtists(name) {
+      if (!name) return false;
+      var s = String(name);
+      var commaCount = (s.match(/,/g) || []).length;
+      if (commaCount >= 2) return true;
+      var ampCount = (s.match(/&/g) || []).length;
+      if (ampCount >= 3) return true;
+      if (s.length > 80) return true;
+      return false;
+    }
+
+    function isCompilation(collectionName, trackCount) {
+      if (trackCount && trackCount > 14) return true; 
+      if (!collectionName) return false;
+      var n = collectionName.toLowerCase();
+      for (var i = 0; i < COMPILATION_MARKERS.length; i++) {
+        if (n.indexOf(COMPILATION_MARKERS[i]) !== -1) return true;
+      }
+      return false;
+    }
+
+    function fetchCoverDeezer(artist, title) {
+      return new Promise(function(resolve) {
+        var settled = false;
+        function finish(value) {
+          if (settled) return;
+          settled = true;
+          resolve(value || null);
+        }
+        function doSearch(query, isFallback) {
+          var cbName = 'deezerCb_' + Math.floor(Math.random() * 1000000);
+          var script = document.createElement('script');
+          var timer = null;
+
+          function cleanup() {
+            if (timer) clearTimeout(timer);
+            if (script.parentNode) script.parentNode.removeChild(script);
+            try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+          }
+
+          window[cbName] = function(data) {
+            cleanup();
+            if (!data || !data.data || !data.data.length) {
+              if (!isFallback) doSearch(title, true);
+              else finish(null);
+              return;
+            }
+
+            var artists = expandArtists(artist);
+            var best = null, bestScore = 0;
+
+            for (var i = 0; i < data.data.length; i++) {
+              var r = data.data[i];
+              if (!r.album || !r.album.cover_xl || !r.artist || !r.artist.name) continue;
+              if (looksLikeVariousArtists(r.artist.name)) continue;
+
+              var sa = 0;
+              for (var j = 0; j < artists.length; j++) {
+                sa = Math.max(sa, similarity(r.artist.name, artists[j]));
+              }
+              var st = similarity(r.title, title);
+
+              // Строгие пороги: название трека и исполнитель должны совпасть одновременно.
+              if (sa < (isFallback ? 0.65 : MIN_ARTIST_SCORE)) continue;
+              if (st < (isFallback ? 0.92 : Math.max(MIN_TITLE_SCORE, 0.55))) continue;
+
+              var score = sa * 0.45 + st * 0.55;
+              if (VERSION_MARKERS.test(r.title)) score -= 0.08;
+              if (score > bestScore) {
+                bestScore = score;
+                best = r;
+              }
+            }
+
+            if (best) {
+              log('Deezer track match:', best.artist.name, '-', best.title, '| score:', bestScore.toFixed(2));
+              finish(best.album.cover_xl);
+            } else if (!isFallback) {
+              doSearch(title, true);
+            } else {
+              log('Deezer: подходящего трека нет');
+              finish(null);
+            }
+          };
+
+          script.src = 'https://api.deezer.com/search?q=' + encodeURIComponent(query) +
+            '&output=jsonp&callback=' + cbName;
+          script.onerror = function() {
+            cleanup();
+            if (!isFallback) doSearch(title, true);
+            else finish(null);
+          };
+          document.body.appendChild(script);
+
+          timer = setTimeout(function() {
+            cleanup();
+            log('Deezer search timeout');
+            if (!isFallback) doSearch(title, true);
+            else finish(null);
+          }, 4000);
+        }
+        doSearch(artist + ' ' + title, false);
+      });
+    }
+
+    function fetchCoverITunes(artist, title) {
+      function search(query, isFallback) {
+        var q = encodeURIComponent(query);
+        return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=15&entity=song', 4000)
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data || !data.results || !data.results.length) {
+              if (!isFallback) { return search(title, true); }
+              return null;
+            }
+            var artists = expandArtists(artist);
+            var withArtist = null, withArtistScore = 0;
+            var withArtistNonComp = null, withArtistNonCompScore = 0;
+
+            for (var i = 0; i < data.results.length; i++) {
+              var r = data.results[i];
+              if (!r.artworkUrl100) continue;
+              if (looksLikeVariousArtists(r.artistName)) continue;
+
+              var sa = 0;
+              for (var j = 0; j < artists.length; j++) {
+                var s = similarity(r.artistName, artists[j]);
+                if (s > sa) sa = s;
+              }
+              var st = similarity(r.trackName, title);
+
+              if (isFallback) {
+                if (st >= 0.9 && sa >= 0.4) {
+                   return r.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
+                }
+              } else {
+                if (st < MIN_TITLE_SCORE) continue;
+                if (sa < MIN_ARTIST_ANY) continue;
+
+                var score = sa * 0.4 + st * 0.6;
+                if (VERSION_MARKERS.test(r.trackName)) score -= 0.10;
+                var isComp = isCompilation(r.collectionName, r.trackCount);
+
+                if (score > withArtistScore) { withArtist = r; withArtistScore = score; }
+                if (!isComp && score > withArtistNonCompScore) { withArtistNonComp = r; withArtistNonCompScore = score; }
+              }
+            }
+            if (!isFallback) {
+              var chosen = withArtistNonComp || withArtist;
+              if (chosen && chosen.artworkUrl100) {
+                return chosen.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
+              }
+              return search(title, true);
+            }
+            return null;
+          })
+          .catch(function (e) {
+            if (!isFallback) return search(title, true);
+            return null;
+          });
+      }
+      return search(artist + ' ' + title, false);
+    }
+
+    /* ============================================================
+       СТРОГИЙ ПОИСК СТУДИЙНОГО АЛЬБОМА (Сборники ЗАПРЕЩЕНЫ)
+    ============================================================ */
+    function fetchArtistCoverITunes(artist) {
+      var q = encodeURIComponent(artist);
+      return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=25&entity=album', 4500)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data || !data.results || !data.results.length) { return null; }
+          var artists = expandArtists(artist);
+          var bestNonComp = null, bestNonCompScore = 0;
+
+          for (var i = 0; i < data.results.length; i++) {
+            var r = data.results[i];
+            if (!r.artworkUrl100) continue;
+            if (looksLikeVariousArtists(r.artistName)) continue;
+
+            var sa = 0;
+            for (var j = 0; j < artists.length; j++) {
+              var s = similarity(r.artistName, artists[j]);
+              if (s > sa) sa = s;
+            }
+
+            if (sa >= MIN_ARTIST_SCORE && !isCompilation(r.collectionName, r.trackCount)) {
+              if (sa > bestNonCompScore) { bestNonCompScore = sa; bestNonComp = r; }
+            }
+          }
+
+          if (!bestNonComp) return null; // Если только сборники, возвращаем null, чтобы пошло фото
+          log('iTunes artist-only pick (studio album):', bestNonComp.artistName, '-', bestNonComp.collectionName);
+          return bestNonComp.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
+        })
+        .catch(function (e) { return null; });
+    }
+
+    /* ============================================================
+       ПОИСК ФОТОГРАФИИ ИСПОЛНИТЕЛЯ (Если альбомов нет)
+    ============================================================ */
+    function fetchArtistPhotoDeezer(artist) {
+      return new Promise(function(resolve) {
+        var cbName = 'dzArtistCb_' + Math.floor(Math.random() * 1000000);
+        var script = document.createElement('script');
+        window[cbName] = function(data) {
+          if (script.parentNode) script.parentNode.removeChild(script);
+          try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+          
+          if (!data || !data.data || !data.data.length) {
+            log('Deezer artist photo: пусто');
+            return resolve(null);
+          }
+          
+          var artists = expandArtists(artist);
+          for (var i = 0; i < data.data.length; i++) {
+            var r = data.data[i];
+            if (!r.picture_xl) continue;
+            
+            var sa = 0;
+            for (var j = 0; j < artists.length; j++) {
+              var s = similarity(r.name, artists[j]);
+              if (s > sa) sa = s;
+            }
+            if (sa >= MIN_ARTIST_SCORE) {
+              log('Deezer artist photo pick:', r.name);
+              return resolve(r.picture_xl);
+            }
+          }
+          log('Deezer artist photo: не найдено совпадений');
+          resolve(null);
+        };
+        script.src = 'https://api.deezer.com/search/artist?q=' + encodeURIComponent(artist) + '&output=jsonp&callback=' + cbName;
+        script.onerror = function() {
+          if (script.parentNode) script.parentNode.removeChild(script);
+          try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+          resolve(null);
+        };
+        document.body.appendChild(script);
+        
+        setTimeout(function() {
+          if (window[cbName]) {
+            if (script.parentNode) script.parentNode.removeChild(script);
+            try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+            log('Deezer artist photo: timeout');
+            resolve(null);
+          }
+        }, 3500);
+      });
+    }
+
+    var lastFmQueue = Promise.resolve();
+    function lastFmThrottle(fn) {
+      var p = lastFmQueue.then(function () { return new Promise(function (res) { setTimeout(res, 300); }); }).then(fn);
+      lastFmQueue = p.catch(function () {});
+      return p;
+    }
+
+    function fetchCoverLastFm(artist, title) {
+      return lastFmThrottle(function () {
+        var url = 'https://ws.audioscrobbler.com/2.0/?method=track.getinfo'
+          + '&api_key=' + LASTFM_KEY
+          + '&artist=' + encodeURIComponent(artist)
+          + '&track=' + encodeURIComponent(title)
+          + '&autocorrect=1&format=json';
+        return fetchWithTimeout(url, 4500)
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data || !data.track) return null;
+            var track = data.track;
+            if (track.artist && looksLikeVariousArtists(track.artist.name)) return null;
+            var sa = similarity(track.artist && track.artist.name, artist);
+            var st = similarity(track.name, title);
+            if (sa < MIN_ARTIST_SCORE || st < 0.60) {
+              log('Last.fm: отклонено слабое совпадение', '| artist:', sa.toFixed(2), '| title:', st.toFixed(2));
+              return null;
+            }
+            if (!track.album || !track.album.image || !track.album.image.length) return null;
+            var order = ['extralarge', 'large', 'medium', 'small'];
+            var url2 = null;
+            for (var i = 0; i < order.length && !url2; i++) {
+              for (var j = 0; j < track.album.image.length; j++) {
+                var im = track.album.image[j];
+                if (im.size === order[i] && im['#text']) { url2 = im['#text']; break; }
+              }
+            }
+            if (!url2) return null;
+            if (url2.indexOf(LASTFM_PLACEHOLDER_HASH) !== -1) return null;
+            return url2;
+          })
+          .catch(function () { return null; });
+      });
+    }
+
+    function fetchCoverAudioDB(artist) {
+      var url = 'https://www.theaudiodb.com/api/v1/json/2/search.php?s=' + encodeURIComponent(artist);
+      return fetchWithTimeout(url, 4000)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data || !data.artists || !data.artists.length) return null;
+          var bestA = null, bestScore = 0;
+          data.artists.forEach(function (a) {
+            var s = similarity(a.strArtist, artist);
+            if (s > bestScore) { bestScore = s; bestA = a; }
+          });
+          if (!bestA || bestScore < MIN_ARTIST_SCORE) return null;
+          return bestA.strArtistThumb || bestA.strArtistFanart || null;
+        })
+        .catch(function () { return null; });
+    }
+
+    // Проверяем не только наличие URL от каталога, но и реальную загрузку картинки браузером.
+    // Иначе API может вернуть ссылку, которая не открывается, и плеер останется с логотипом.
+    function verifyCoverImage(url) {
+      return new Promise(function(resolve) {
+        if (!url || typeof url !== 'string') return resolve(false);
+        var testImage = new Image();
+        var finished = false;
+        var timer = setTimeout(function() { finish(false, 'timeout'); }, 6000);
+        function finish(ok, reason) {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timer);
+          testImage.onload = null;
+          testImage.onerror = null;
+          if (!ok) log('Cover URL не загрузился:', reason || url);
+          resolve(ok);
+        }
+        testImage.onload = function() { finish(true); };
+        testImage.onerror = function() { finish(false, url); };
+        testImage.src = url;
+        if (testImage.complete && testImage.naturalWidth > 0) finish(true);
+      });
+    }
+
+    function fetchCoverExternal(artist, title) {
+      // Сначала ищем обложку самой записи. Каждый URL проверяем фактической загрузкой.
+      return Promise.all([
+        fetchCoverDeezer(artist, title),
+        fetchCoverITunes(artist, title),
+        fetchCoverLastFm(artist, title)
+      ]).then(function(results) {
+        var candidates = [
+          { source: 'Deezer track', url: results[0], priority: 3 },
+          { source: 'iTunes track', url: results[1], priority: 2 },
+          { source: 'Last.fm track', url: results[2], priority: 1 }
+        ].filter(function(x) { return !!x.url; });
+        candidates.sort(function(a, b) { return b.priority - a.priority; });
+
+        function tryTrackCandidate(index) {
+          if (index >= candidates.length) return findArtistFallback();
+          var candidate = candidates[index];
+          return verifyCoverImage(candidate.url).then(function(ok) {
+            if (ok) {
+              log('Cover selected and image verified:', candidate.source);
+              return { url: candidate.url, exact: true, source: candidate.source };
+            }
+            log('Источник обложки недоступен, пробую следующий:', candidate.source);
+            return tryTrackCandidate(index + 1);
+          });
+        }
+
+        function findArtistFallback() {
+          log('external: нет загружаемой обложки трека, ищем студийный альбом...');
+          return fetchArtistCoverITunes(artist).then(function(albumArt) {
+            if (albumArt) {
+              return verifyCoverImage(albumArt).then(function(ok) {
+                if (ok) {
+                  log('Cover selected and image verified: iTunes studio album (fallback)');
+                  return { url: albumArt, exact: false, source: 'iTunes artist album' };
+                }
+                log('iTunes album artwork URL недоступен');
+                return findArtistPhoto();
+              });
+            }
+            return findArtistPhoto();
+          });
+        }
+
+        function findArtistPhoto() {
+          log('external: ищем фотографию исполнителя...');
+          return fetchArtistPhotoDeezer(artist).then(function(photoArt) {
+            if (photoArt) {
+              return verifyCoverImage(photoArt).then(function(ok) {
+                if (ok) {
+                  log('Cover selected and image verified: Deezer artist photo');
+                  return { url: photoArt, exact: false, source: 'Deezer artist photo' };
+                }
+                log('Deezer вернул фото, но сам файл изображения недоступен; пробую TheAudioDB');
+                return findAudioDBPhoto();
+              });
+            }
+            return findAudioDBPhoto();
+          });
+        }
+
+        function findAudioDBPhoto() {
+          return fetchCoverAudioDB(artist).then(function(audioDbArt) {
+            if (!audioDbArt) return null;
+            return verifyCoverImage(audioDbArt).then(function(ok) {
+              if (ok) {
+                log('Cover selected and image verified: TheAudioDB artist photo');
+                return { url: audioDbArt, exact: false, source: 'TheAudioDB artist photo' };
+              }
+              log('TheAudioDB photo URL недоступен');
+              return null;
+            });
+          });
+        }
+
+        return tryTrackCandidate(0);
+      }).catch(function(e) {
+        log('Cover search error:', e && e.message ? e.message : e);
+        return null;
+      });
+    }
+
+    function applyMediaSessionMetadata() {
+      document.title = currentTrackArtist + ' - ' + currentTrackTitle + ' | RetroDance Radio';
+      if (!('mediaSession' in navigator)) return;
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: currentTrackTitle || 'RetroDance Radio',
+          artist: currentTrackArtist || 'Retro Radio',
+          album: 'RetroDance Radio',
+          artwork: [
+            { src: currentArtwork, sizes: '96x96',   type: 'image/jpeg' },
+            { src: currentArtwork, sizes: '128x128', type: 'image/jpeg' },
+            { src: currentArtwork, sizes: '192x192', type: 'image/jpeg' },
+            { src: currentArtwork, sizes: '256x256', type: 'image/jpeg' },
+            { src: currentArtwork, sizes: '512x512', type: 'image/jpeg' }
+          ]
+        });
+      } catch (e) {}
+    }
+
+    function applyMediaSessionState() {
+      if (!('mediaSession' in navigator)) return;
+      try { navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'; }
+      catch (e) {}
+    }
+
+    function setMainCover(art) {
+      var url = art || STATION_LOGO;
+      if (coverImg.getAttribute('data-want') === url && coverImg.classList.contains('loaded')) {
+        currentArtwork = url;
+        applyMediaSessionMetadata();
+        return;
+      }
+      currentArtwork = url;
+      coverImg.setAttribute('data-want', url);
+      coverImg.classList.remove('loaded');
+      if (url === STATION_LOGO) {
+        coverImg.removeAttribute('src');
+        applyMediaSessionMetadata();
+        return;
+      }
+      coverImg.src = url;
+      applyMediaSessionMetadata();
+    }
+
+    function applyCoverForTrack(artist, title, trackKey, serverArt) {
+      if (coverCache[trackKey]) {
+        log('Cover cache hit:', trackKey);
+        setMainCover(coverCache[trackKey]);
+        return;
+      }
+
+      // Пока ищем, показываем логотип: старую/сомнительную картинку не выдаём за обложку.
+      setMainCover(STATION_LOGO);
+      log('Cover search started:', artist, '-', title);
+
+      fetchCoverExternal(artist, title).then(function(result) {
+        if (currentTrackKey !== trackKey) return;
+
+        if (result && result.url && result.url !== STATION_LOGO) {
+          setMainCover(result.url);
+          // В долгий кэш попадают только совпадения именно по исполнителю И названию трека.
+          if (result.exact) {
+            coverCache[trackKey] = result.url;
+            saveCache();
+            log('Verified track cover cached:', result.source, trackKey);
+          } else {
+            log('Fallback image shown but not cached:', result.source);
+          }
+          return;
+        }
+
+        // Арт AzuraCast допускается только как резерв, не сохраняется в кэш,
+        // поскольку API может вернуть устаревшую или общую картинку.
+        if (serverArt && serverArt !== STATION_LOGO) {
+          log('No verified external cover; using AzuraCast art as temporary fallback');
+          setMainCover(serverArt);
+        } else {
+          setMainCover(STATION_LOGO);
+          log('No reliable cover found; station logo kept');
+        }
+      }).catch(function(e) {
+        if (currentTrackKey !== trackKey) return;
+        log('Cover pipeline failed:', e && e.message ? e.message : e);
+        if (serverArt && serverArt !== STATION_LOGO) setMainCover(serverArt);
+        else setMainCover(STATION_LOGO);
+      });
+    }
+
+    function startRadio() {
+      if (isLoading) return;
+      isLoading = true;
+      updateUI();
+      var myToken = ++playToken;
+      try {
+        if (!player.src || player.src.indexOf(STREAM_URL) !== 0) {
+          player.src = STREAM_URL + '?r=' + Date.now();
+        }
+        player.volume = isMuted ? 0 : 1;
+        player.muted  = isMuted;
+      } catch (e) {}
+      var p = player.play();
+      if (p && p.catch) {
+        p.catch(function (err) {
+          if (myToken !== playToken) return;
+          if (err && err.name === 'AbortError') return;
+          isLoading = false; isPlaying = false; updateUI();
+          if (userIntent) scheduleReconnect();
+        });
+      }
+    }
+
+    function stopRadio() {
+      playToken++;
+      player.pause();
+      try { player.removeAttribute('src'); } catch (e) {}
+      isPlaying = false; isLoading = false;
+      updateUI(); applyMediaSessionState();
+      releaseWakeLock();
+    }
+
+    function toggleRadio(e) {
+      if (e) e.preventDefault();
+      if (userIntent) {
+        userIntent = false;
+        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+        reconnectAttempts = 0;
+        stopRadio();
+      } else {
+        userIntent = true; reconnectAttempts = 0; startRadio();
+      }
+    }
+
+    function scheduleReconnect() {
+      if (!userIntent || reconnectTimer) return;
+      if (reconnectAttempts >= 6) { isLoading = false; updateUI(); return; }
+      reconnectAttempts++;
+      var delay = Math.min(15000, 800 * Math.pow(1.6, reconnectAttempts - 1));
+      isLoading = true; updateUI();
+      reconnectTimer = setTimeout(function () {
+        reconnectTimer = null;
+        if (!userIntent) { isLoading = false; updateUI(); return; }
+        tryReconnect();
+      }, delay);
+    }
+
+    function tryReconnect() {
+      var myToken = ++playToken;
+      try { player.src = STREAM_URL + '?r=' + Date.now(); } catch (e) {}
+      var p = player.play();
+      if (p && p.catch) {
+        p.catch(function (err) {
+          if (myToken !== playToken) return;
+          if (err && err.name === 'AbortError') return;
+          scheduleReconnect();
+        });
+      }
+    }
+
+    player.addEventListener('playing', function () {
+      isPlaying = true; isLoading = false; reconnectAttempts = 0;
+      updateUI(); applyMediaSessionState(); applyMediaSessionMetadata();
+      requestWakeLock();
+    });
+    player.addEventListener('pause', function () {
+      if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); applyMediaSessionState(); }
+    });
+    player.addEventListener('ended', function () {
+      if (userIntent) scheduleReconnect();
+    });
+    player.addEventListener('error', function () {
+      var code = player.error && player.error.code;
+      if (!userIntent) { isPlaying = false; isLoading = false; updateUI(); return; }
+      if (code === 1) return;
+      if (code === 2 || code === 3) {
+        isPlaying = false; isLoading = true; updateUI();
+        scheduleReconnect();
+      }
+    });
+
+    window.addEventListener('online', function () {
+      if (!userIntent) return;
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      reconnectAttempts = 0; isLoading = true; updateUI();
+      setTimeout(function () { if (userIntent) tryReconnect(); }, 800);
+    });
+    window.addEventListener('offline', function () {
+      if (!userIntent) return;
+      isLoading = true; updateUI();
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        return;
+      }
+      requestWakeLock();
+      if (userIntent && !player.paused && player.currentTime > 0) {
+        var testTime = player.currentTime;
+        setTimeout(function () {
+          if (player.currentTime === testTime && !player.paused && !player.ended) {
+            isLoading = true; updateUI(); tryReconnect();
+          }
+        }, 1500);
+      } else if (userIntent && (player.paused || player.ended)) {
+        isLoading = true; updateUI(); tryReconnect();
+      }
+    });
+
+    muteBtn.addEventListener('click', function () {
+      isMuted = !isMuted;
+      player.muted = isMuted; player.volume = isMuted ? 0 : 1;
+      updateVolumeIcon();
+    });
+    playBtn.addEventListener('click', toggleRadio);
+
+    if ('mediaSession' in navigator) {
+      try {
+        navigator.mediaSession.setActionHandler('play', function () {
+          userIntent = true; reconnectAttempts = 0; startRadio();
+        });
+        navigator.mediaSession.setActionHandler('pause', function () {
+          userIntent = false; stopRadio();
+        });
+      } catch (e) {}
+    }
+
+    function scheduleMetadata(delay) {
+      if (metadataWorker) {
+        metadataWorker.postMessage({ action: 'schedule', delay: delay });
+      }
+    }
+
+    function updateMetadata() {
+      if (!navigator.onLine) { scheduleMetadata(MID_POLL_DELAY); return; }
+      fetchWithTimeout(AZURACAST_API + '?t=' + Date.now(), 5000)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data || !data.now_playing || !data.now_playing.song) {
+            scheduleMetadata(MID_POLL_DELAY); return;
+          }
+          var song = data.now_playing.song;
+          var artist = song.artist || 'Retro Radio';
+          var title  = song.title || 'Нажмите Play';
+          var serverArt = song.art || '';
+          var trackKey = normalize(artist) + ' - ' + normalize(title);
+
+          var nextDelay = MID_POLL_DELAY;
+          if (typeof data.now_playing.remaining === 'number' && data.now_playing.remaining > 0) {
+            var rem = data.now_playing.remaining;
+            nextDelay = (rem > END_OF_TRACK_WINDOW) ? MID_POLL_DELAY : Math.max(3000, (rem + 2) * 1000);
+          }
+          scheduleMetadata(nextDelay);
+
+          log('track:', trackKey, '| same:', trackKey === currentTrackKey, '| remaining:', (data.now_playing.remaining || '?'), '| next in', nextDelay, 'ms');
+
+          if (data.listeners && typeof data.listeners.total === 'number' && data.listeners.total > 0) {
+            listenersEl.textContent = data.listeners.total;
+          }
+
+          if (trackKey !== currentTrackKey) {
+            currentTrackKey = trackKey;
+            currentTrackTitle = title;
+            currentTrackArtist = artist;
+            titleEl.textContent = title;
+            artistEl.textContent = artist;
+            applyMediaSessionMetadata();
+            applyCoverForTrack(artist, title, trackKey, serverArt);
+          }
+        })
+        .catch(function () { scheduleMetadata(MID_POLL_DELAY); });
+    }
+
+    function updateHistory() {
+      if (!navigator.onLine) return;
+      fetchWithTimeout(AZURACAST_API + '?t=' + Date.now(), 5000)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data || !Array.isArray(data.song_history)) return;
+          historyList.innerHTML = '';
+          data.song_history.slice(0, 5).forEach(function (item) {
+            var song = item.song || {};
+            var div = document.createElement('div');
+            div.className = 'history-item';
+            var img = document.createElement('img');
+            img.className = 'history-thumb';
+            img.alt = '';
+            if (song.art) img.src = song.art;
+            var textDiv = document.createElement('div');
+            textDiv.className = 'history-text';
+            var aSpan = document.createElement('span');
+            aSpan.className = 'history-artist';
+            aSpan.textContent = song.artist || 'Retro Radio';
+            var tSpan = document.createElement('span');
+            tSpan.className = 'history-song-title';
+            tSpan.textContent = song.title || '';
+            textDiv.appendChild(aSpan);
+            textDiv.appendChild(tSpan);
+            div.appendChild(img);
+            div.appendChild(textDiv);
+            historyList.appendChild(div);
+          });
+        }).catch(function () {});
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(function (b) {
+          b.classList.toggle('active', b.dataset.tab === tab);
+          b.setAttribute('aria-selected', b.dataset.tab === tab ? 'true' : 'false');
+        });
+        document.querySelectorAll('.tab-panel').forEach(function (panel) {
+          panel.classList.toggle('active', panel.id === 'panel-' + tab);
+        });
+        if (tab === 'history') updateHistory();
+      });
+    });
+
+    if (/[?&]debug=1\b/.test(window.location.search)) {
+      setTimeout(function () { toggleLogPanel(true); }, 300);
+    }
+
+    (function () {
+      var el = document.querySelector('.station-name');
+      if (!el) return;
+      var taps = 0, timer = null;
+      el.addEventListener('click', function () {
+        taps++;
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(function () { taps = 0; }, 1500);
+        if (taps >= 5) { taps = 0; toggleLogPanel(); }
+      });
+    })();
+
+    document.getElementById('rd-log-pause').addEventListener('click', function () {
+      logPaused = !logPaused;
+      this.classList.toggle('paused', logPaused);
+      this.textContent = logPaused ? '▶️' : '❄️';
+    });
+
+    document.getElementById('rd-log-full').addEventListener('click', function () {
+      var modal = document.getElementById('rd-modal');
+      document.getElementById('rd-modal-text').value = logBuffer.join('\n');
+      modal.classList.add('visible');
+    });
+    document.getElementById('rd-modal-close').addEventListener('click', function () {
+      document.getElementById('rd-modal').classList.remove('visible');
+    });
+
+    document.getElementById('rd-log-copy').addEventListener('click', function () {
+      var text = logBuffer.join('\n');
+      if (navigator.clipboard) navigator.clipboard.writeText(text);
+    });
+
+    document.getElementById('rd-log-close').addEventListener('click', function () {
+      toggleLogPanel(false);
+    });
+
+    updateVolumeIcon();
+    applyMediaSessionMetadata();
+    updateMetadata();
+  })();
+  </script>
+</body>
+</html>
