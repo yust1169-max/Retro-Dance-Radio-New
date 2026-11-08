@@ -194,7 +194,7 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v36'; // Обновлено для сброса кэша
+    var CACHE_KEY      = 'rd_cover_cache_v38'; // Обновлено для сброса кэша
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
@@ -222,11 +222,10 @@
       'car-man':         ['кар-мэн']
     };
 
+    // Оставили только самые явные маркеры, остальное решает trackCount
     var COMPILATION_MARKERS = [
-      'hits', 'best of', 'greatest', 'collection', 'compilation',
-      '90er', '80er', '70er', '60er', 'generation', 'various',
-      'the best', 'essential', 'ultimate', 'now that', 'italian dance',
-      'хиты', 'лучшие', 'сборник', 'золотые', 'дискотека'
+      'presents', 'mixed', 'hits', 'best of', 'greatest', 'collection',
+      'compilation', 'various', 'хиты', 'лучшие', 'сборник'
     ];
 
     var player         = document.getElementById('player');
@@ -461,8 +460,11 @@
       return false;
     }
 
+    /* ============================================================
+       УМНАЯ ПРОВЕРКА: Если треков больше 15, это 100% сборник
+    ============================================================ */
     function isCompilation(collectionName, trackCount) {
-      if (trackCount && trackCount > 15) return true;
+      if (trackCount && trackCount > 15) return true; 
       if (!collectionName) return false;
       var n = collectionName.toLowerCase();
       for (var i = 0; i < COMPILATION_MARKERS.length; i++) {
@@ -622,6 +624,7 @@
             }
           }
 
+          // ВСЕГДА предпочитаем студийный альбом/сингл, сборник берем только если больше ничего нет
           var best = bestNonComp || bestComp;
           if (!best) return null;
           log('iTunes artist-only pick:', best.artistName, '-', best.collectionName);
@@ -945,7 +948,6 @@
           }
           scheduleMetadata(nextDelay);
 
-          // ВОЗВРАЩАЕМ ПЛОТНЫЙ ЛОГ
           log('track:', trackKey, '| same:', trackKey === currentTrackKey, '| remaining:', (data.now_playing.remaining || '?'), '| next in', nextDelay, 'ms');
 
           if (data.listeners && typeof data.listeners.total === 'number' && data.listeners.total > 0) {
