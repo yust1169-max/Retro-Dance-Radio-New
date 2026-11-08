@@ -194,7 +194,7 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v38'; // Обновлено для сброса кэша
+    var CACHE_KEY      = 'rd_cover_cache_v40'; // Обновлено для сброса кэша
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
@@ -222,10 +222,15 @@
       'car-man':         ['кар-мэн']
     };
 
-    // Оставили только самые явные маркеры, остальное решает trackCount
+    /* ============================================================
+       РАСШИРЕННЫЙ СПИСОК СЛОВ-МАРКЕРОВ СБОРНИКОВ
+    ============================================================ */
     var COMPILATION_MARKERS = [
-      'presents', 'mixed', 'hits', 'best of', 'greatest', 'collection',
-      'compilation', 'various', 'хиты', 'лучшие', 'сборник'
+      'presents', 'mixed', 'hits', 'best', 'greatest', 'collection',
+      'compilation', 'various', 'anthology', 'essential', 'ultimate',
+      'top', 'vol', 'volume', 'playlist', 'selection', 'sound of',
+      'gold', 'classic', 'remix', 'remixes',
+      'хиты', 'лучшие', 'сборник', 'золотые', 'дискотека', 'избранное'
     ];
 
     var player         = document.getElementById('player');
@@ -460,11 +465,8 @@
       return false;
     }
 
-    /* ============================================================
-       УМНАЯ ПРОВЕРКА: Если треков больше 15, это 100% сборник
-    ============================================================ */
     function isCompilation(collectionName, trackCount) {
-      if (trackCount && trackCount > 15) return true; 
+      if (trackCount && trackCount > 14) return true; 
       if (!collectionName) return false;
       var n = collectionName.toLowerCase();
       for (var i = 0; i < COMPILATION_MARKERS.length; i++) {
@@ -593,6 +595,9 @@
       return search(artist + ' ' + title, false);
     }
 
+    /* ============================================================
+       СТРОГИЙ ПОИСК СТУДИЙНОГО АЛЬБОМА (Сборники ЗАПРЕЩЕНЫ)
+    ============================================================ */
     function fetchArtistCoverITunes(artist) {
       var q = encodeURIComponent(artist);
       return fetchWithTimeout('https://itunes.apple.com/search?term=' + q + '&limit=25&entity=album', 4500)
@@ -601,7 +606,6 @@
           if (!data || !data.results || !data.results.length) { return null; }
           var artists = expandArtists(artist);
           var bestNonComp = null, bestNonCompScore = 0;
-          var bestComp = null, bestCompScore = 0;
 
           for (var i = 0; i < data.results.length; i++) {
             var r = data.results[i];
@@ -614,23 +618,69 @@
               if (s > sa) sa = s;
             }
 
-            if (sa >= MIN_ARTIST_SCORE) {
-              var isComp = isCompilation(r.collectionName, r.trackCount);
-              if (isComp) {
-                if (sa > bestCompScore) { bestCompScore = sa; bestComp = r; }
-              } else {
-                if (sa > bestNonCompScore) { bestNonCompScore = sa; bestNonComp = r; }
-              }
+            if (sa >= MIN_ARTIST_SCORE && !isCompilation(r.collectionName, r.trackCount)) {
+              if (sa > bestNonCompScore) { bestNonCompScore = sa; bestNonComp = r; }
             }
           }
 
-          // ВСЕГДА предпочитаем студийный альбом/сингл, сборник берем только если больше ничего нет
-          var best = bestNonComp || bestComp;
-          if (!best) return null;
-          log('iTunes artist-only pick:', best.artistName, '-', best.collectionName);
-          return best.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
+          if (!bestNonComp) return null; // Если только сборники, возвращаем null, чтобы пошло фото
+          log('iTunes artist-only pick (studio album):', bestNonComp.artistName, '-', bestNonComp.collectionName);
+          return bestNonComp.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg').replace('100x100', '600x600');
         })
         .catch(function (e) { return null; });
+    }
+
+    /* ============================================================
+       ПОИСК ФОТОГРАФИИ ИСПОЛНИТЕЛЯ (Если альбомов нет)
+    ============================================================ */
+    function fetchArtistPhotoDeezer(artist) {
+      return new Promise(function(resolve) {
+        var cbName = 'dzArtistCb_' + Math.floor(Math.random() * 1000000);
+        var script = document.createElement('script');
+        window[cbName] = function(data) {
+          if (script.parentNode) script.parentNode.removeChild(script);
+          try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+          
+          if (!data || !data.data || !data.data.length) {
+            log('Deezer artist photo: пусто');
+            return resolve(null);
+          }
+          
+          var artists = expandArtists(artist);
+          for (var i = 0; i < data.data.length; i++) {
+            var r = data.data[i];
+            if (!r.picture_xl) continue;
+            
+            var sa = 0;
+            for (var j = 0; j < artists.length; j++) {
+              var s = similarity(r.name, artists[j]);
+              if (s > sa) sa = s;
+            }
+            if (sa >= MIN_ARTIST_SCORE) {
+              log('Deezer artist photo pick:', r.name);
+              return resolve(r.picture_xl);
+            }
+          }
+          log('Deezer artist photo: не найдено совпадений');
+          resolve(null);
+        };
+        script.src = 'https://api.deezer.com/search/artist?q=' + encodeURIComponent(artist) + '&output=jsonp&callback=' + cbName;
+        script.onerror = function() {
+          if (script.parentNode) script.parentNode.removeChild(script);
+          try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+          resolve(null);
+        };
+        document.body.appendChild(script);
+        
+        setTimeout(function() {
+          if (window[cbName]) {
+            if (script.parentNode) script.parentNode.removeChild(script);
+            try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+            log('Deezer artist photo: timeout');
+            resolve(null);
+          }
+        }, 3500);
+      });
     }
 
     var lastFmQueue = Promise.resolve();
@@ -700,11 +750,20 @@
         if (deezerArt) return deezerArt;
         if (itunesArt) return itunesArt;
 
-        return fetchArtistCoverITunes(artist).then(function (artistArt) {
-          if (artistArt) return artistArt;
-          return fetchCoverLastFm(artist, title).then(function (art2) {
-            if (art2) return art2;
-            return fetchCoverAudioDB(artist);
+        log('external: точный трек не найден, ищем студийный альбом...');
+        return fetchArtistCoverITunes(artist).then(function (albumArt) {
+          if (albumArt) return albumArt;
+
+          log('external: студийных альбомов нет, ищем фото исполнителя...');
+          return fetchArtistPhotoDeezer(artist).then(function (photoArt) {
+             if (photoArt) return photoArt;
+             
+             log('Last.fm: поиск обложки трека...');
+             return fetchCoverLastFm(artist, title).then(function (art2) {
+               if (art2) return art2;
+               log('TheAudioDB: поиск фото исполнителя...');
+               return fetchCoverAudioDB(artist);
+             });
           });
         });
       });
