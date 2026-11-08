@@ -194,7 +194,7 @@
     var STREAM_URL     = 'https://radio.retrodanceradio.com/listen/retro_dance_radio/128';
     var AZURACAST_API  = 'https://radio.retrodanceradio.com/api/nowplaying/retro_dance_radio';
     var LASTFM_KEY     = '0cd72dd2343a7827721881b5fe407abe';
-    var CACHE_KEY      = 'rd_cover_cache_v33'; // Обновлено для сброса кэша
+    var CACHE_KEY      = 'rd_cover_cache_v34'; // Обновлено для сброса кэша
     var CACHE_TTL      = 7 * 24 * 60 * 60 * 1000;
     var DEBUG          = true;
 
@@ -319,10 +319,16 @@
       if (logPanelVisible) renderLogFull();
     }
 
-    coverImg.addEventListener('load', function () { coverImg.classList.add('loaded'); });
+    coverImg.addEventListener('load', function () { 
+      coverImg.classList.add('loaded'); 
+    });
     coverImg.addEventListener('error', function () {
       coverImg.classList.remove('loaded');
-      log('cover-img ERROR');
+      log('cover-img ERROR: ссылка битая, возвращаем логотип');
+      // Сбрасываем на логотип станции, чтобы не было пустого квадрата
+      currentArtwork = STATION_LOGO;
+      coverImg.src = STATION_LOGO;
+      applyMediaSessionMetadata();
     });
 
     function updateUI() {
